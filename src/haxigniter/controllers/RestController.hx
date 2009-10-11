@@ -31,7 +31,7 @@ import haxigniter.types.TypeFactory;
  */
 class RestController extends haxigniter.controllers.Controller
 {
-	public override function handleRequest(uriSegments : Array<String>, method : String, query : Hash<String>) : Dynamic
+	public override function handleRequest(uriSegments : Array<String>, method : String, query : Hash<String>, rawQuery : String) : Dynamic
 	{
 		var action : String = null;
 		var args : Array<Dynamic> = [];

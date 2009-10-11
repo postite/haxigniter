@@ -57,13 +57,27 @@ class TestCase extends haxe.unit.TestCase
 		}
 	}
 	
-	public function assertPattern(pattern : EReg, input : Dynamic) : Void
+	public function assertPattern(pattern : EReg, input : Dynamic,  ?c : PosInfos ) : Void
 	{
-		this.assertTrue(pattern.match(Std.string(input)));
+		currentTest.done = true;
+		if (!pattern.match(Std.string(input)))
+		{
+			currentTest.success = false;
+			currentTest.error   = "regexp pattern didn't match '" + input + "'";
+			currentTest.posInfos = c;
+			throw currentTest;
+		}
 	}
 
-	public function assertNotPattern(pattern : EReg, input : Dynamic) : Void
+	public function assertNotPattern(pattern : EReg, input : Dynamic,  ?c : PosInfos ) : Void
 	{
-		this.assertFalse(pattern.match(Std.string(input)));
+		currentTest.done = true;
+		if (pattern.match(Std.string(input)))
+		{
+			currentTest.success = false;
+			currentTest.error   = "regexp pattern wasn't supposed to match '" + input + "'";
+			currentTest.posInfos = c;
+			throw currentTest;
+		}
 	}
 }

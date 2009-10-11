@@ -10,7 +10,7 @@ class Request
 	private static var config = haxigniter.application.config.Config.instance();	
 	public static var defaultPackage : String = 'haxigniter.application.controllers';
 
-	public static function fromString(request : String, ?method : String, ?query : Hash<String>) : Dynamic
+	public static function fromString(request : String, ?method : String, ?query : Hash<String>, ?rawQuery : String) : Dynamic
 	{
 		if(StringTools.startsWith(request, '/'))
 			request = request.substr(1);
@@ -18,13 +18,13 @@ class Request
 		if(StringTools.endsWith(request, '/'))
 			request = request.substr(0, request.length - 1);
 		
-		return fromArray(request.split('/'), method, query);
+		return fromArray(request.split('/'), method, query, rawQuery);
 	}
 	
-	public static function fromArray(uriSegments : Array<String>, ?method : String, ?query : Hash<String>) : Dynamic
+	public static function fromArray(uriSegments : Array<String>, ?method : String, ?query : Hash<String>, ?rawQuery : String) : Dynamic
 	{
 		var controller : Controller = createController(uriSegments[0]);
-		return controller.handleRequest(uriSegments, method, query);		
+		return controller.handleRequest(uriSegments, method, query, rawQuery);
 	}
 		
 	public static function createController(controllerName : String) : Controller

@@ -128,7 +128,7 @@ class Application
 			try
 			{
 				// Make a request with the current url.
-				Request.fromArray(Url.segments, Web.getMethod(), Web.getParams());
+				Request.fromArray(Url.segments, Web.getMethod(), Web.getParams(), Web.getParamsString());
 
 				// Decided to close session here, not in cleanup, because of session integrity.
 				// It may be in a bad state if exception is thrown.
@@ -150,7 +150,7 @@ class Application
 		}
 		else
 		{
-			Request.fromArray(Url.segments, Web.getMethod(), Web.getParams());
+			Request.fromArray(Url.segments, Web.getMethod(), Web.getParams(), Web.getParamsString());
 
 			#if neko
 			if(config.sessionPath != '')

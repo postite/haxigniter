@@ -32,7 +32,7 @@ class Controller implements haxe.rtti.Infos
 	 * @param	params Query parameters
 	 * @return  Any value that the controller returns.
 	 */
-	public function handleRequest(uriSegments : Array<String>, method : String, query : Hash<String>) : Dynamic
+	public function handleRequest(uriSegments : Array<String>, method : String, query : Hash<String>, rawQuery : String) : Dynamic
 	{
 		var controllerType = Type.getClass(this);
 		var controllerMethod : String = (uriSegments[1] == null) ? config.defaultAction : uriSegments[1];

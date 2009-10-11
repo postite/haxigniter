@@ -72,7 +72,7 @@ class Custom extends Controller
 {
 	public function new() {}
 	
-	public override function handleRequest(uriSegments : Array<String>, method : String, params : Hash<String>) : Dynamic
+	public override function handleRequest(uriSegments : Array<String>, method : String, params : Hash<String>, rawQuery : String) : Dynamic
 	{
 		return 'I am custom: ' + method + ' ' + params.get('one') + params.get('two') + params.get('three');
 	}

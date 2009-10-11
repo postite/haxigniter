@@ -9,6 +9,8 @@ import haxigniter.tests.unit.When_using_library_Url;
 import haxigniter.tests.unit.When_using_library_Database;
 import haxigniter.tests.unit.When_using_library_Input;
 
+import haxigniter.tests.unit.When_using_RestApiParser;
+
 #if php
 import php.Lib;
 #elseif neko
@@ -44,6 +46,7 @@ class TestRunner extends haxe.unit.TestRunner
 			this.add(new When_using_library_Database());
 			this.add(new When_using_library_Url());
 			this.add(new When_using_library_Input());
+			this.add(new When_using_RestApiParser());
 		}
 		
 		this.addTestClasses();		
