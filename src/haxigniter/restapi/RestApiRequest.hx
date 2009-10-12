@@ -88,6 +88,30 @@ class RestApiRequest
 	
 	public function toString() : String
 	{
-		return 'RestApiRequest(' + type + selectors + ' [' + data + '] => ' + format + ')';
+		var output = 'RestApiRequest(' + type + ': ';
+		var selectorOutput = [];
+		
+		for(selector in selectors)
+		{
+			switch(selector)
+			{
+				case all(name):
+					selectorOutput.push('all("' + name + '")');
+				case view(name, viewName):
+					selectorOutput.push('view("' + name + '", "' + viewName + '")');
+				case some(resourceName, query):
+					var resources = [];
+					for(resource in query)
+					{
+						resources.push(Std.string(resource));
+					}
+					selectorOutput.push('some("' + resourceName + '", ' + resources.join(', ') + ')');
+			}
+		}
+		
+		output += selectorOutput.join(', ');
+		output += ' [' + data + '] => ' + format + ')';
+		
+		return output;
 	}
 }
