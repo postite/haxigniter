@@ -111,8 +111,8 @@ class RestApiController extends Controller
 		if(finalOuput.charSet != null)
 			header.push('charset=' + finalOuput.charSet);
 		
-		if(header.length > 0)
-			Web.setHeader('Content-Type', header.join('; '));
+		//if(header.length > 0)
+			//Web.setHeader('Content-Type', header.join('; '));
 
 		Lib.print(finalOuput.output);
 	}

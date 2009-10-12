@@ -24,7 +24,6 @@ enum RestResourceSelector
 	
 enum RestApiSelector
 {
-    one(resourceName : String, id : Int);
     all(resourceName : String);
     some(resourceName : String, query : Array<RestResourceSelector>);
     view(resourceName : String, viewName : String);

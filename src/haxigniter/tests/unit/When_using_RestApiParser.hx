@@ -40,19 +40,19 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		output = parse('/bazaars/1');
 		
 		this.assertEqual(1, output.length);
-		this.assertApiResource(output[0], 'bazaars', 1);
+		this.assertSelectorAttrib(output[0], 0, 'id', RestResourceOperator.equals, '1', 'bazaars');
 
 		output = parse('/bazaars/1/libraries');
 		
 		this.assertEqual(2, output.length);
-		this.assertApiResource(output[0], 'bazaars', 1);
+		this.assertSelectorAttrib(output[0], 0, 'id', RestResourceOperator.equals, '1', 'bazaars');
 		this.assertApiResource(output[1], 'libraries', null);
 		
 		output = parse('/bazaars/1/libraries/2');
 		
 		this.assertEqual(2, output.length);
-		this.assertApiResource(output[0], 'bazaars', 1);
-		this.assertApiResource(output[1], 'libraries', 2);
+		this.assertSelectorAttrib(output[0], 0, 'id', RestResourceOperator.equals, '1', 'bazaars');
+		this.assertSelectorAttrib(output[1], 0, 'id', RestResourceOperator.equals, '2', 'libraries');
 
 		output = parse('/bazaars/testview/');
 		
@@ -68,12 +68,12 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		
 		this.assertEqual(2, output.length);
 		this.assertApiResource(output[0], 'bazaars', 'testview');
-		this.assertApiResource(output[1], 'libraries', 2);
+		this.assertSelectorAttrib(output[1], 0, 'id', RestResourceOperator.equals, '2', 'libraries');
 
 		output = parse('/bazaars/1/libraries/testview');
 		
 		this.assertEqual(2, output.length);
-		this.assertApiResource(output[0], 'bazaars', 1);
+		this.assertSelectorAttrib(output[0], 0, 'id', RestResourceOperator.equals, '1', 'bazaars');
 		this.assertApiResource(output[1], 'libraries', 'testview');
 		
 		// All ok, lets test errors.
@@ -90,12 +90,15 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		this.assertApiResource(output[0], 'bazaars', null);
 		
 		output = parse('/bazaars/1/libraries.json/4', 'json');
-		this.assertApiResource(output[0], 'bazaars', 1);
-		this.assertApiResource(output[1], 'libraries', 4);
+		this.assertSelectorAttrib(output[0], 0, 'id', RestResourceOperator.equals, '1', 'bazaars');
+		this.assertSelectorAttrib(output[1], 0, 'id', RestResourceOperator.equals, '4', 'libraries');
 		
-		output = parse('/bazaars.xml/3/libraries.csv/', 'csv');
-		this.assertApiResource(output[0], 'bazaars', 3);
+		output = parse('/bazaars/3/libraries.csv/', 'csv');
+		this.assertSelectorAttrib(output[0], 0, 'id', RestResourceOperator.equals, '3', 'bazaars');
 		this.assertApiResource(output[1], 'libraries', null);
+		
+		// More than one output format is an error.
+		badParse('/bazaars.xml/3/libraries.csv/', ~/Multiple output formats specified: "xml" and "csv"./, RestErrorType.invalidOutputFormat);
 	}
 	
 	public function Then_SOME_selectors_should_be_parsed_properly()
@@ -131,11 +134,14 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 
 	/////////////////////////////////////////////////////////////////
 	
-	private function assertSelectorAttrib(selector : RestApiSelector, selectorIndex : Int, name : String, operator : RestResourceOperator, value : String)
+	private function assertSelectorAttrib(selector : RestApiSelector, selectorIndex : Int, name : String, operator : RestResourceOperator, value : String, ?resourceName : String)
 	{
 		switch(selector)
 		{
 			case some(resource, selectors):
+				if(resourceName != null)
+					this.assertEqual(resourceName, resourceName);
+					
 				switch(selectors[selectorIndex])
 				{
 					case attribute(aName, aOp, aValue):
@@ -172,10 +178,6 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 	{
 		switch(selector)
 		{
-			case one(resource, id):
-				this.assertEqual(resourceName, resource);
-				this.assertEqual(data, id);
-			
 			case some(resource, selectors):
 				this.assertEqual(resourceName, resource);
 				this.assertEqual(data, selectors);

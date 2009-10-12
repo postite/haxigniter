@@ -31,7 +31,14 @@ class RestApiSqlFactory implements RestApiRequestHandler
 	
 	public function handleApiRequest(request : RestApiRequest) : RestApiResponse
 	{
-		throw 'Not implemented.';
+		if(request.type != RestRequestType.get)
+			throw 'Request type ' + request.type + ' is not implemented.';
+		
+		for(selector in request.selectors)
+		{
+			trace(selector);
+		}
+			
 		return null;
 	}
 	

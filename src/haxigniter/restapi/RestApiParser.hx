@@ -322,6 +322,7 @@ class RestApiParser
 	public static function parse(decodedUrl : String, output : {format: String}) : Array<RestApiSelector>
 	{
 		var parsed = new Array<RestApiSelector>();
+		var outputFormat : String = null;
 		
 		// Remove start and end slash
 		if(StringTools.startsWith(decodedUrl, '/'))
@@ -334,16 +335,20 @@ class RestApiParser
 		var urlSegments = decodedUrl.split('/');
 		var i = 0;
 		
-		//trace(urlSegments);
-		
 		while(i < urlSegments.length)
 		{
 			// Test valid resource and return an array of [resource name, output format]
 			var resourceData = validResourceTest(urlSegments[i++]);
 			
-			output.format = resourceData[1];
+			if(outputFormat == null)
+				outputFormat = resourceData[1];
+			else if(resourceData[1] != null)
+				throw new RestApiException('Multiple output formats specified: "' + outputFormat + '" and "' + resourceData[1] + '".', RestErrorType.invalidOutputFormat);
+				
 			parsed.push(parseSelector(resourceData[0], urlSegments[i++]));
 		}
+		
+		output.format = outputFormat;
 		
 		return parsed;
 	}
@@ -355,7 +360,7 @@ class RestApiParser
 			return RestApiSelector.all(resource);
 		
 		if(oneResource.match(data))
-			return RestApiSelector.one(resource, Std.parseInt(data));
+			return RestApiSelector.some(resource, [RestResourceSelector.attribute('id', RestResourceOperator.equals, data)]);
 		
 		if(viewResource.match(data))
 			return RestApiSelector.view(resource, data);
@@ -405,14 +410,3 @@ class RestApiParser
 		return output;
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
