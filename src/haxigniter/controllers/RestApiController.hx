@@ -14,42 +14,27 @@ import haxigniter.restapi.RestApiResponse;
 
 import haxigniter.exceptions.RestApiException;
 
-interface RestApiRequestHandler
+class RestApiController extends Controller
 {
-	function handleApiRequest(request : RestApiRequest) : RestResponseOutput;
-	function handleApiError(message : String, error : RestErrorType, outputFormat : String) : RestResponseOutput;
-}
-
-class RestApiController extends Controller, implements RestApiRequestHandler
-{
+	public static var commonMimeTypes = {
+		haxigniter: 'application/vnd.haxe.serialized', 
+		xml: 'application/xml',
+		xhtml: 'application/xhtml+xml',
+		html: 'text/html',
+		json: 'application/json'
+	};
+	
 	public var apiRequestHandler : RestApiRequestHandler;
 
-	public var defaultContentType : String;
-	public var defaultOutputFormat : String;
-	
 	public function new(?apiRequestHandler : RestApiRequestHandler)
 	{
-		defaultContentType = 'application/vnd.haxe.serialized';
-		defaultOutputFormat = 'haxigniter';
-		
 		// Default behavior: If no handler specified and this class is a RestApiRequestHandler, use it.
-		if(apiRequestHandler == null && Std.is(this, RestApiRequestHandler))
-			this.apiRequestHandler = this;
+		if(apiRequestHandler == null)
+			this.apiRequestHandler = new haxigniter.restapi.RestApiSqlFactory();
 		else
 			this.apiRequestHandler = apiRequestHandler;
 	}
 
-	public function handleApiError(message : String, error : RestErrorType, outputFormat : String) : RestResponseOutput
-	{
-		var outputString = haxe.Serializer.run(RestApiResponse.error(message, error));
-		return {contentType: this.defaultContentType, charSet: null, output: outputString};
-	}
-	
-	public function handleApiRequest(request : RestApiRequest) : RestResponseOutput
-	{
-		return handleApiError('Not implemented yet.', RestErrorType.invalidRequestType, defaultOutputFormat);
-	}
-	
 	/**
 	 * Handle a page request.
 	 * @param	uriSegments Array of request segments (URL splitted with "/")
@@ -59,7 +44,7 @@ class RestApiController extends Controller, implements RestApiRequestHandler
 	 */
 	public override function handleRequest(uriSegments : Array<String>, method : String, query : Hash<String>, rawQuery : String) : Dynamic
 	{
-		var response : RestResponseOutput;
+		var response : RestApiResponse;
 		var outputFormat : String = null;
 		
 		// First, urldecode the raw Query.
@@ -68,10 +53,19 @@ class RestApiController extends Controller, implements RestApiRequestHandler
 		try
 		{
 			// Parse the query string to get the output format early, so it can be used in error handling.
-			var output = { format: null };
-			
+			var output = { format: null };			
 			var selectors = RestApiParser.parse(rawQuery, output);
-			outputFormat = output.format == null ? this.defaultOutputFormat : output.format;
+			
+			if(output.format != null)
+			{
+				// Test if format is supported by the request handler.
+				if(!Lambda.has(apiRequestHandler.supportedOutputFormats, outputFormat))
+					throw new RestApiException('Invalid output format: ' + outputFormat, RestErrorType.invalidOutputFormat);
+				
+				outputFormat = output.format;
+			}
+			else
+				outputFormat = apiRequestHandler.supportedOutputFormats[0];
 
 			// Extract api version from second segment
 			var versionTest = ~/^[vV](\d+)$/;
@@ -90,15 +84,8 @@ class RestApiController extends Controller, implements RestApiRequestHandler
 				default: throw new RestApiException('Invalid request type: ' + method, RestErrorType.invalidRequestType);
 			}
 			
-			
-			// Data is the POSTed query, but since it's concatenated with GET, the raw query must be removed...
-			// TODO: Is PUT supported for query?
-			for(key in query.keys())
-			{
-				if(rawQuery.indexOf(key) == 0)
-					query.remove(key);
-			}
-			var data = query;
+			// Get the raw posted data.
+			var data : String = Web.getPostData();
 
 			// Create the RestApiRequest object and pass it along to the handler.
 			var request = new RestApiRequest(type, selectors, outputFormat, apiVersion, data);
@@ -107,20 +94,26 @@ class RestApiController extends Controller, implements RestApiRequestHandler
 		}
 		catch(e : RestApiException)
 		{
-			response = apiRequestHandler.handleApiError(e.message, e.error, outputFormat);
+			response = RestApiResponse.failure(e.message, e.error);
 		}
+		catch(e : Dynamic)
+		{
+			response = RestApiResponse.failure(Std.string(e), RestErrorType.internal);
+		}
+		
+		var finalOuput : RestResponseOutput = apiRequestHandler.outputApiResponse(response, outputFormat);
 
 		// Format the final output according to response and send it to the client.
 		var header = [];
 		
-		if(response.contentType != null)
-			header.push(response.contentType);
-		if(response.charSet != null)
-			header.push('charset=' + response.charSet);
+		if(finalOuput.contentType != null)
+			header.push(finalOuput.contentType);
+		if(finalOuput.charSet != null)
+			header.push('charset=' + finalOuput.charSet);
 		
 		if(header.length > 0)
 			Web.setHeader('Content-Type', header.join('; '));
 
-		Lib.print(response.output);
+		Lib.print(finalOuput.output);
 	}
 }
