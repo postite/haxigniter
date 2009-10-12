@@ -30,13 +30,6 @@ enum RestApiSelector
     view(resourceName : String, viewName : String);
 }
 
-enum RestApiFormat 
-{
-    haXigniter;
-    json;
-    xml;
-}
-
 enum RestRequestType
 {
 	create;
@@ -51,11 +44,11 @@ class RestApiRequest
 {
 	public var type(default, null) : RestRequestType;
     public var selectors(default, null) : Array<RestApiSelector>;
-    public var format(default, null) : RestApiFormat;
+    public var format(default, null) : String;
     public var apiVersion(default, null) : Int;
     public var data(default, null) : Hash<String>; // Any PUT or POST data for create/update
 
-	public function new(type : RestRequestType, selectors : Array<RestApiSelector>, format : RestApiFormat, apiVersion : Int, data : Hash<String>) 
+	public function new(type : RestRequestType, selectors : Array<RestApiSelector>, format : String, apiVersion : Int, data : Hash<String>) 
 	{
 		if(type == null)
 			throw new RestApiException('No request type specified.', RestErrorType.invalidRequestType);

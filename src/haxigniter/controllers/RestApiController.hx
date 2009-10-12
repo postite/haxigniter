@@ -17,17 +17,20 @@ import haxigniter.exceptions.RestApiException;
 interface RestApiRequestHandler
 {
 	function handleApiRequest(request : RestApiRequest) : RestResponseOutput;
-	function handleApiError(message : String, error : RestErrorType) : RestResponseOutput;
+	function handleApiError(message : String, error : RestErrorType, outputFormat : String) : RestResponseOutput;
 }
 
 class RestApiController extends Controller, implements RestApiRequestHandler
 {
 	public var apiRequestHandler : RestApiRequestHandler;
+
 	public var defaultContentType : String;
+	public var defaultOutputFormat : String;
 	
 	public function new(?apiRequestHandler : RestApiRequestHandler)
 	{
 		defaultContentType = 'application/vnd.haxe.serialized';
+		defaultOutputFormat = 'haxigniter';
 		
 		// Default behavior: If no handler specified and this class is a RestApiRequestHandler, use it.
 		if(apiRequestHandler == null && Std.is(this, RestApiRequestHandler))
@@ -36,15 +39,15 @@ class RestApiController extends Controller, implements RestApiRequestHandler
 			this.apiRequestHandler = apiRequestHandler;
 	}
 
-	public function handleApiError(message : String, error : RestErrorType) : RestResponseOutput
+	public function handleApiError(message : String, error : RestErrorType, outputFormat : String) : RestResponseOutput
 	{
 		var outputString = haxe.Serializer.run(RestApiResponse.error(message, error));
-		return {contentType: defaultContentType, charSet: null, output: outputString};
+		return {contentType: this.defaultContentType, charSet: null, output: outputString};
 	}
 	
 	public function handleApiRequest(request : RestApiRequest) : RestResponseOutput
 	{
-		return handleApiError('Not implemented yet.', RestErrorType.invalidRequestType);
+		return handleApiError('Not implemented yet.', RestErrorType.invalidRequestType, defaultOutputFormat);
 	}
 	
 	/**
@@ -57,16 +60,23 @@ class RestApiController extends Controller, implements RestApiRequestHandler
 	public override function handleRequest(uriSegments : Array<String>, method : String, query : Hash<String>, rawQuery : String) : Dynamic
 	{
 		var response : RestResponseOutput;
+		var outputFormat : String = null;
 		
-		// First, urldecode the raw Query according to specs.
+		// First, urldecode the raw Query.
 		rawQuery = StringTools.urlDecode(rawQuery);
 		
 		try
 		{
+			// Parse the query string to get the output format early, so it can be used in error handling.
+			var output = { format: null };
+			
+			var selectors = RestApiParser.parse(rawQuery, output);
+			outputFormat = output.format == null ? this.defaultOutputFormat : output.format;
+
 			// Extract api version from second segment
 			var versionTest = ~/^[vV](\d+)$/;
 			if(uriSegments[1] == null || !versionTest.match(uriSegments[1]))
-				throw new RestApiException('Invalid API version.', RestErrorType.invalidApiVersion);
+				throw new RestApiException('Invalid API version: ' + uriSegments[1], RestErrorType.invalidApiVersion);
 
 			var apiVersion : Int = Std.parseInt(versionTest.matched(1));
 			
@@ -80,8 +90,6 @@ class RestApiController extends Controller, implements RestApiRequestHandler
 				default: throw new RestApiException('Invalid request type: ' + method, RestErrorType.invalidRequestType);
 			}
 			
-			// Only one format supported right now
-			var format = RestApiFormat.haXigniter;
 			
 			// Data is the POSTed query, but since it's concatenated with GET, the raw query must be removed...
 			// TODO: Is PUT supported for query?
@@ -92,17 +100,14 @@ class RestApiController extends Controller, implements RestApiRequestHandler
 			}
 			var data = query;
 
-			// Finally, parse the query string.
-			var selectors = RestApiParser.parse(rawQuery);
-			
 			// Create the RestApiRequest object and pass it along to the handler.
-			var request = new RestApiRequest(type, selectors, format, apiVersion, data);
+			var request = new RestApiRequest(type, selectors, outputFormat, apiVersion, data);
 			
 			response = apiRequestHandler.handleApiRequest(request);
 		}
 		catch(e : RestApiException)
 		{
-			response = apiRequestHandler.handleApiError(e.message, e.error);
+			response = apiRequestHandler.handleApiError(e.message, e.error, outputFormat);
 		}
 
 		// Format the final output according to response and send it to the client.

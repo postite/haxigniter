@@ -283,7 +283,7 @@ class Selector {
 
 class RestApiParser
 {
-	private static var validResourceName : EReg = ~/^\w+$/;
+	private static var validResourceName : EReg = ~/^(\w+)(\.\w+)?$/;
 	private static var oneResource : EReg = ~/^[1-9]\d*$/;
 	private static var viewResource : EReg = ~/^\w+$/;
 
@@ -308,15 +308,20 @@ class RestApiParser
 		return my_stringToOperator;
 	}
 	
-	private static inline function validResourceTest(resource : String) : Void
+	private static inline function validResourceTest(resource : String) : Array<String>
 	{
 		if(!validResourceName.match(resource))
 			throw new RestApiException('Invalid resource: ' + resource, RestErrorType.invalidResource);
+		
+		// Test output format. Matched string will be ".format"
+		var outputFormat = validResourceName.matched(2);
+		
+		return [validResourceName.matched(1), outputFormat != null && outputFormat.length > 1 ? outputFormat.substr(1) : null];
 	}
 	
-	public static function parse(decodedUrl : String) : Array<RestApiSelector>
+	public static function parse(decodedUrl : String, output : {format: String}) : Array<RestApiSelector>
 	{
-		var output = new Array<RestApiSelector>();
+		var parsed = new Array<RestApiSelector>();
 		
 		// Remove start and end slash
 		if(StringTools.startsWith(decodedUrl, '/'))
@@ -333,16 +338,18 @@ class RestApiParser
 		
 		while(i < urlSegments.length)
 		{
-			output.push(parseSelector(urlSegments[i++], urlSegments[i++]));
+			// Test valid resource and return an array of [resource name, output format]
+			var resourceData = validResourceTest(urlSegments[i++]);
+			
+			output.format = resourceData[1];
+			parsed.push(parseSelector(resourceData[0], urlSegments[i++]));
 		}
 		
-		return output;
+		return parsed;
 	}
 	
 	public static function parseSelector(resource : String, data : String) : RestApiSelector
 	{
-		validResourceTest(resource);
-		
 		// Detect resource type.
 		if(data == null)
 			return RestApiSelector.all(resource);

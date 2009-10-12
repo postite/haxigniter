@@ -5,6 +5,7 @@ import haxigniter.types.TypeFactory;
 import haxigniter.tests.TestCase;
 
 import haxigniter.restapi.RestApiRequest;
+import haxigniter.restapi.RestApiResponse;
 import haxigniter.restapi.RestApiParser;
 
 class When_using_RestApiParser extends haxigniter.tests.TestCase
@@ -76,13 +77,31 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		this.assertApiResource(output[1], 'libraries', 'testview');
 		
 		// All ok, lets test errors.
-		badParse('/Bäd request/', ~/Invalid resource: Bäd request/);
+		badParse('/Bäd request/', ~/Invalid resource: Bäd request/, RestErrorType.invalidResource);
+		badParse('/bazaars./', ~/Invalid resource: bazaars\./, RestErrorType.invalidResource);
+	}
+
+	public function test_Then_output_format_should_be_detected()
+	{
+		output = parse('/bazaars/', null);
+		this.assertApiResource(output[0], 'bazaars', null);
+
+		output = parse('/bazaars.xml/', 'xml');		
+		this.assertApiResource(output[0], 'bazaars', null);
+		
+		output = parse('/bazaars/1/libraries.json/4', 'json');
+		this.assertApiResource(output[0], 'bazaars', 1);
+		this.assertApiResource(output[1], 'libraries', 4);
+		
+		output = parse('/bazaars.xml/3/libraries.csv/', 'csv');
+		this.assertApiResource(output[0], 'bazaars', 3);
+		this.assertApiResource(output[1], 'libraries', null);
 	}
 	
-	public function test_Then_SOME_selectors_should_be_parsed_properly()
+	public function Then_SOME_selectors_should_be_parsed_properly()
 	{
 		output = parse('/bazaars/[id=3][name^=Boris]/');
-
+		
 		this.assertEqual(1, output.length);
 		
 		this.assertSelectorAttrib(output[0], 0, 'id', RestResourceOperator.equals, '3');
@@ -107,7 +126,7 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		this.assertSelectorFunc(output[1], 3, 'urlencode', new Array<String>());
 
 		// And an error check.
-		badParse('/bazaars/[this]]is not good', ~/Unrecognized selector segment: \]is/);
+		badParse('/bazaars/[this]]is not good', ~/Unrecognized selector segment: \]is/, RestErrorType.invalidQuery);
 	}
 
 	/////////////////////////////////////////////////////////////////
@@ -154,23 +173,23 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		switch(selector)
 		{
 			case one(resource, id):
-				this.assertEqual(resource, resourceName);
-				this.assertEqual(id, data);
+				this.assertEqual(resourceName, resource);
+				this.assertEqual(data, id);
 			
 			case some(resource, selectors):
-				this.assertEqual(resource, resourceName);
-				this.assertEqual(selectors, data);
+				this.assertEqual(resourceName, resource);
+				this.assertEqual(data, selectors);
 
 			case all(resource):
-				this.assertEqual(resource, resourceName);
+				this.assertEqual(resourceName, resource);
 			
 			case view(resource, name):
-				this.assertEqual(resource, resourceName);
-				this.assertEqual(name, data);
+				this.assertEqual(resourceName, resource);
+				this.assertEqual(data, name);
 		}		
 	}
 
-	private function badParse(input : String, expectedError : EReg) : Void
+	private function badParse(input : String, expectedError : EReg, expectedErrorType : RestErrorType) : Void
 	{
 		try 
 		{
@@ -179,12 +198,18 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		}
 		catch(e : haxigniter.exceptions.RestApiException)
 		{
-			this.assertPattern(expectedError, e.toString());
+			this.assertPattern(expectedError, e.message);
+			this.assertEqual(expectedErrorType, e.error);
 		}
 	}
 	
-	private function parse(input : String) : Array<RestApiSelector>
+	private function parse(input : String, ?outputFormat : String) : Array<RestApiSelector>
 	{
-		return RestApiParser.parse(input);
+		var output = { format: null };
+		var test = RestApiParser.parse(input, output);
+		
+		this.assertEqual(outputFormat, output.format);
+		
+		return test;
 	}
 }
