@@ -1,6 +1,7 @@
 package haxigniter.restapi;
 
 import haxigniter.restapi.RestApiRequest;
+import haxigniter.restapi.RestApiResponse;
 import haxigniter.exceptions.RestApiException;
 
 /* 
@@ -310,7 +311,7 @@ class RestApiParser
 	private static inline function validResourceTest(resource : String) : Void
 	{
 		if(!validResourceName.match(resource))
-			throw new RestApiException('Invalid resource: ' + resource);
+			throw new RestApiException('Invalid resource: ' + resource, RestErrorType.invalidResource);
 	}
 	
 	public static function parse(decodedUrl : String) : Array<RestApiSelector>
@@ -365,7 +366,7 @@ class RestApiParser
 		}
 		catch(e : String)
 		{
-			throw new RestApiException(e);
+			throw new RestApiException(e, RestErrorType.invalidQuery);
 		}
 	}
 	
@@ -382,7 +383,7 @@ class RestApiParser
 			case pseudoFunc(name, args):
 				return RestResourceSelector.func(name, args);
 			case className(value), hash(value):
-				throw new RestApiException('Invalid modifier: ' + value);
+				throw new RestApiException('Invalid modifier: ' + value, RestErrorType.invalidQuery);
 			case attribute(name, operator, value):
 				return RestResourceSelector.attribute(name, getOperator(operator), value);
 		}
@@ -392,7 +393,7 @@ class RestApiParser
 	{
 		var output = stringToOperator().get(stringOperator);
 		if(output == null)
-			throw new RestApiException('Invalid operator: ' + stringOperator);
+			throw new RestApiException('Invalid operator: ' + stringOperator, RestErrorType.invalidQuery);
 		
 		return output;
 	}
