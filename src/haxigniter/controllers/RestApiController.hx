@@ -30,7 +30,7 @@ class RestApiController extends Controller
 	{
 		// Default behavior: If no handler specified and this class is a RestApiRequestHandler, use it.
 		if(apiRequestHandler == null)
-			this.apiRequestHandler = new haxigniter.restapi.RestApiSqlFactory();
+			this.apiRequestHandler = new haxigniter.restapi.RestApiSqlFactory(this.db);
 		else
 			this.apiRequestHandler = apiRequestHandler;
 	}

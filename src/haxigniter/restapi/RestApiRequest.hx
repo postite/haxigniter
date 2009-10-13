@@ -98,14 +98,14 @@ class RestApiRequest
 				case all(name):
 					selectorOutput.push('all("' + name + '")');
 				case view(name, viewName):
-					selectorOutput.push('view("' + name + '", "' + viewName + '")');
+					selectorOutput.push('view("' + name + '": "' + viewName + '")');
 				case some(resourceName, query):
 					var resources = [];
 					for(resource in query)
 					{
 						resources.push(Std.string(resource));
 					}
-					selectorOutput.push('some("' + resourceName + '", ' + resources.join(', ') + ')');
+					selectorOutput.push('some("' + resourceName + '": ' + resources.join(', ') + ')');
 			}
 		}
 		
