@@ -41,9 +41,12 @@ class RestApiSqlFactory implements RestApiRequestHandler
 	{
 		if(request.type != RestRequestType.get)
 			throw new RestApiException('Request type ' + request.type + ' is not implemented.', RestErrorType.invalidRequestType);
-		
-		haxigniter.Application.trace(request);
-		
+		else
+			return handleGetRequest(request);
+	}
+	
+	public function handleGetRequest(request : RestApiRequest) : RestApiResponse
+	{
 		// The query being built is a join of all resources.
 		var tables = [];
 		var values = [];
@@ -52,13 +55,18 @@ class RestApiSqlFactory implements RestApiRequestHandler
 		{
 			switch(selector)
 			{
+				case one(name, id):
+					var newValue = { val: '' };
+					tables.push({name: name, attribs: [attributeToSql(name + '.id', RestResourceOperator.equals, Std.string(id), newValue)]});
+					values.push(newValue.val);
+				
 				case all(name):
 					tables.push({name: name, attribs: []});
 				
 				case view(name, viewName):
 					throw new RestApiException('Views are not implemented.', RestErrorType.invalidQuery);
 				
-				case some(name, query):
+				case some(resourceName, query):
 					var attributes = [];
 					for(resource in query)
 					{
@@ -69,11 +77,11 @@ class RestApiSqlFactory implements RestApiRequestHandler
 							
 							case attribute(name, operator, value):
 								var newValue = { val: '' };
-								attributes.push(attributeToSql(name, operator, value, newValue));
+								attributes.push(attributeToSql(resourceName + '.' + name, operator, value, newValue));
 								values.push(newValue.val);
 						}
 					}
-					tables.push({name: name, attribs: attributes});
+					tables.push({name: resourceName, attribs: attributes});
 			}
 		}
 
@@ -109,8 +117,6 @@ class RestApiSqlFactory implements RestApiRequestHandler
 			
 			joins.push(join);
 		}
-		
-		//db.traceQueries = true;
 		
 		// TODO: Enforce upper limit based on range pseudo-function.
 		
@@ -177,12 +183,12 @@ class RestApiSqlFactory implements RestApiRequestHandler
 		}
 	}
 	
-	public function outputApiResponse(request : RestApiResponse, outputFormat : String) : RestResponseOutput
+	public function outputApiResponse(response : RestApiResponse, outputFormat : String) : RestResponseOutput
 	{
 		return {
 			contentType: supportedContentTypes.get(supportedOutputFormats[0]),
 			charSet: null,
-			output: haxe.Serializer.run(request)
+			output: haxe.Serializer.run(response)
 		};
 	}
 
