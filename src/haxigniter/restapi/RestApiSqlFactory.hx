@@ -1,5 +1,7 @@
 package haxigniter.restapi;
 
+import haxigniter.libraries.Inflection;
+
 #if php
 import php.Lib;
 import php.Web;
@@ -109,7 +111,9 @@ class RestApiSqlFactory implements RestApiRequestHandler
 		{
 			table = tables[i];
 			var prevTable : { name: String, attribs: Array<String>} = tables[i-1];
-			var join = 'INNER JOIN ' + table.name + ' ON (' + table.name + '.' + prevTable.name + 'Id = ' + prevTable.name + '.id';
+			
+			// Create the join statement, with singularized foreign key.
+			var join = 'INNER JOIN ' + table.name + ' ON (' + table.name + '.' + Inflection.singularize(prevTable.name) + 'Id = ' + prevTable.name + '.id';
 			
 			if(table.attribs.length > 0)
 				join += ' AND ' + table.attribs.join(' AND ');
@@ -128,13 +132,15 @@ class RestApiSqlFactory implements RestApiRequestHandler
 		var results = db.query('SELECT ' + tables[tables.length-1].name + '.* ' + output + limit, values);
 		var response : RestDataCollection;
 		
-		// If no LIMIT, collection is easily created.
-		if(limit == '')
+		// If no LIMIT or empty response, collection is easily created.
+		if(results.length == 0)
+			response = new RestDataCollection(0, 0, 0, Lambda.array(results.results()));
+		else if(limit == '')
 			response = new RestDataCollection(0, results.length - 1, results.length, Lambda.array(results.results()));
 		else
 		{
-			var count = db.query('SELECT COUNT(*) ' + output, values);
-			response = new RestDataCollection(0, results.length - 1, count.length, Lambda.array(results.results()));
+			var count = db.queryInt('SELECT COUNT(*) ' + output, values);
+			response = new RestDataCollection(0, results.length - 1, count, Lambda.array(results.results()));
 		}
 		
 		/*
