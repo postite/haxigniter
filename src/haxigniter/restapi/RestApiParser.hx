@@ -27,7 +27,7 @@ class SelectorSegment {
     private static var PSEUDO_P      = ~/^:([\w\-]+)/i;
     private static var ATTR_P        = ~/^\[([^\]]+)\]/;
     
-    private static var ATTR_S_P      = ~/^([\w\-]+)(?:([=|!~*\^$]+)['"]?([\w\-]+)["']?)?$/i;
+    private static var ATTR_S_P      = ~/^([\w\-]+)(?:([=|!~*\^$<>]+)['"]?([\w\-]+)["']?)?$/i;
     
     public var name       (default, null):String;
     public var modifiers  (default, null):Array<Modifier>;
@@ -356,15 +356,16 @@ class RestApiParser
 	public static function parseSelector(resource : String, data : String) : RestApiSelector
 	{
 		// Detect resource type.
-		if(data == null)
+		if(data == null || data == '')
 			return RestApiSelector.all(resource);
 		
 		if(oneResource.match(data))
-			return RestApiSelector.some(resource, [RestResourceSelector.attribute('id', RestResourceOperator.equals, data)]);
+			return RestApiSelector.one(resource, Std.parseInt(data));
+			//return RestApiSelector.some(resource, [RestResourceSelector.attribute('id', RestResourceOperator.equals, data)]);
 		
 		if(viewResource.match(data))
 			return RestApiSelector.view(resource, data);
-		
+
 		try
 		{
 			// Concatenate all Modifiers from selector.

@@ -46,10 +46,21 @@ class RestApiController extends Controller
 	{
 		var response : RestApiResponse;
 		var outputFormat : String = null;
+
+		// Strip the api query from the query hash before urldecoding the raw query.
+		for(getParam in query.keys())
+		{
+			if(rawQuery.indexOf(getParam) == 0)
+				query.remove(getParam);
+		}
 		
-		// First, urldecode the raw Query.
+		// Then strip everything after (and including) the first &.
+		if(rawQuery.indexOf('&') >= 0)
+			rawQuery = rawQuery.substr(0, rawQuery.indexOf('&'));
+
+		// Finally, urldecode the query so it can be parsed.
 		rawQuery = StringTools.urlDecode(rawQuery);
-		
+
 		try
 		{
 			// Parse the query string to get the output format early, so it can be used in error handling.
@@ -86,6 +97,8 @@ class RestApiController extends Controller
 			
 			// Get the raw posted data.
 			var data : String = Web.getPostData();
+			
+			// TODO: User authorization, with the help of query.
 
 			// Create the RestApiRequest object and pass it along to the handler.
 			var request = new RestApiRequest(type, selectors, outputFormat, apiVersion, data);

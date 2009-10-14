@@ -24,6 +24,7 @@ enum RestResourceSelector
 	
 enum RestApiSelector
 {
+	one(resourceName : String, id : Int);
     all(resourceName : String);
     some(resourceName : String, query : Array<RestResourceSelector>);
     view(resourceName : String, viewName : String);
@@ -57,7 +58,7 @@ interface RestApiRequestHandler
 	 * @param	outputFormat is guaranteed (from the RestApiController) to be in the supportedOutputFormat array.
 	 * @return
 	 */
-	function outputApiResponse(request : RestApiResponse, outputFormat : String) : RestResponseOutput;
+	function outputApiResponse(response : RestApiResponse, outputFormat : String) : RestResponseOutput;
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -95,6 +96,8 @@ class RestApiRequest
 		{
 			switch(selector)
 			{
+				case one(name, id):
+					selectorOutput.push('one("' + name + '": ' + id + ')');
 				case all(name):
 					selectorOutput.push('all("' + name + '")');
 				case view(name, viewName):

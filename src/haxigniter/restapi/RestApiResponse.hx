@@ -46,11 +46,29 @@ class RestDataCollection
 	}
 }
 
+class RestApiDebug
+{
+	public static function responseToString(response : RestApiResponse) : String
+	{
+		switch(response)
+		{
+			case success(rows):
+				return 'RestApiResponse.success(Affected: ' + rows + ')';
+			
+			case successData(collection):
+				return 'RestApiResponse.successData(' + StringTools.replace(collection.data.join(', '), '}, ', '},\n') + ' [From ' + collection.startIndex + ' to ' + collection.endIndex + ', total ' + collection.totalCount + '])';
+			
+			case failure(message, errorType):
+				return 'RestApiResponse.failure("' + message + '", RestErrorType.' + errorType + ')';
+		}
+	}	
+}
+
 /////////////////////////////////////////////////////////////////////
 
 enum RestApiResponse 
 {
-	success(ids : Array<Int>);
+	success(affectedRows : Int);
 	successData(collection : RestDataCollection);
 	failure(message : String, errorType : RestErrorType);
 }
