@@ -26,6 +26,8 @@ class RestApiController extends Controller
 	
 	public var apiRequestHandler : RestApiRequestHandler;
 
+	public var debugMode : haxigniter.libraries.DebugLevel;
+
 	public function new(?apiRequestHandler : RestApiRequestHandler)
 	{
 		// Default behavior: If no handler specified and this class is a RestApiRequestHandler, use it.
@@ -34,7 +36,7 @@ class RestApiController extends Controller
 		else
 			this.apiRequestHandler = apiRequestHandler;
 	}
-
+	
 	/**
 	 * Handle a page request.
 	 * @param	uriSegments Array of request segments (URL splitted with "/")
@@ -47,6 +49,9 @@ class RestApiController extends Controller
 		var response : RestApiResponse;
 		var outputFormat : String = null;
 
+		// Prepare for eventual debugging
+		var oldTraceQueries = this.db.traceQueries;
+		
 		// Strip the api query from the query hash before urldecoding the raw query.
 		for(getParam in query.keys())
 		{
@@ -99,9 +104,16 @@ class RestApiController extends Controller
 			var data : String = Web.getPostData();
 			
 			// TODO: User authorization, with the help of query.
-
+			
 			// Create the RestApiRequest object and pass it along to the handler.
 			var request = new RestApiRequest(type, selectors, outputFormat, apiVersion, data);
+			
+			// Debugging
+			if(this.debugMode != null)
+			{
+				this.db.traceQueries = this.debugMode;		
+				this.trace(request);
+			}
 			
 			response = apiRequestHandler.handleApiRequest(request);
 		}
@@ -114,19 +126,28 @@ class RestApiController extends Controller
 			response = RestApiResponse.failure(Std.string(e), RestErrorType.internal);
 		}
 		
-		var finalOuput : RestResponseOutput = apiRequestHandler.outputApiResponse(response, outputFormat);
+		var finalOutput : RestResponseOutput = apiRequestHandler.outputApiResponse(response, outputFormat);
 
+		// Debugging
+		if(this.debugMode != null)
+		{
+			this.trace(RestApiDebug.responseToString(response));
+			this.trace(finalOutput);
+			this.db.traceQueries = oldTraceQueries;
+		}
+		
 		// Format the final output according to response and send it to the client.
 		var header = [];
 		
-		if(finalOuput.contentType != null)
-			header.push(finalOuput.contentType);
-		if(finalOuput.charSet != null)
-			header.push('charset=' + finalOuput.charSet);
+		if(finalOutput.contentType != null)
+			header.push(finalOutput.contentType);
+		if(finalOutput.charSet != null)
+			header.push('charset=' + finalOutput.charSet);
 		
-		//if(header.length > 0)
-			//Web.setHeader('Content-Type', header.join('; '));
+		if(header.length > 0 && this.debugMode == null)
+			Web.setHeader('Content-Type', header.join('; '));
 
-		Lib.print(finalOuput.output);
+		if(this.debugMode == null)
+			Lib.print(finalOutput.output);
 	}
 }
