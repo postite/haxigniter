@@ -21,7 +21,6 @@ import haxigniter.exceptions.RestApiException;
 class RestApiSqlFactory implements RestApiRequestHandler
 {
 	public var supportedContentTypes(default, null) : Hash<String>;
-	public var supportedOutputFormats(default, null) : Array<String>;
 	
 	private var db : DatabaseConnection;
 	
@@ -36,10 +35,12 @@ class RestApiSqlFactory implements RestApiRequestHandler
 	}
 
 	///// RestApiRequestHandler implementation //////////////////////
-	
+
+	public var supportedOutputFormats(default, null) : Array<RestApiFormat>;
+
 	public function handleApiRequest(request : RestApiRequest) : RestApiResponse
 	{
-		if(request.type != RestRequestType.get)
+		if(request.type != RestApiRequestType.get)
 			throw new RestApiException('Request type ' + request.type + ' is not implemented.', RestErrorType.invalidRequestType);
 		else
 			return handleGetRequest(request);
@@ -51,13 +52,13 @@ class RestApiSqlFactory implements RestApiRequestHandler
 		var tables = [];
 		var values = [];
 		
-		for(selector in request.selectors)
+		for(resource in request.resources)
 		{
-			switch(selector)
+			switch(resource)
 			{
 				case one(name, id):
 					var newValue = { val: '' };
-					tables.push({name: name, attribs: [attributeToSql(name + '.id', RestResourceOperator.equals, Std.string(id), newValue)]});
+					tables.push({name: name, attribs: [attributeToSql(name + '.id', RestApiSelectorOperator.equals, Std.string(id), newValue)]});
 					values.push(newValue.val);
 				
 				case all(name):
@@ -68,9 +69,9 @@ class RestApiSqlFactory implements RestApiRequestHandler
 				
 				case some(resourceName, query):
 					var attributes = [];
-					for(resource in query)
+					for(selector in query)
 					{
-						switch(resource)
+						switch(selector)
 						{
 							case func(name, args):
 								throw new RestApiException('Pseudo-functions are not implemented.', RestErrorType.invalidQuery);
@@ -145,7 +146,7 @@ class RestApiSqlFactory implements RestApiRequestHandler
 		return haxigniter.restapi.RestApiResponse.successData(response);
 	}
 	
-	public function attributeToSql(name : String, operator : RestResourceOperator, value : String, newValue : {val : String})
+	public function attributeToSql(name : String, operator : RestApiSelectorOperator, value : String, newValue : {val : String})
 	{
 		newValue.val = value;
 		
@@ -183,7 +184,7 @@ class RestApiSqlFactory implements RestApiRequestHandler
 		}
 	}
 	
-	public function outputApiResponse(response : RestApiResponse, outputFormat : String) : RestResponseOutput
+	public function outputApiResponse(response : RestApiResponse, outputFormat : RestApiFormat) : RestResponseOutput
 	{
 		return {
 			contentType: supportedContentTypes.get(supportedOutputFormats[0]),
@@ -194,7 +195,7 @@ class RestApiSqlFactory implements RestApiRequestHandler
 
 	/////////////////////////////////////////////////////////////////
 	
-	private function contentType(outputFormat : String)
+	private function contentType(outputFormat : RestApiFormat)
 	{
 		return supportedContentTypes.exists(outputFormat) ? supportedContentTypes.get(outputFormat) : supportedContentTypes.get(supportedOutputFormats[0]);
 	}

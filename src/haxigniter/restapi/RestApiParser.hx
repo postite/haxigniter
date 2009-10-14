@@ -287,22 +287,22 @@ class RestApiParser
 	private static var oneResource : EReg = ~/^[1-9]\d*$/;
 	private static var viewResource : EReg = ~/^\w+$/;
 
-	private static var my_stringToOperator : Hash<RestResourceOperator>;
-	private static function stringToOperator() : Hash<RestResourceOperator>
+	private static var my_stringToOperator : Hash<RestApiSelectorOperator>;
+	private static function stringToOperator() : Hash<RestApiSelectorOperator>
 	{
 		if(my_stringToOperator == null)
 		{
-			my_stringToOperator = new Hash<RestResourceOperator>();
+			my_stringToOperator = new Hash<RestApiSelectorOperator>();
 
-			my_stringToOperator.set('*=', RestResourceOperator.contains);
-			my_stringToOperator.set('$=', RestResourceOperator.endsWith);
-			my_stringToOperator.set('=', RestResourceOperator.equals);
-			my_stringToOperator.set('<', RestResourceOperator.lessThan);
-			my_stringToOperator.set('<=', RestResourceOperator.lessThanOrEqual);
-			my_stringToOperator.set('>', RestResourceOperator.moreThan);
-			my_stringToOperator.set('>=', RestResourceOperator.moreThanOrEqual);
-			my_stringToOperator.set('!=', RestResourceOperator.notEqual);
-			my_stringToOperator.set('^=', RestResourceOperator.startsWith);
+			my_stringToOperator.set('*=', RestApiSelectorOperator.contains);
+			my_stringToOperator.set('$=', RestApiSelectorOperator.endsWith);
+			my_stringToOperator.set('=', RestApiSelectorOperator.equals);
+			my_stringToOperator.set('<', RestApiSelectorOperator.lessThan);
+			my_stringToOperator.set('<=', RestApiSelectorOperator.lessThanOrEqual);
+			my_stringToOperator.set('>', RestApiSelectorOperator.moreThan);
+			my_stringToOperator.set('>=', RestApiSelectorOperator.moreThanOrEqual);
+			my_stringToOperator.set('!=', RestApiSelectorOperator.notEqual);
+			my_stringToOperator.set('^=', RestApiSelectorOperator.startsWith);
 		}
 		
 		return my_stringToOperator;
@@ -319,10 +319,10 @@ class RestApiParser
 		return [validResourceName.matched(1), outputFormat != null && outputFormat.length > 1 ? outputFormat.substr(1) : null];
 	}
 	
-	public static function parse(decodedUrl : String, output : {format: String}) : Array<RestApiSelector>
+	public static function parse(decodedUrl : String, output : {format: RestApiFormat}) : Array<RestApiResource>
 	{
-		var parsed = new Array<RestApiSelector>();
-		var outputFormat : String = null;
+		var parsed = new Array<RestApiResource>();
+		var outputFormat : RestApiFormat = null;
 		
 		// Remove start and end slash
 		if(StringTools.startsWith(decodedUrl, '/'))
@@ -353,18 +353,18 @@ class RestApiParser
 		return parsed;
 	}
 	
-	public static function parseSelector(resource : String, data : String) : RestApiSelector
+	public static function parseSelector(resource : String, data : String) : RestApiResource
 	{
 		// Detect resource type.
 		if(data == null || data == '')
-			return RestApiSelector.all(resource);
+			return RestApiResource.all(resource);
 		
 		if(oneResource.match(data))
-			return RestApiSelector.one(resource, Std.parseInt(data));
-			//return RestApiSelector.some(resource, [RestResourceSelector.attribute('id', RestResourceOperator.equals, data)]);
+			return RestApiResource.one(resource, Std.parseInt(data));
+			//return RestApiSelector.some(resource, [RestResourceSelector.attribute('id', RestApiSelectorOperator.equals, data)]);
 		
 		if(viewResource.match(data))
-			return RestApiSelector.view(resource, data);
+			return RestApiResource.view(resource, data);
 
 		try
 		{
@@ -375,7 +375,7 @@ class RestApiParser
 				output = output.concat(selector.modifiers);
 			}
 			
-			return RestApiSelector.some(resource, Lambda.array(Lambda.map(output, cssToRest)));
+			return RestApiResource.some(resource, Lambda.array(Lambda.map(output, cssToRest)));
 		}
 		catch(e : String)
 		{
@@ -383,26 +383,26 @@ class RestApiParser
 		}
 	}
 	
-	private static function cssToRest(modifier : Modifier) : RestResourceSelector
+	private static function cssToRest(modifier : Modifier) : RestApiSelector
 	{
 		var field : String;
-		var operator : RestResourceOperator = null;
+		var operator : RestApiSelectorOperator = null;
 		var value : String = null;
 		
 		switch(modifier)
 		{
 			case pseudo(name):
-				return RestResourceSelector.func(name, new Array<String>());
+				return RestApiSelector.func(name, new Array<String>());
 			case pseudoFunc(name, args):
-				return RestResourceSelector.func(name, args);
+				return RestApiSelector.func(name, args);
 			case className(value), hash(value):
 				throw new RestApiException('Invalid modifier: ' + value, RestErrorType.invalidQuery);
 			case attribute(name, operator, value):
-				return RestResourceSelector.attribute(name, getOperator(operator), value);
+				return RestApiSelector.attribute(name, getOperator(operator), value);
 		}
 	}
 	
-	private static function getOperator(stringOperator : String) : RestResourceOperator
+	private static function getOperator(stringOperator : String) : RestApiSelectorOperator
 	{
 		var output = stringToOperator().get(stringOperator);
 		if(output == null)

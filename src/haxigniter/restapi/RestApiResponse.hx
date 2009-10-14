@@ -9,7 +9,7 @@ enum RestErrorType
 	invalidOutputFormat;
 	invalidData;
 
-	internal;
+	unknown;
 }
 
 typedef RestResponseOutput = {

@@ -3,7 +3,7 @@
 import haxigniter.exceptions.RestApiException;
 import haxigniter.restapi.RestApiResponse;
 
-enum RestResourceOperator
+enum RestApiSelectorOperator
 {
     contains;        // *=
     endsWith;        // $=
@@ -16,21 +16,23 @@ enum RestResourceOperator
     startsWith;      // ^=
 }
 
-enum RestResourceSelector
+enum RestApiSelector
 {
-    func (name:String, args:Array<String>);
-    attribute (name:String, operator:RestResourceOperator, value:String);
+    func (name : String, args : Array<String>);
+    attribute (name : String, operator : RestApiSelectorOperator, value : String);
 }
 	
-enum RestApiSelector
+enum RestApiResource
 {
 	one(resourceName : String, id : Int);
     all(resourceName : String);
-    some(resourceName : String, query : Array<RestResourceSelector>);
+    some(resourceName : String, selectors : Array<RestApiSelector>);
     view(resourceName : String, viewName : String);
 }
 
-enum RestRequestType
+typedef RestApiFormat = String;
+
+enum RestApiRequestType
 {
 	create;
 	delete;
@@ -43,7 +45,7 @@ interface RestApiRequestHandler
 	/**
 	 * Array of supported formats. If none is specified in the request, first one on this list is used.
 	 */ 
-	var supportedOutputFormats(default, null) : Array<String>;
+	var supportedOutputFormats(default, null) : Array<RestApiFormat>;
 	
 	/**
 	 * Handle an incoming request.
@@ -58,30 +60,30 @@ interface RestApiRequestHandler
 	 * @param	outputFormat is guaranteed (from the RestApiController) to be in the supportedOutputFormat array.
 	 * @return
 	 */
-	function outputApiResponse(response : RestApiResponse, outputFormat : String) : RestResponseOutput;
+	function outputApiResponse(response : RestApiResponse, outputFormat : RestApiFormat) : RestResponseOutput;
 }
 
 /////////////////////////////////////////////////////////////////////
 
 class RestApiRequest
 {
-	public var type(default, null) : RestRequestType;
-    public var selectors(default, null) : Array<RestApiSelector>;
-    public var format(default, null) : String;
+	public var type(default, null) : RestApiRequestType;
+    public var resources(default, null) : Array<RestApiResource>;
+    public var format(default, null) : RestApiFormat;
     public var apiVersion(default, null) : Int;
     public var data(default, null) : String; // Any extra data for create/update
 
-	public function new(type : RestRequestType, selectors : Array<RestApiSelector>, format : String, apiVersion : Int, ?data : String)
+	public function new(type : RestApiRequestType, resources : Array<RestApiResource>, format : RestApiFormat, apiVersion : Int, ?data : String)
 	{
 		if(type == null)
 			throw new RestApiException('No request type specified.', RestErrorType.invalidRequestType);
-		if(selectors == null)
+		if(resources == null)
 			throw new RestApiException('No selectors in request.', RestErrorType.invalidQuery);
 		if(apiVersion == null)
 			throw new RestApiException('No api version specified.', RestErrorType.invalidApiVersion);
 		
 		this.type = type;
-		this.selectors = selectors;
+		this.resources = resources;
 		this.format = format;
 		this.apiVersion = apiVersion;
 		this.data = data;
@@ -90,29 +92,29 @@ class RestApiRequest
 	public function toString() : String
 	{
 		var output = 'RestApiRequest(' + type + ': ';
-		var selectorOutput = [];
+		var resourceOutput = [];
 		
-		for(selector in selectors)
+		for(resource in resources)
 		{
-			switch(selector)
+			switch(resource)
 			{
 				case one(name, id):
-					selectorOutput.push('one("' + name + '": ' + id + ')');
+					resourceOutput.push('one("' + name + '": ' + id + ')');
 				case all(name):
-					selectorOutput.push('all("' + name + '")');
+					resourceOutput.push('all("' + name + '")');
 				case view(name, viewName):
-					selectorOutput.push('view("' + name + '": "' + viewName + '")');
+					resourceOutput.push('view("' + name + '": "' + viewName + '")');
 				case some(resourceName, query):
-					var resources = [];
-					for(resource in query)
+					var selectors = [];
+					for(selector in query)
 					{
-						resources.push(Std.string(resource));
+						selectors.push(Std.string(selector));
 					}
-					selectorOutput.push('some("' + resourceName + '": ' + resources.join(', ') + ')');
+					resourceOutput.push('some("' + resourceName + '": ' + selectors.join(', ') + ')');
 			}
 		}
 		
-		output += selectorOutput.join(', ');
+		output += resourceOutput.join(', ');
 		output += ' [' + data + '] => ' + format + ')';
 		
 		return output;

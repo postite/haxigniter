@@ -47,7 +47,7 @@ class RestApiController extends Controller
 	public override function handleRequest(uriSegments : Array<String>, method : String, query : Hash<String>, rawQuery : String) : Dynamic
 	{
 		var response : RestApiResponse;
-		var outputFormat : String = null;
+		var outputFormat : RestApiFormat = null;
 
 		// Prepare for eventual debugging
 		var oldTraceQueries = this.db.traceQueries;
@@ -91,12 +91,12 @@ class RestApiController extends Controller
 			var apiVersion : Int = Std.parseInt(versionTest.matched(1));
 			
 			// Create the request type depending on method
-			var type : RestRequestType = switch(method)
+			var type : RestApiRequestType = switch(method)
 			{
-				case 'POST': RestRequestType.create;
-				case 'DELETE': RestRequestType.delete;
-				case 'GET': RestRequestType.get;
-				case 'PUT': RestRequestType.update;
+				case 'POST': RestApiRequestType.create;
+				case 'DELETE': RestApiRequestType.delete;
+				case 'GET': RestApiRequestType.get;
+				case 'PUT': RestApiRequestType.update;
 				default: throw new RestApiException('Invalid request type: ' + method, RestErrorType.invalidRequestType);
 			}
 			
@@ -123,7 +123,7 @@ class RestApiController extends Controller
 		}
 		catch(e : Dynamic)
 		{
-			response = RestApiResponse.failure(Std.string(e), RestErrorType.internal);
+			response = RestApiResponse.failure(Std.string(e), RestErrorType.unknown);
 		}
 		
 		var finalOutput : RestResponseOutput = apiRequestHandler.outputApiResponse(response, outputFormat);

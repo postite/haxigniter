@@ -10,7 +10,7 @@ import haxigniter.restapi.RestApiParser;
 
 class When_using_RestApiParser extends haxigniter.tests.TestCase
 {
-	var output : Array<RestApiSelector>;
+	var output : Array<RestApiResource>;
 	
 	public override function setup()
 	{
@@ -37,10 +37,27 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		this.assertEqual(1, output.length);
 		this.assertApiResource(output[0], 'bazaars', null);
 
+		output = parse('/bazaars//');
+		
+		this.assertEqual(1, output.length);
+		this.assertApiResource(output[0], 'bazaars', null);
+
 		output = parse('/bazaars/1');
 		
 		this.assertEqual(1, output.length);
 		this.assertApiResource(output[0], 'bazaars', 1);
+
+		output = parse('/bazaars//libraries');
+		
+		this.assertEqual(2, output.length);
+		this.assertApiResource(output[0], 'bazaars', null);
+		this.assertApiResource(output[1], 'libraries', null);
+
+		output = parse('/bazaars//libraries//');
+		
+		this.assertEqual(2, output.length);
+		this.assertApiResource(output[0], 'bazaars', null);
+		this.assertApiResource(output[1], 'libraries', null);
 
 		output = parse('/bazaars/1/libraries');
 		
@@ -79,6 +96,8 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		// All ok, lets test errors.
 		badParse('/Bäd request/', ~/Invalid resource: Bäd request/, RestErrorType.invalidResource);
 		badParse('/bazaars./', ~/Invalid resource: bazaars\./, RestErrorType.invalidResource);
+		
+		badParse('/bazaars///', ~/Invalid resource: /, RestErrorType.invalidResource);
 	}
 
 	public function test_Then_output_format_should_be_detected()
@@ -107,15 +126,15 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		
 		this.assertEqual(1, output.length);
 		
-		this.assertSelectorAttrib(output[0], 0, 'id', RestResourceOperator.equals, '3');
-		this.assertSelectorAttrib(output[0], 1, 'name', RestResourceOperator.startsWith, 'Boris');
+		this.assertSelectorAttrib(output[0], 0, 'id', RestApiSelectorOperator.equals, '3');
+		this.assertSelectorAttrib(output[0], 1, 'name', RestApiSelectorOperator.startsWith, 'Boris');
 
 		output = parse('/bazaars/:test[name*=Doris]:range(0,10):urlencode/');
 
 		this.assertEqual(1, output.length);
 		
 		this.assertSelectorFunc(output[0], 0, 'test', new Array<String>());
-		this.assertSelectorAttrib(output[0], 1, 'name', RestResourceOperator.contains, 'Doris');
+		this.assertSelectorAttrib(output[0], 1, 'name', RestApiSelectorOperator.contains, 'Doris');
 		this.assertSelectorFunc(output[0], 2, 'range', ['0', '10']);
 		this.assertSelectorFunc(output[0], 3, 'urlencode', new Array<String>());
 
@@ -124,7 +143,7 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		this.assertEqual(2, output.length);
 		
 		this.assertSelectorFunc(output[1], 0, 'test', new Array<String>());
-		this.assertSelectorAttrib(output[1], 1, 'name', RestResourceOperator.contains, 'Doris');
+		this.assertSelectorAttrib(output[1], 1, 'name', RestApiSelectorOperator.contains, 'Doris');
 		this.assertSelectorFunc(output[1], 2, 'range', ['0', '10']);
 		this.assertSelectorFunc(output[1], 3, 'urlencode', new Array<String>());
 
@@ -134,7 +153,7 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 
 	/////////////////////////////////////////////////////////////////
 	
-	private function assertSelectorAttrib(selector : RestApiSelector, selectorIndex : Int, name : String, operator : RestResourceOperator, value : String, ?resourceName : String)
+	private function assertSelectorAttrib(selector : RestApiResource, selectorIndex : Int, name : String, operator : RestApiSelectorOperator, value : String, ?resourceName : String)
 	{
 		switch(selector)
 		{
@@ -156,7 +175,7 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		}		
 	}
 
-	private function assertSelectorFunc(selector : RestApiSelector, selectorIndex : Int, name : String, args : Array<String>)
+	private function assertSelectorFunc(selector : RestApiResource, selectorIndex : Int, name : String, args : Array<String>)
 	{
 		switch(selector)
 		{
@@ -174,7 +193,7 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		}		
 	}
 	
-	private function assertApiResource(selector : RestApiSelector, resourceName : String, data : Dynamic)
+	private function assertApiResource(selector : RestApiResource, resourceName : String, data : Dynamic)
 	{
 		switch(selector)
 		{
@@ -209,7 +228,7 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		}
 	}
 	
-	private function parse(input : String, ?outputFormat : String) : Array<RestApiSelector>
+	private function parse(input : String, ?outputFormat : RestApiFormat) : Array<RestApiResource>
 	{
 		var output = { format: null };
 		var test = RestApiParser.parse(input, output);
