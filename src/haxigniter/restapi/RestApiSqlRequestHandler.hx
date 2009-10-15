@@ -20,7 +20,7 @@ import haxigniter.restapi.RestApiResponse;
 
 import haxigniter.exceptions.RestApiException;
 
-class RestApiSqlFactory implements RestApiRequestHandler
+class RestApiSqlRequestHandler implements RestApiRequestHandler
 {
 	public var supportedContentTypes(default, null) : Hash<String>;
 	
