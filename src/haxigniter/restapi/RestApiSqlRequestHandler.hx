@@ -42,7 +42,7 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 
 	public function handleApiRequest(request : RestApiRequest) : RestApiResponse
 	{
-		if(request.type != RestApiRequestType.get)
+		if(request.type != RestApiRequestType.read)
 			throw new RestApiException('Request type ' + request.type + ' is not implemented.', RestErrorType.invalidRequestType);
 		else
 			return handleGetRequest(request);

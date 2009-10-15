@@ -32,12 +32,12 @@ enum RestApiResource
 
 typedef RestApiFormat = String;
 
-enum RestApiRequestType
+enum RestApiRequestType // CRUD
 {
 	create;
-	delete;
-	get;
+	read;
 	update;
+	delete;
 }
 
 interface RestApiRequestHandler

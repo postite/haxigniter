@@ -99,7 +99,7 @@ class RestApiController extends Controller
 			{
 				case 'POST': RestApiRequestType.create;
 				case 'DELETE': RestApiRequestType.delete;
-				case 'GET': RestApiRequestType.get;
+				case 'GET': RestApiRequestType.read;
 				case 'PUT': RestApiRequestType.update;
 				default: throw new RestApiException('Invalid request type: ' + method, RestErrorType.invalidRequestType);
 			}
