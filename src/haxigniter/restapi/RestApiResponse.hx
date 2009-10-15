@@ -8,7 +8,8 @@ enum RestErrorType
 	invalidApiVersion;
 	invalidOutputFormat;
 	invalidData;
-
+	
+	unauthorizedRequest;
 	unknown;
 }
 

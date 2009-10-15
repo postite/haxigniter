@@ -11,6 +11,7 @@ import neko.Web;
 import haxigniter.restapi.RestApiParser;
 import haxigniter.restapi.RestApiRequest;
 import haxigniter.restapi.RestApiResponse;
+import haxigniter.restapi.RestApiAuthorization;
 
 import haxigniter.exceptions.RestApiException;
 
@@ -25,16 +26,19 @@ class RestApiController extends Controller
 	};
 	
 	public var apiRequestHandler : RestApiRequestHandler;
+	public var apiAuthorization : RestApiAuthorization;
 
 	public var debugMode : haxigniter.libraries.DebugLevel;
 
-	public function new(?apiRequestHandler : RestApiRequestHandler)
+	public function new(?apiRequestHandler : RestApiRequestHandler, ?apiAuthorization : RestApiAuthorization)
 	{
-		// Default behavior: If no handler specified and this class is a RestApiRequestHandler, use it.
+		// Default behavior: If no handler specified, use a RestApiSqlFactory.
 		if(apiRequestHandler == null)
 			this.apiRequestHandler = new haxigniter.restapi.RestApiSqlFactory(this.db);
 		else
 			this.apiRequestHandler = apiRequestHandler;
+		
+		this.apiAuthorization = apiAuthorization;
 	}
 	
 	/**
@@ -106,7 +110,7 @@ class RestApiController extends Controller
 			// TODO: User authorization, with the help of query.
 			
 			// Create the RestApiRequest object and pass it along to the handler.
-			var request = new RestApiRequest(type, selectors, outputFormat, apiVersion, data);
+			var request = new RestApiRequest(type, selectors, outputFormat, apiVersion, query, data);
 			
 			// Debugging
 			if(this.debugMode != null)
@@ -114,6 +118,10 @@ class RestApiController extends Controller
 				this.db.traceQueries = this.debugMode;		
 				this.trace(request);
 			}
+			
+			// If authorization exists, it must go through.
+			if(apiAuthorization != null && !apiAuthorization.authorizeRequest(request))
+				throw new RestApiException('Unauthorized request.', RestErrorType.unauthorizedRequest);
 			
 			response = apiRequestHandler.handleApiRequest(request);
 		}

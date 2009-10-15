@@ -71,9 +71,10 @@ class RestApiRequest
     public var resources(default, null) : Array<RestApiResource>;
     public var format(default, null) : RestApiFormat;
     public var apiVersion(default, null) : Int;
+	public var queryParameters(default, null) : Hash<String>;
     public var data(default, null) : String; // Any extra data for create/update
 
-	public function new(type : RestApiRequestType, resources : Array<RestApiResource>, format : RestApiFormat, apiVersion : Int, ?data : String)
+	public function new(type : RestApiRequestType, resources : Array<RestApiResource>, format : RestApiFormat, apiVersion : Int, queryParameters : Hash<String>, data : String)
 	{
 		if(type == null)
 			throw new RestApiException('No request type specified.', RestErrorType.invalidRequestType);
@@ -86,6 +87,8 @@ class RestApiRequest
 		this.resources = resources;
 		this.format = format;
 		this.apiVersion = apiVersion;
+		
+		this.queryParameters = queryParameters;
 		this.data = data;
 	}
 	
@@ -115,7 +118,7 @@ class RestApiRequest
 		}
 		
 		output += resourceOutput.join(', ');
-		output += ' [' + data + '] => ' + format + ')';
+		output += ' ' + queryParameters + ' [' + data + '] => ' + format + ')';
 		
 		return output;
 	}
