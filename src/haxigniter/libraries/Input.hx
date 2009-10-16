@@ -37,9 +37,6 @@ class Input
 		
 		for(pair in pairs)
 		{
-			if(StringTools.trim(pair) == '')
-				continue;
-			
 			var keyValue = pair.split('=');
 			
 			if(keyValue.length == 2)

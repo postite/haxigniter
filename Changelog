@@ -3,6 +3,7 @@ Changelog for haXigniter
 Current
 =======
 Features
+ - Added Input.parseQuery() for parsing query strings and urls.
  - All queries sent to the database can now be auto-traced using the "traceQueries" property.
  - haxigniter.libraries.Inflection added, with support for pluralizing/singularizing words.
 
