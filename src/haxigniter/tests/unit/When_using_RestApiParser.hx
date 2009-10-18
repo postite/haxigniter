@@ -94,6 +94,10 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		this.assertApiResource(output[1], 'libraries', 'testview');
 		
 		// All ok, lets test errors.
+		badParse('', ~/Invalid resource: /, RestErrorType.invalidResource);
+		badParse('/', ~/Invalid resource: /, RestErrorType.invalidResource);
+		badParse('//', ~/Invalid resource: /, RestErrorType.invalidResource);
+		
 		badParse('/Bäd request/', ~/Invalid resource: Bäd request/, RestErrorType.invalidResource);
 		badParse('/bazaars./', ~/Invalid resource: bazaars\./, RestErrorType.invalidResource);
 		

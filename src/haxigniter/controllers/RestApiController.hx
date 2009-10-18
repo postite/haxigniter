@@ -59,8 +59,11 @@ class RestApiController extends Controller
 		// Strip the api query from the query hash before urldecoding the raw query.
 		for(getParam in query.keys())
 		{
-			if(rawQuery.indexOf(getParam) == 0)
+			if(getParam.indexOf('/') > = 0)
+			{
 				query.remove(getParam);
+				break;
+			}
 		}
 		
 		// Then strip everything after (and including) the first &.
