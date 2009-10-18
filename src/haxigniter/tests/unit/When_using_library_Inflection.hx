@@ -11,6 +11,8 @@ class When_using_library_Inflection extends haxigniter.tests.TestCase
 		this.assertPlural('mice', 'mouse');
 		this.assertPlural('tomatoes', 'tomato');
 		this.assertPlural('buses', 'bus');
+		this.assertPlural('shoes', 'shoe');
+		this.assertPlural('thieves', 'thief');
 		this.assertPlural('loudspeakers', 'loudspeaker');
 		this.assertPlural('shelves', 'shelf');
 		this.assertPlural('thieves', 'thief');
@@ -27,6 +29,8 @@ class When_using_library_Inflection extends haxigniter.tests.TestCase
 		this.assertSingular('mouse', 'mice');
 		this.assertSingular('tomato', 'tomatoes');
 		this.assertSingular('bus', 'buses');
+		this.assertSingular('shoe', 'shoes');
+		this.assertSingular('thief', 'thieves');
 		this.assertSingular('loudspeaker', 'loudspeakers');
 		this.assertSingular('shelf', 'shelves');
 		this.assertSingular('thief', 'thieves');

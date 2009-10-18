@@ -12,8 +12,14 @@ class UnitTest
         }
         else
         {
-            var tests = new haxigniter.application.tests.TestRunner(args[0] == '-all');
-            neko.Lib.print(tests.runTests());
+            if(args[0] == '-all')
+            {
+                neko.Lib.println('Running haXigniter tests...');
+                neko.Lib.println(new haxigniter.tests.HaxigniterTests().runTests());
+            }
+            
+            neko.Lib.println('Running application tests...');
+            neko.Lib.print(new haxigniter.application.tests.TestRunner().runTests());
         }
     }
 }

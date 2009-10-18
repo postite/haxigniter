@@ -91,19 +91,21 @@ class Application
 
 	public static function main()
 	{
+		// If development mode, run the unit tests.
 		if(Application.instance().config.development)
 		{
-			// Run the unit tests. 
-			// Pass true to run the whole haXigniter unit test suite.
 			Application.runTests();
 		}
 		
 		Application.instance().run();
 	}
 	
-	public static function runTests(runHaxigniterTests = false)
+	public static function runTests(displayOnlyErrors = true)
 	{
-		new haxigniter.application.tests.TestRunner(runHaxigniterTests).runAndDisplayOnError();
+		if(displayOnlyErrors)
+			new haxigniter.application.tests.TestRunner().runAndDisplayOnError();
+		else
+			new haxigniter.application.tests.TestRunner().runAndDisplay();
 	}
 
 	public static function genericError()

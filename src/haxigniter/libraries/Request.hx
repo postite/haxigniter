@@ -3,7 +3,6 @@
 import Type;
 import haxigniter.types.TypeFactory;
 import haxigniter.controllers.Controller;
-import haxigniter.controllers.RestController;
 
 class Request
 {

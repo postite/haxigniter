@@ -61,7 +61,7 @@ class Inflection
         ~/(octop|vir)i$/i,
         ~/(cris|ax|test)es$/i,
         ~/(shoe)s$/i,
-        ~/(o)es$/i,
+        ~/([o])es$/i, // square brackets are required, otherwise PHP regexp fails!
         ~/(bus)es$/i,
         ~/([m|l])ice$/i,
         ~/(x|ch|ss|sh)es$/i,
@@ -173,7 +173,9 @@ class Inflection
             var replacement = replacements[i];
 			
             if(pattern.match(string))
+			{
 				return pattern.replace(string, replacement);
+			}
         }
 		
         return string;

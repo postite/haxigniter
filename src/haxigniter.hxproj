@@ -37,7 +37,7 @@
     <!-- example: <hidden path="..." /> -->
   </hiddenPaths>
   <!-- Executed before build -->
-  <preBuildCommand>$(ProjectDir)\..\tools\prebuild.bat</preBuildCommand>
+  <preBuildCommand>"$(ProjectDir)\..\tools\prebuild.bat" "$(OutputDir)\$(OutputName)"</preBuildCommand>
   <!-- Executed after build -->
   <postBuildCommand alwaysRun="True" />
   <!-- Other project options -->

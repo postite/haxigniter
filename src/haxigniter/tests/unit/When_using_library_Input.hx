@@ -126,6 +126,18 @@ class When_using_library_Input extends haxigniter.tests.TestCase
 		this.assertEqual(1337, output.field4);
 	}
 
+	public function test_Then_escapeData_can_escape_everything()
+	{
+		var input = new Hash<Dynamic>();
+		input.set('field3', '&');
+		input.set('field4', 1337);
+
+		var output : Hash<String> = Input.escapeData(input, null, true);
+		
+		this.assertEqual('&amp;', output.get('field3'));
+		this.assertEqual('1337', output.get('field4'));
+	}
+
 	public function test_Then_parseQuery_should_parse_query_parameters()
 	{
 		var output = Input.parseQuery('best=123&in=234&test=345');

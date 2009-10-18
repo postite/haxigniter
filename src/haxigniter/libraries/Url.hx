@@ -68,14 +68,25 @@ class Url
 	}
 
 	/**
-	 * Returns the path to the site URL without appending slash, so it can be used in template links.
+	 * Returns the path to the application directory, without appending slash.
+	 * 
+	 * A common usage is to prepend all links in a template page with this value so no 
+	 * internal links has to be rewritten if the application directory changes.
 	 */
 	public static function linkUrl() : String
 	{
-		var output = config.siteUrl;
-		var slashPos = output.lastIndexOf('/');
+		var output = config.indexPath;
 		
-		return slashPos == 0 ? '' : output.substr(0, slashPos);
+		// Somewhat hacky, but it should work to handle mod_rewrite as well.
+		if(!new EReg('\\.\\w+$', '').match(output))
+		{
+			return (output == '/') ? '' : output;
+		}
+		else
+		{
+			output = haxigniter.libraries.Server.dirname(output);
+			return (output.length == 1) ? '' : output;
+		}
 	}
 	
 	public static function siteUrl(segments = '') : String
