@@ -124,7 +124,7 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		badParse('/bazaars.xml/3/libraries.csv/', ~/Multiple output formats specified: "xml" and "csv"./, RestErrorType.invalidOutputFormat);
 	}
 	
-	public function Then_SOME_selectors_should_be_parsed_properly()
+	public function test_Then_SOME_selectors_should_be_parsed_properly()
 	{
 		output = parse('/bazaars/[id=3][name^=Boris]/');
 		
@@ -142,7 +142,7 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		this.assertSelectorFunc(output[0], 2, 'range', ['0', '10']);
 		this.assertSelectorFunc(output[0], 3, 'urlencode', new Array<String>());
 
-		output = parse('/bazaars/1/libraries/:test[name*=Doris]:range(0,10):urlencode/');
+		output = parse('/bazaars/1/libraries/:test[name*="Doris"]:range(0,10):urlencode/');
 
 		this.assertEqual(2, output.length);
 		

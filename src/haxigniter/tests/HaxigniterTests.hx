@@ -10,6 +10,7 @@ import haxigniter.tests.unit.When_using_library_Input;
 import haxigniter.tests.unit.When_using_library_Inflection;
 
 import haxigniter.tests.unit.When_using_RestApiParser;
+import haxigniter.tests.unit.When_using_RestApiController;
 
 #if php
 import php.Lib;
@@ -23,7 +24,7 @@ import neko.Lib;
  */
 class HaxigniterTests extends haxigniter.tests.TestRunner
 {
-	//new haxigniter.tests.HaxigniterTests().runAndDisplayOnError();
+	//new haxigniter.tests.HaxigniterTests().runAndDisplay();
 	
 	public function new()
 	{
@@ -39,5 +40,6 @@ class HaxigniterTests extends haxigniter.tests.TestRunner
 		this.add(new When_using_library_Inflection());
 		
 		this.add(new When_using_RestApiParser());
+		this.add(new When_using_RestApiController());
 	}
 }

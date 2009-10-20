@@ -20,8 +20,8 @@ enum Modifier {
  * A segment of a selector.
  */
 class SelectorSegment {
-    private static var NAME_P:EReg = ~/^(\*|[\-\w]+)/i;
-    private static var HC_P  :EReg = ~/^(#|\.)([\-\w]+)/i;
+    private static var NAME_P:EReg = ~/^([\-\w]+)/i;
+    //private static var HC_P  :EReg = ~/^(#|\.)([\-\w]+)/i;
     
     private static var PSEUDO_FUNC_P = ~/^:([\w\-]+)\(/i;
     private static var PSEUDO_P      = ~/^:([\w\-]+)/i;
@@ -54,9 +54,10 @@ class SelectorSegment {
         if (NAME_P.match(input)) {
             name = NAME_P.matched(1);
             
-            input = input.substr(NAME_P.matched(0).length);
+            input = input.substr(NAME_P.matched(0).length);			
         }
         
+		/*
         while (HC_P.match(input)) {
             var mod = HC_P.matched(1);
             var str = HC_P.matched(2);
@@ -71,8 +72,9 @@ class SelectorSegment {
                 throw "Unknown modifier: " + input;
             }        
             
-            input = input.substr(HC_P.matched(0).length);
+            input = input.substr(HC_P.matched(0).length);			
         }
+		*/
         
         var i = 0;
         

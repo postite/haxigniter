@@ -28,6 +28,7 @@ class RestApiController extends Controller
 	public var apiRequestHandler : RestApiRequestHandler;
 	public var apiAuthorization : RestApiAuthorization;
 
+	public var noOutput : Bool;
 	public var debugMode : haxigniter.libraries.DebugLevel;
 	
 	private var viewTranslations : Hash<Hash<String>>;
@@ -41,7 +42,9 @@ class RestApiController extends Controller
 			this.apiRequestHandler = apiRequestHandler;
 		
 		this.apiAuthorization = apiAuthorization;
+		
 		this.viewTranslations = new Hash<Hash<String>>();
+		this.noOutput = false;
 	}
 
 	private function translateView(resourceName : String, viewName : String) : String
@@ -201,18 +204,23 @@ class RestApiController extends Controller
 			this.db.traceQueries = oldTraceQueries;
 		}
 		
-		// Format the final output according to response and send it to the client.
-		var header = [];
-		
-		if(finalOutput.contentType != null)
-			header.push(finalOutput.contentType);
-		if(finalOutput.charSet != null)
-			header.push('charset=' + finalOutput.charSet);
-		
-		if(header.length > 0 && this.debugMode == null)
-			Web.setHeader('Content-Type', header.join('; '));
+		if(!this.noOutput)
+		{
+			// Format the final output according to response and send it to the client.
+			var header = [];
+			
+			if(finalOutput.contentType != null)
+				header.push(finalOutput.contentType);
+			if(finalOutput.charSet != null)
+				header.push('charset=' + finalOutput.charSet);
+			
+			if(header.length > 0 && this.debugMode == null)
+				Web.setHeader('Content-Type', header.join('; '));
 
-		if(this.debugMode == null)
-			Lib.print(finalOutput.output);
+			if(this.debugMode == null)
+				Lib.print(finalOutput.output);
+		}
+		
+		return finalOutput;
 	}
 }
