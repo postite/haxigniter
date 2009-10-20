@@ -319,9 +319,9 @@ class RestApiParser
 		return [validResourceName.matched(1), outputFormat != null && outputFormat.length > 1 ? outputFormat.substr(1) : null];
 	}
 	
-	public static function parse(decodedUrl : String, output : {format: RestApiFormat}) : Array<RestApiResource>
+	public static function parse(decodedUrl : String, output : {format: RestApiFormat}) : Array<RestApiParsedSegment>
 	{
-		var parsed = new Array<RestApiResource>();
+		var parsed = new Array<RestApiParsedSegment>();
 		var outputFormat : RestApiFormat = null;
 		
 		// Remove start and end slash
@@ -353,18 +353,17 @@ class RestApiParser
 		return parsed;
 	}
 	
-	public static function parseSelector(resource : String, data : String) : RestApiResource
+	public static function parseSelector(resource : String, data : String) : RestApiParsedSegment
 	{
 		// Detect resource type.
 		if(data == null || data == '')
-			return RestApiResource.all(resource);
+			return RestApiParsedSegment.all(resource);
 		
 		if(oneResource.match(data))
-			return RestApiResource.one(resource, Std.parseInt(data));
-			//return RestApiSelector.some(resource, [RestResourceSelector.attribute('id', RestApiSelectorOperator.equals, data)]);
+			return RestApiParsedSegment.one(resource, Std.parseInt(data));
 		
 		if(viewResource.match(data))
-			return RestApiResource.view(resource, data);
+			return RestApiParsedSegment.view(resource, data);
 
 		try
 		{
@@ -375,7 +374,7 @@ class RestApiParser
 				output = output.concat(selector.modifiers);
 			}
 			
-			return RestApiResource.some(resource, Lambda.array(Lambda.map(output, cssToRest)));
+			return RestApiParsedSegment.some(resource, Lambda.array(Lambda.map(output, cssToRest)));
 		}
 		catch(e : String)
 		{

@@ -10,7 +10,7 @@ import haxigniter.restapi.RestApiParser;
 
 class When_using_RestApiParser extends haxigniter.tests.TestCase
 {
-	var output : Array<RestApiResource>;
+	var output : Array<RestApiParsedSegment>;
 	
 	public override function setup()
 	{
@@ -157,7 +157,7 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 
 	/////////////////////////////////////////////////////////////////
 	
-	private function assertSelectorAttrib(selector : RestApiResource, selectorIndex : Int, name : String, operator : RestApiSelectorOperator, value : String, ?resourceName : String)
+	private function assertSelectorAttrib(selector : RestApiParsedSegment, selectorIndex : Int, name : String, operator : RestApiSelectorOperator, value : String, ?resourceName : String)
 	{
 		switch(selector)
 		{
@@ -179,7 +179,7 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		}		
 	}
 
-	private function assertSelectorFunc(selector : RestApiResource, selectorIndex : Int, name : String, args : Array<String>)
+	private function assertSelectorFunc(selector : RestApiParsedSegment, selectorIndex : Int, name : String, args : Array<String>)
 	{
 		switch(selector)
 		{
@@ -197,7 +197,7 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		}		
 	}
 	
-	private function assertApiResource(selector : RestApiResource, resourceName : String, data : Dynamic)
+	private function assertApiResource(selector : RestApiParsedSegment, resourceName : String, data : Dynamic)
 	{
 		switch(selector)
 		{
@@ -232,7 +232,7 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		}
 	}
 	
-	private function parse(input : String, ?outputFormat : RestApiFormat) : Array<RestApiResource>
+	private function parse(input : String, ?outputFormat : RestApiFormat) : Array<RestApiParsedSegment>
 	{
 		var output = { format: null };
 		var test = RestApiParser.parse(input, output);

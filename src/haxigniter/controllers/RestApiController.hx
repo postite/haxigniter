@@ -29,6 +29,8 @@ class RestApiController extends Controller
 	public var apiAuthorization : RestApiAuthorization;
 
 	public var debugMode : haxigniter.libraries.DebugLevel;
+	
+	private var viewTranslations : Hash<Hash<String>>;
 
 	public function new(?apiRequestHandler : RestApiRequestHandler, ?apiAuthorization : RestApiAuthorization)
 	{
@@ -39,6 +41,56 @@ class RestApiController extends Controller
 			this.apiRequestHandler = apiRequestHandler;
 		
 		this.apiAuthorization = apiAuthorization;
+		this.viewTranslations = new Hash<Hash<String>>();
+	}
+
+	private function translateView(resourceName : String, viewName : String) : String
+	{
+		if(!this.viewTranslations.exists(resourceName))
+			throw new RestApiException('Resource "' + resourceName + '" not found for view "' + viewName + '"', RestErrorType.invalidQuery);
+		
+		var views = this.viewTranslations.get(resourceName);
+		
+		if(!views.exists(viewName))
+			throw new RestApiException('View "' + viewName + '" not found in resource "' + resourceName + '"', RestErrorType.invalidQuery);
+		
+		return views.get(viewName);
+	}
+	
+	public function addView(resourceName : String, viewName : String, viewTranslation : String) : Void
+	{
+		var views : Hash<String>;
+		if(!this.viewTranslations.exists(resourceName))
+		{
+			views = new Hash<String>();
+			this.viewTranslations.set(resourceName, views);
+		}
+		else
+			views = this.viewTranslations.get(resourceName);
+		
+		views.set(viewName, viewTranslation);
+	}
+	
+	private function parsedSegmentToResource(segment : RestApiParsedSegment) : RestApiResource
+	{
+		switch(segment)
+		{
+			case one(name, id):
+				// Create a selector where id=X
+				return { name: name, selectors: [RestApiSelector.attribute('id', RestApiSelectorOperator.equals, Std.string(id))] };
+			
+			case all(name):
+				// Create an resource with only name, no selectors.
+				return { name: name, selectors: [] };
+			
+			case view(name, viewName):
+				// Translate the view to a selector string and parse it.
+				return this.parsedSegmentToResource(RestApiParser.parseSelector(name, this.translateView(name, viewName)));
+				
+			case some(name, selectors):
+				// Selectors are parsed already, just pass them on.
+				return {name: name, selectors: selectors};
+		}
 	}
 	
 	/**
@@ -76,8 +128,7 @@ class RestApiController extends Controller
 		try
 		{
 			// Parse the query string to get the output format early, so it can be used in error handling.
-			var output = { format: null };			
-			var selectors = RestApiParser.parse(rawQuery, output);
+			var output = { format: null };
 			
 			if(output.format != null)
 			{
@@ -112,8 +163,11 @@ class RestApiController extends Controller
 			
 			// TODO: User authorization, with the help of query.
 			
+			// Parse the raw query
+			var selectors = RestApiParser.parse(rawQuery, output);
+			
 			// Create the RestApiRequest object and pass it along to the handler.
-			var request = new RestApiRequest(type, selectors, outputFormat, apiVersion, query, data);
+			var request = new RestApiRequest(type, Lambda.array(Lambda.map(selectors, this.parsedSegmentToResource)), outputFormat, apiVersion, query, data);
 			
 			// Debugging
 			if(this.debugMode != null)

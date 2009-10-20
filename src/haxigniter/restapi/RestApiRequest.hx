@@ -22,12 +22,17 @@ enum RestApiSelector
     attribute (name : String, operator : RestApiSelectorOperator, value : String);
 }
 	
-enum RestApiResource
+enum RestApiParsedSegment
 {
 	one(resourceName : String, id : Int);
     all(resourceName : String);
     some(resourceName : String, selectors : Array<RestApiSelector>);
     view(resourceName : String, viewName : String);
+}
+
+typedef RestApiResource = {
+	var name : String;
+	var selectors : Array<RestApiSelector>;
 }
 
 typedef RestApiFormat = String;
@@ -94,27 +99,23 @@ class RestApiRequest
 	
 	public function toString() : String
 	{
-		var output = 'RestApiRequest(' + type + ': ';
+		var output = 'RestApiRequest.' + type + '(';
 		var resourceOutput = [];
 		
 		for(resource in resources)
 		{
-			switch(resource)
+			var selectors = [];
+			if(resource.selectors.length == 0)
+				selectors.push('all');
+			else
 			{
-				case one(name, id):
-					resourceOutput.push('one("' + name + '": ' + id + ')');
-				case all(name):
-					resourceOutput.push('all("' + name + '")');
-				case view(name, viewName):
-					resourceOutput.push('view("' + name + '": "' + viewName + '")');
-				case some(resourceName, query):
-					var selectors = [];
-					for(selector in query)
-					{
-						selectors.push(Std.string(selector));
-					}
-					resourceOutput.push('some("' + resourceName + '": ' + selectors.join(', ') + ')');
+				for(selector in resource.selectors)
+				{
+					selectors.push(Std.string(selector));
+				}
 			}
+			
+			resourceOutput.push(resource.name + ': ' + selectors.join(', '));
 		}
 		
 		output += resourceOutput.join(', ');
