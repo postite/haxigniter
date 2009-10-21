@@ -1,6 +1,7 @@
 package haxigniter.restapi;
 
 import haxigniter.libraries.Inflection;
+import haxigniter.libraries.Database;
 
 #if php
 import php.Lib;
@@ -93,10 +94,11 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		
 		if(createResource.selectors.length > 0)
 			throw new RestApiException('Ending resource cannot have any selectors in create requests.', RestErrorType.invalidQuery);
-		
+
 		var data = requestData(request);
+		
 		var output = new Array<Int>();
-			
+		
 		if(request.resources.length > 1)
 		{
 			// Create a select query based on everything up to (but not including) the last resource, to get the ids for the foreign key.
@@ -130,32 +132,34 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 
 		var updateAll : Bool = request.resources.length == 1 && request.resources[0].selectors.length == 0;
 		var tableName = request.resources[request.resources.length - 1].name;
-
-		var query = 'UPDATE ' + tableName + ' SET ';
 		
-		var updateData = new Array<String>();
-		var values = [];
-		for(key in data.keys())
+		if(ids.length > 0 || updateAll)
 		{
-			updateData.push(key + '=?');			
-			values.push(data.get(key));
-		}
-		
-		// Add the data keys to the query.
-		query += updateData.join(', ');
-		
-		// Test affected rows or just return ids?
-		if(!updateAll)
-			query += ' WHERE ' + tableName + '.id IN(' + ids.join(',') + ')';
+			var query = 'UPDATE ' + tableName + ' SET ';
+			
+			var updateData = new Array<String>();
+			var values = [];
+			for(key in data.keys())
+			{
+				updateData.push(key + '=?');			
+				values.push(data.get(key));
+			}
+			
+			// Add the data keys to the query.
+			query += updateData.join(', ');
+			
+			// Test affected rows or just return ids?
+			if(!updateAll)
+				query += ' WHERE ' + tableName + '.id IN(' + ids.join(',') + ')';
 
-		db.query(query, values);
+			db.query(query, values);
+		}
 			
 		return RestApiResponse.success(ids);
 	}
 
 	public function handleDeleteRequest(request : RestApiRequest) : RestApiResponse
 	{
-		var data = requestData(request);
 		var output = new Array<Int>();
 
 		var base = buildBaseSql(request.resources);
@@ -163,15 +167,17 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 
 		var deleteAll : Bool = request.resources.length == 1 && request.resources[0].selectors.length == 0;
 		var tableName = request.resources[request.resources.length - 1].name;
-		
-		var query = 'DELETE FROM ' + tableName;
-		
-		// Test affected rows or just return ids?
-		if(!deleteAll)
-			query += ' WHERE ' + tableName + '.id IN(' + ids.join(',') + ')';
 
-		haxigniter.Application.trace(query);
-		//db.query(query);
+		if(ids.length > 0 || deleteAll)
+		{
+			var query = 'DELETE FROM ' + tableName;
+			
+			// Test affected rows or just return ids?
+			if(!deleteAll)
+				query += ' WHERE ' + tableName + '.id IN(' + ids.join(',') + ')';
+			
+			db.query(query);
+		}
 		
 		return RestApiResponse.success(ids);
 	}
@@ -297,6 +303,10 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 	{
 		var tables = [];
 		
+		var order = null;
+		var limit = null;
+		var offset = null;
+		
 		for(resource in resources)
 		{
 			var attributes = [];
@@ -307,7 +317,70 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 				switch(selector)
 				{
 					case func(name, args):
-						throw new RestApiException('Pseudo-functions are not implemented.', RestErrorType.invalidQuery);
+						switch(name.toLowerCase())
+						{
+							case 'range':
+								if(limit != null)
+									throw new RestApiException('range() can only be called once in a selector.', RestErrorType.invalidQuery);
+
+								if(args.length != 2)
+									throw new RestApiException('range() takes exactly two arguments.', RestErrorType.invalidQuery);
+								
+								var start = Std.parseInt(args[0]);
+								var end = Std.parseInt(args[1]);
+								
+								if(start == null)
+									throw new RestApiException('Error in range() when parsing "' + args[0] + '" to integer.', RestErrorType.invalidQuery);
+
+								if(end == null)
+									throw new RestApiException('Error in range() when parsing "' + args[1] + '" to integer.', RestErrorType.invalidQuery);
+								
+								if(end < start)
+									throw new RestApiException('Start of range() cannot be higher than the end.', RestErrorType.invalidQuery);
+
+								limit = end - start;
+								offset = start;
+						
+							case 'order':
+								if(order != null)
+									throw new RestApiException('Order can only be set once in a selector.', RestErrorType.invalidQuery);
+
+								var orders = new Array<String>();
+								for(i in 0 ... args.length)
+								{
+									if(i%2 == 1) continue;
+									
+									this.db.testAlphaNumeric(args[i]);
+									
+									if(args[i+1] == null)
+										orders.push(args[i]);
+									else
+									{
+										var orderBy = args[i+1].toUpperCase();
+										
+										if(orderBy == 'ASC' || orderBy == 'DESC')
+											orders.push(args[i] + ' ' + orderBy);
+										else
+											throw new RestApiException('order() keyword can only be ASC or DESC, was "' + orderBy + '".', RestErrorType.invalidQuery);
+									}										
+								}								
+								order = orders.join(', ');
+						
+							case 'random':
+								if(order != null)
+									throw new RestApiException('Order can only be set once in a selector.', RestErrorType.invalidQuery);
+
+								switch(this.db.driver)
+								{
+									case DatabaseDriver.mysql:
+										order = 'RAND()';
+									case DatabaseDriver.sqlite:
+										order = 'RANDOM()';
+								}
+								
+							default:
+								throw new RestApiException('pseudo-function "'+name+'" is not supported by the sql request handler.', RestErrorType.invalidQuery);
+						}
 					
 					case attribute(name, operator, value):
 						var newValue = { val: '' };
@@ -319,10 +392,13 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 			tables.push({name: resource.name, attributes: attributes, values: values});
 		}
 		
-		var joins = createSqlJoin(tables);
-		var where = createSqlWhere(tables[tables.length-1]);
-		
-		return { where: where, joins: joins, order: '', limit: 0, offset: 0 };
+		return { 
+			joins: createSqlJoin(tables),
+			where: createSqlWhere(tables[tables.length-1]),
+			order: (order == null ? '' : order), 
+			limit: (limit == null ? 0 : limit), 
+			offset: (offset == null ? 0 : offset) 
+			};
 	}
 
 	private function createSqlWhere(table : {name: String, attributes: Array<String>, values: Array<String>}) : SqlQueryPart
@@ -332,11 +408,12 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 	
 	private function createSqlJoin(tables : Array<{name: String, attributes: Array<String>, values: Array<String>}>) : SqlQueryPart
 	{
-		var sql = '';
 		var values = new Array<String>();
+		var joins = new Array<String>();
 		
 		for(i in 0 ... tables.length-1)
 		{
+			var sql = '';
 			var table = tables[i];
 			var joinTable = tables[i+1];
 			
@@ -346,13 +423,18 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 			if(table.attributes.length > 0)
 			{
 				sql += ' AND ' + table.attributes.join(' AND ');
-				values = values.concat(table.values);
+				
+				// Need to concatenate in reverse order here so they come in correct order in the sql query.
+				values = table.values.concat(values);
 			}
 			
-			sql += ") ";
+			sql += ")";
+			
+			// Need to shift them so they come in the correct order in the sql query.
+			joins.unshift(sql);
 		}
 		
-		return { name: '', sql: sql, values: values };
+		return { name: '', sql: joins.join(' '), values: values };
 	}
 	
 	private function contentType(outputFormat : RestApiFormat)
