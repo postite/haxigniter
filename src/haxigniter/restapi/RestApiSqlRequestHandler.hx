@@ -181,8 +181,6 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		var query = buildBaseSql(request.resources);
 		var select = selectSql(query);
 		
-		haxigniter.Application.trace(query);
-		
 		// TODO: Enforce upper limit
 		// TODO: Use SQL_CALC_FOUND_ROWS for the Mysql driver.
 

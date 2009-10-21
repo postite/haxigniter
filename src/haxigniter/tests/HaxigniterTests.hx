@@ -11,6 +11,7 @@ import haxigniter.tests.unit.When_using_library_Inflection;
 
 import haxigniter.tests.unit.When_using_RestApiParser;
 import haxigniter.tests.unit.When_using_RestApiController;
+import haxigniter.tests.unit.When_using_RestApiSqlRequestHandler;
 
 #if php
 import php.Lib;
@@ -41,5 +42,6 @@ class HaxigniterTests extends haxigniter.tests.TestRunner
 		
 		this.add(new When_using_RestApiParser());
 		this.add(new When_using_RestApiController());
+		this.add(new When_using_RestApiSqlRequestHandler());
 	}
 }
