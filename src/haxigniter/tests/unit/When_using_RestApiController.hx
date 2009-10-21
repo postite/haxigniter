@@ -30,7 +30,7 @@ class TestRestApi extends haxigniter.controllers.RestApiController, implements R
 	public function handleApiRequest(request : RestApiRequest) : RestApiResponse
 	{
 		this.lastRequest = request;
-		return RestApiResponse.success(0);
+		return RestApiResponse.success([]);
 	}
 
 	public function outputApiResponse(response : RestApiResponse, outputFormat : RestApiFormat) : RestResponseOutput
@@ -38,7 +38,7 @@ class TestRestApi extends haxigniter.controllers.RestApiController, implements R
 		switch(response)
 		{
 			case success(rows):
-				if(rows != 0) throw response;
+				if(rows.length != 0) throw response;
 			default:
 				throw response;
 		}

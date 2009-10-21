@@ -20,10 +20,18 @@ import haxigniter.restapi.RestApiResponse;
 
 import haxigniter.exceptions.RestApiException;
 
-typedef BaseSqlComponents = {
-	var tables: Array<{name: String, attribs: Array<String>}>;
+typedef SqlQueryPart = {
+	var name : String;
+	var sql: String;
 	var values: Array<String>;
-	var joins: Array<String>;
+}
+
+typedef SqlQueryBase = {
+	var joins : SqlQueryPart;
+	var where : SqlQueryPart;
+	var order : String;
+	var limit : Int;
+	var offset : Int;
 }
 
 class RestApiSqlRequestHandler implements RestApiRequestHandler
@@ -81,129 +89,125 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 	
 	public function handleCreateRequest(request : RestApiRequest) : RestApiResponse
 	{
-		if(request.resources.length > 1)
-			throw new RestApiException('Only one resource can be specified for create requests.', RestErrorType.invalidQuery);
+		var createResource = request.resources[request.resources.length - 1];
 		
-		switch(request.resources[0])
-		{
-			case all(name):
-				var data = requestData(request); 
-				
-				if(this.db.insert(name, data) == 0)
-					throw new RestApiException('Create request failed - no insert was made.', RestErrorType.unknown);
+		if(createResource.selectors.length > 0)
+			throw new RestApiException('Ending resource cannot have any selectors in create requests.', RestErrorType.invalidQuery);
+		
+		var data = requestData(request);
+		var output = new Array<Int>();
 			
-			default:
-				throw new RestApiException('Only "ALL" resources allowed for create requests.', RestErrorType.invalidQuery);
+		if(request.resources.length > 1)
+		{
+			// Create a select query based on everything up to (but not including) the last resource, to get the ids for the foreign key.
+			var query = buildBaseSql(request.resources.slice(0, -1));
+			var foreignKey = Inflection.singularize(query.where.name) + 'Id';
+			
+			for(id in selectSqlId(query))
+			{
+				data.set(foreignKey, Std.string(id));
+				
+				db.insert(createResource.name, data);
+				output.push(db.lastInsertId());
+			}
+		}
+		else
+		{
+			db.insert(createResource.name, data);
+			output.push(db.lastInsertId());			
 		}
 		
-		return RestApiResponse.success(this.db.lastInsertId());
+		return RestApiResponse.success(output);
 	}
 
 	public function handleUpdateRequest(request : RestApiRequest) : RestApiResponse
 	{
-		var sql = buildBaseSql(request);
-
-		if(request.resources.length > 1)
-			throw new RestApiException('Only one resource can be specified for update requests.', RestErrorType.invalidQuery);
-		
 		var data = requestData(request);
+		var output = new Array<Int>();
+
+		var base = buildBaseSql(request.resources);
+		var ids = selectSqlId(base);
+
+		var updateAll : Bool = request.resources.length == 1 && request.resources[0].selectors.length == 0;
+		var tableName = request.resources[request.resources.length - 1].name;
+
+		var query = 'UPDATE ' + tableName + ' SET ';
 		
-		var sql = buildBaseSql(request);
-		var table : { name: String, attribs: Array<String>} = sql.tables[0];
-		
-		var query = 'UPDATE ' + table.name + ' SET ';
 		var updateData = new Array<String>();
-		
+		var values = [];
 		for(key in data.keys())
 		{
 			updateData.push(key + '=?');			
-			sql.values.push(data.get(key));
+			values.push(data.get(key));
 		}
 		
 		// Add the data keys to the query.
 		query += updateData.join(', ');
 		
-		if(table.attribs.length > 0)
-		{
-			// Move the values for the WHERE to the end of the values array, because they are specified last.
-			var temp = sql.values.splice(0, table.attribs.length);
-			sql.values = sql.values.concat(temp);
+		// Test affected rows or just return ids?
+		if(!updateAll)
+			query += ' WHERE ' + tableName + '.id IN(' + ids.join(',') + ')';
 
-			query += ' WHERE (' + table.attribs.join(') AND (') + ')';
-		}
-		
-		var result = this.db.query(query, sql.values);
-		
-		return RestApiResponse.success(result.length);
+		db.query(query, values);
+			
+		return RestApiResponse.success(ids);
 	}
 
 	public function handleDeleteRequest(request : RestApiRequest) : RestApiResponse
 	{
-		// TODO: Make mysql driver support multiple delete table requests.
-		if(request.resources.length > 1)
-			throw new RestApiException('Only one resource can be specified for delete requests.', RestErrorType.invalidQuery);
+		var data = requestData(request);
+		var output = new Array<Int>();
 
-		var sql = buildBaseSql(request);
-		var table : { name: String, attribs: Array<String>} = sql.tables[0];
-		
-		var query = 'DELETE FROM ' + table.name;
-		
-		if(table.attribs.length > 0)
-			query += ' WHERE (' + table.attribs.join(') AND (') + ')';
-		else if(sql.values.length > 0)
-			throw new RestApiException('Unmatched sql attributes and values.', RestErrorType.unknown);
+		var base = buildBaseSql(request.resources);
+		var ids = selectSqlId(base);
 
-		var result = this.db.query(query, sql.values);
+		var deleteAll : Bool = request.resources.length == 1 && request.resources[0].selectors.length == 0;
+		var tableName = request.resources[request.resources.length - 1].name;
 		
-		return RestApiResponse.success(result.length);
+		var query = 'DELETE FROM ' + tableName;
+		
+		// Test affected rows or just return ids?
+		if(!deleteAll)
+			query += ' WHERE ' + tableName + '.id IN(' + ids.join(',') + ')';
+
+		haxigniter.Application.trace(query);
+		//db.query(query);
+		
+		return RestApiResponse.success(ids);
 	}
 
 	public function handleReadRequest(request : RestApiRequest) : RestApiResponse
 	{
-		var sql = buildBaseSql(request);
-
-		var from = '';
-		var where = '';
-		var limit = '';
+		var query = buildBaseSql(request.resources);
+		var select = selectSql(query);
 		
-		var table : { name: String, attribs: Array<String>} = sql.tables[0];
-		from = 'FROM ' + table.name + ' ';
+		haxigniter.Application.trace(query);
 		
-		if(table.attribs.length > 0)
-		{
-			where += ' WHERE (' + table.attribs.join(') AND (') + ')';
-			
-			// Move the values for the attributes to the end of the values array,
-			// because they are specified last, in the FROM part.
-			var temp = sql.values.splice(0, table.attribs.length);
-			sql.values = sql.values.concat(temp);
-		}
-
-		// TODO: Enforce upper limit based on range pseudo-function.
-		
+		// TODO: Enforce upper limit
 		// TODO: Use SQL_CALC_FOUND_ROWS for the Mysql driver.
-		var output = from + sql.joins.join(' ') + where;
 
-		// Make the full query
-		var results = db.query('SELECT ' + sql.tables[sql.tables.length-1].name + '.* ' + output + limit, sql.values);
+		var results = db.query('SELECT ' + query.where.name + '.*' + select.sql, select.values);
 		var response : RestDataCollection;
 		
-		// If no LIMIT or empty response, collection is easily created.
-		if(results.length == 0)
-			response = new RestDataCollection(0, 0, 0, Lambda.array(results.results()));
-		else if(limit == '')
-			response = new RestDataCollection(0, results.length - 1, results.length, Lambda.array(results.results()));
+		if(query.limit == 0 && query.offset == 0)
+		{
+			response = new RestDataCollection(0, cast(Math.max(0, results.length-1), Int), results.length, Lambda.array(results.results()));
+		}
 		else
 		{
-			var count = db.queryInt('SELECT COUNT(*) ' + output, sql.values);
-			response = new RestDataCollection(0, results.length - 1, count, Lambda.array(results.results()));
+			var limitPos : Int;
+			
+			// Cut the query after the ORDER BY or LIMIT, it's not needed when counting.
+			if(query.order != '')
+				limitPos = select.sql.lastIndexOf('ORDER BY');
+			else if(query.limit > 0 || query.offset > 0)
+				limitPos = select.sql.lastIndexOf('LIMIT');
+			else
+				limitPos = select.sql.length;
+			
+			var count = db.queryInt('SELECT COUNT(*) ' + select.sql.substr(0, limitPos), select.values);
+			response = new RestDataCollection(query.offset, query.offset + results.length - 1, count, Lambda.array(results.results()));
 		}
-		
-		/*
-		haxigniter.Application.trace(tables);
-		haxigniter.Application.trace(values);
-		haxigniter.Application.trace(output);
-		*/
 		
 		return haxigniter.restapi.RestApiResponse.successData(response);
 	}
@@ -257,64 +261,100 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 
 	/////////////////////////////////////////////////////////////////
 
-	public function buildBaseSql(request : RestApiRequest) : BaseSqlComponents
+	public function selectSqlId(query : SqlQueryBase) : Array<Int>
 	{
-		// The query being built is a join of all resources.
-		var tables = [];
-		var values = [];
-		var joins = [];
+		var output = new Array<Int>();
 		
-		for(resource in request.resources)
+		var select = selectSql(query);
+		var foreignKey = Inflection.singularize(query.where.name) + 'Id';
+		
+		for(row in db.query('SELECT ' + query.where.name + '.id' + select.sql, select.values))
 		{
-			switch(resource)
-			{
-				case one(name, id):
-					var newValue = { val: '' };
-					tables.push({name: name, attribs: [attributeToSql(name + '.id', RestApiSelectorOperator.equals, Std.string(id), newValue)]});
-					values.push(newValue.val);
-				
-				case all(name):
-					tables.push({name: name, attribs: []});
-				
-				case view(name, viewName):
-					throw new RestApiException('Views are not implemented.', RestErrorType.invalidQuery);
-				
-				case some(resourceName, query):
-					var attributes = [];
-					for(selector in query)
-					{
-						switch(selector)
-						{
-							case func(name, args):
-								throw new RestApiException('Pseudo-functions are not implemented.', RestErrorType.invalidQuery);
-							
-							case attribute(name, operator, value):
-								var newValue = { val: '' };
-								attributes.push(attributeToSql(resourceName + '.' + name, operator, value, newValue));
-								values.push(newValue.val);
-						}
-					}
-					tables.push({name: resourceName, attribs: attributes});
-			}
+			output.push(row.id);
 		}
+		
+		return output;
+	}
+	
+	public function selectSql(query : SqlQueryBase) : SqlQueryPart
+	{
+		// Query the database
+		var sql = ' FROM ' + query.where.name + ' ' + query.joins.sql + ' ';
+		
+		if(query.where.sql != '')
+			sql += 'WHERE ' + query.where.sql + ' ';
+		
+		if(query.order != '')
+			sql += 'ORDER BY ' + query.order + ' ';
+		
+		if(query.limit > 0 || query.offset > 0)
+			sql += 'LIMIT ' + (query.offset > 0 ? query.offset + ',' : '') + query.limit;
 
-		for(i in 1...tables.length)
+		var values = query.joins.values.concat(query.where.values);
+		
+		return { name: '', sql: sql, values: values };
+	}
+	
+	public function buildBaseSql(resources : Array<RestApiResource>) : SqlQueryBase
+	{
+		var tables = [];
+		
+		for(resource in resources)
+		{
+			var attributes = [];
+			var values = [];
+			
+			for(selector in resource.selectors)
+			{
+				switch(selector)
+				{
+					case func(name, args):
+						throw new RestApiException('Pseudo-functions are not implemented.', RestErrorType.invalidQuery);
+					
+					case attribute(name, operator, value):
+						var newValue = { val: '' };
+						attributes.push(attributeToSql(resource.name + '.' + name, operator, value, newValue));
+						values.push(newValue.val);
+				}
+			}
+			
+			tables.push({name: resource.name, attributes: attributes, values: values});
+		}
+		
+		var joins = createSqlJoin(tables);
+		var where = createSqlWhere(tables[tables.length-1]);
+		
+		return { where: where, joins: joins, order: '', limit: 0, offset: 0 };
+	}
+
+	private function createSqlWhere(table : {name: String, attributes: Array<String>, values: Array<String>}) : SqlQueryPart
+	{
+		return { name: table.name, sql: table.attributes.join(' AND '), values: table.values };
+	}
+	
+	private function createSqlJoin(tables : Array<{name: String, attributes: Array<String>, values: Array<String>}>) : SqlQueryPart
+	{
+		var sql = '';
+		var values = new Array<String>();
+		
+		for(i in 0 ... tables.length-1)
 		{
 			var table = tables[i];
-			var prevTable : { name: String, attribs: Array<String>} = tables[i-1];
+			var joinTable = tables[i+1];
 			
 			// Create the join statement, with singularized foreign key.
-			var join = 'INNER JOIN ' + table.name + ' ON (' + table.name + '.' + Inflection.singularize(prevTable.name) + 'Id = ' + prevTable.name + '.id';
+			sql += 'INNER JOIN ' + table.name + ' ON (' + table.name + '.id = ' + joinTable.name + '.' + Inflection.singularize(table.name) + 'Id';
 			
-			if(table.attribs.length > 0)
-				join += ' AND ' + table.attribs.join(' AND ');
+			if(table.attributes.length > 0)
+			{
+				sql += ' AND ' + table.attributes.join(' AND ');
+				values = values.concat(table.values);
+			}
 			
-			join += ')';
-			
-			joins.push(join);
+			sql += ") ";
 		}
-
-		return { tables: tables, values: values, joins: joins };
+		
+		return { name: '', sql: sql, values: values };
 	}
 	
 	private function contentType(outputFormat : RestApiFormat)

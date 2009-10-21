@@ -69,7 +69,7 @@ class RestApiDebug
 
 enum RestApiResponse 
 {
-	success(affectedRows : Int);
+	success(affectedIds : Array<Int>);
 	successData(collection : RestDataCollection);
 	failure(message : String, errorType : RestErrorType);
 }
