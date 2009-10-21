@@ -126,30 +126,66 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 	
 	public function test_Then_SOME_selectors_should_be_parsed_properly()
 	{
-		output = parse('/bazaars/[id=3][name^=Boris]/');
+		output = parse('/bazaars/[id=3][name ^= Boris]/');
 		
 		this.assertEqual(1, output.length);
-		
 		this.assertSelectorAttrib(output[0], 0, 'id', RestApiSelectorOperator.equals, '3');
 		this.assertSelectorAttrib(output[0], 1, 'name', RestApiSelectorOperator.startsWith, 'Boris');
 
+		
 		output = parse('/bazaars/:test[name*=Doris]:range(0,10):urlencode/');
 
 		this.assertEqual(1, output.length);
-		
 		this.assertSelectorFunc(output[0], 0, 'test', new Array<String>());
 		this.assertSelectorAttrib(output[0], 1, 'name', RestApiSelectorOperator.contains, 'Doris');
 		this.assertSelectorFunc(output[0], 2, 'range', ['0', '10']);
 		this.assertSelectorFunc(output[0], 3, 'urlencode', new Array<String>());
 
-		output = parse('/bazaars/1/libraries/:test[name*="Doris"]:range(0,10):urlencode/');
+		
+		output = parse('/bazaars/1/libraries/:test[name*="D\"oris"]:range(0,10):urlencode/');
 
 		this.assertEqual(2, output.length);
-		
 		this.assertSelectorFunc(output[1], 0, 'test', new Array<String>());
-		this.assertSelectorAttrib(output[1], 1, 'name', RestApiSelectorOperator.contains, 'Doris');
+		this.assertSelectorAttrib(output[1], 1, 'name', RestApiSelectorOperator.contains, 'D"oris');
 		this.assertSelectorFunc(output[1], 2, 'range', ['0', '10']);
 		this.assertSelectorFunc(output[1], 3, 'urlencode', new Array<String>());
+
+
+		output = parse('/bazaars/[name^=test][email$=google.com]');
+
+		this.assertEqual(1, output.length);
+		this.assertSelectorAttrib(output[0], 0, 'name', RestApiSelectorOperator.startsWith, 'test');
+		this.assertSelectorAttrib(output[0], 1, 'email', RestApiSelectorOperator.endsWith, 'google.com');
+
+
+		output = parse('/bazaars/[url^=http://]');
+
+		this.assertEqual(1, output.length);
+		this.assertSelectorAttrib(output[0], 0, 'url', RestApiSelectorOperator.startsWith, 'http://');
+
+		
+		output = parse('/bazaars/[url^=http://]');
+
+		this.assertEqual(1, output.length);
+		this.assertSelectorAttrib(output[0], 0, 'url', RestApiSelectorOperator.startsWith, 'http://');
+
+		
+		output = parse('/bazaars/[url^="N/A"]');
+
+		this.assertEqual(1, output.length);
+		this.assertSelectorAttrib(output[0], 0, 'url', RestApiSelectorOperator.startsWith, 'N/A');
+
+
+		// Escaping the brackets
+		output = parse('/bazaars/[url^=\\[Brackets\\]]');
+
+		this.assertEqual(1, output.length);
+		this.assertSelectorAttrib(output[0], 0, 'url', RestApiSelectorOperator.startsWith, '[Brackets]');
+
+		output = parse('/bazaars/[url^="\\[Bracket\\]"]');
+
+		this.assertEqual(1, output.length);
+		this.assertSelectorAttrib(output[0], 0, 'url', RestApiSelectorOperator.startsWith, '[Bracket]');
 
 		// And an error check.
 		badParse('/bazaars/[this]]is not good', ~/Unrecognized selector segment: \]is/, RestErrorType.invalidQuery);

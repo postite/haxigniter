@@ -19,15 +19,16 @@ enum Modifier {
 /**
  * A segment of a selector.
  */
-class SelectorSegment {
+class SelectorSegment
+{
     private static var NAME_P:EReg = ~/^([\-\w]+)/i;
-    //private static var HC_P  :EReg = ~/^(#|\.)([\-\w]+)/i;
     
     private static var PSEUDO_FUNC_P = ~/^:([\w\-]+)\(/i;
     private static var PSEUDO_P      = ~/^:([\w\-]+)/i;
-    private static var ATTR_P        = ~/^\[([^\]]+)\]/;
+    private static var ATTR_P        = ~/^\[(.*?(?<!\\))\]/;
+	//private static var ATTR_P        = ~/^\[([^\]]+)\]/;
     
-    private static var ATTR_S_P      = ~/^([\w\-]+)(?:([=|!~*\^$<>]+)['"]?([\w\-]+)["']?)?$/i;
+    private static var ATTR_S_P      = ~/^([\w\-]+)\s*(?:([=|!~*\^$<>]+)\s*['"]?(.*?)["']?)?$/i;
     
     public var name       (default, null):String;
     public var modifiers  (default, null):Array<Modifier>;
@@ -37,13 +38,8 @@ class SelectorSegment {
         this.modifiers  = modifiers;
     }
     
-    public function stateless():SelectorSegment {
-        return new SelectorSegment(name, new Array<Modifier>());
-    }
-    
     /**
-     * Parses a single segment. Requires that any combinators (' ', '>', and 
-     * '+') be grouped at the start of the string.
+     * Parses a single segment.
      */
     public static function parse(input:String):SelectorSegment {
         input = StringTools.trim(input);
@@ -56,25 +52,6 @@ class SelectorSegment {
             
             input = input.substr(NAME_P.matched(0).length);			
         }
-        
-		/*
-        while (HC_P.match(input)) {
-            var mod = HC_P.matched(1);
-            var str = HC_P.matched(2);
-            
-            if (mod == '#') {
-                modifiers.push(Modifier.hash(str));
-            }
-            else if (mod == '.') {
-                modifiers.push(Modifier.className(str));
-            }
-            else {
-                throw "Unknown modifier: " + input;
-            }        
-            
-            input = input.substr(HC_P.matched(0).length);			
-        }
-		*/
         
         var i = 0;
         
@@ -106,7 +83,14 @@ class SelectorSegment {
                     var name  = ATTR_S_P.matched(1);
                     var op    = ATTR_S_P.matched(2);
                     var value = ATTR_S_P.matched(3);
-                    
+
+                    // Need to rewrite escaping of the brackets manually
+					if(value != null)
+					{
+						value = StringTools.replace(value, '\\[', '[');
+						value = StringTools.replace(value, '\\]', ']');
+					}
+					
                     modifiers.push(Modifier.attribute(name, op, value));
                 }
                 else {
@@ -190,9 +174,8 @@ class SelectorSegment {
 /**
  * Represents a complete selector; e.g.: #foo >bar.first:hover
  */
-class Selector {
-    private static var COMBINATOR_SPACE_P:EReg = ~/\s+([>+~])\s+/g;
-    
+class Selector
+{    
     public var segments (default, null):Array<SelectorSegment>;
     
     public function new(segments:Array<SelectorSegment>) {
@@ -208,30 +191,14 @@ class Selector {
     public function iterator():Iterator<Null<SelectorSegment>> {
         return segments.iterator();
     }
-    
-    public function stateless():Selector {
-        return new Selector(
-            Lambda.array(
-                Lambda.map(
-                    segments,
-                    function (s) {
-                        return s.stateless();
-                    }
-                )
-            )
-        );
-    }
-    
+
     public static function parse(input:String):Selector {
         input = StringTools.trim(input);
         
         var segments = new Array<SelectorSegment>();
-        
-        for (segment in splitSegs(input)) {
-            if (segment != '') {
-                segments.push(SelectorSegment.parse(segment));
-            }
-        }
+		
+		if(input != '')
+			segments.push(SelectorSegment.parse(input));
         
         return new Selector(segments);
     }
@@ -242,42 +209,6 @@ class Selector {
     
     private function getLength():Int {
         return segments.length;
-    }
-    
-    public static function splitSegs(input:String):Array<String> {
-        // Eliminate all spaces before/after sibling/child combinators:
-        input = COMBINATOR_SPACE_P.replace(input, '$1');
-        
-        // Eliminate duplicate spaces:
-        input = ~/\s+/g.replace(input, ' ');
-        
-        var segs = new Array<String>();
-        
-        var buf    = new StringBuf();
-        var length = 0;
-        
-        for (i in 0...input.length) {
-            var c = input.charAt(i);
-            
-            // Child, next sibling, descendant, following sibling:
-            if (c == ' ' || c == '+' || c == '>' || c == '~') {
-                if (length > 0) {
-                    segs.push(buf.toString());
-                    
-                    length = 0;
-                    buf    = new StringBuf();
-                }
-            }
-            
-            ++length;
-            buf.add(c);
-        }
-        
-        if (length > 0) {
-            segs.push(buf.toString());
-        }
-        
-        return segs;
     }
 }
 
@@ -321,11 +252,8 @@ class RestApiParser
 		return [validResourceName.matched(1), outputFormat != null && outputFormat.length > 1 ? outputFormat.substr(1) : null];
 	}
 	
-	public static function parse(decodedUrl : String, output : {format: RestApiFormat}) : Array<RestApiParsedSegment>
+	private static function parseSegments(decodedUrl : String) : Array<String>
 	{
-		var parsed = new Array<RestApiParsedSegment>();
-		var outputFormat : RestApiFormat = null;
-		
 		// Remove start and end slash
 		if(StringTools.startsWith(decodedUrl, '/'))
 			decodedUrl = decodedUrl.substr(1);
@@ -333,8 +261,56 @@ class RestApiParser
 		if(StringTools.endsWith(decodedUrl, '/'))
 			decodedUrl = decodedUrl.substr(0, decodedUrl.length - 1);
 
+		var output = new Array<String>();
+		var buffer = new StringBuf();
+		
+		var insideBracket = false;
+		var insideString = '';
+		
+		for(i in 0 ... decodedUrl.length)
+		{
+			var c = decodedUrl.charAt(i);
+			if(c == '/' && !insideBracket && insideString == '')
+			{
+				output.push(buffer.toString());
+				buffer = new StringBuf();
+			}
+			else
+			{
+				buffer.add(c);
+				
+				switch(c)
+				{
+					case '[':
+						if(insideString == '') insideBracket = true;
+					case ']':
+						if(insideString == '') insideBracket = false;
+					case '"':
+						if(insideString != "'" && decodedUrl.charAt(i-1) != '\\')
+						{
+							insideString = (insideString == '"') ? '' : '"';
+						}
+					case "'":
+						if(insideString != '"' && decodedUrl.charAt(i-1) != '\\')
+						{
+							insideString = (insideString == "'") ? '' : "'";
+						}
+				}				
+			}
+		}
+		
+		output.push(buffer.toString());
+		
+		return output;
+	}
+	
+	public static function parse(decodedUrl : String, output : {format: RestApiFormat}) : Array<RestApiParsedSegment>
+	{
+		var parsed = new Array<RestApiParsedSegment>();
+		var outputFormat : RestApiFormat = null;
+		
 		// Split url and pair the resources with the types
-		var urlSegments = decodedUrl.split('/');
+		var urlSegments = parseSegments(decodedUrl);
 		var i = 0;
 		
 		while(i < urlSegments.length)
