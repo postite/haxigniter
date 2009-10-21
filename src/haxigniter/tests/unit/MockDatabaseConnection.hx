@@ -46,9 +46,11 @@ class MockDatabaseConnection extends DatabaseConnection
 		return this.mockConnection.queries;
 	}
 	
-	public function new()
+	public function new(?driver : DatabaseDriver)
 	{
 		this.mockConnection = new MockConnection();
+		
+		this.driver = driver != null ? driver : DatabaseDriver.mysql;
 	}
 	
 	public override function open()
