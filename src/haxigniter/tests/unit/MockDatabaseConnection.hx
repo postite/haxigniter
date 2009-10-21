@@ -41,7 +41,7 @@ class MockDatabaseConnection extends DatabaseConnection
 	private var mockConnection : MockConnection;
 	
 	public var queries(getQueries, null) : Array<String>;
-	public function getQueries() : Array<String>
+	private function getQueries() : Array<String>
 	{
 		return this.mockConnection.queries;
 	}
