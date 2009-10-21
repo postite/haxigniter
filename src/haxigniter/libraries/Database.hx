@@ -272,6 +272,10 @@ class DatabaseConnection
 			
 			if(param != null)
 			{
+				param = this.connection.quote(Std.string(param));
+				
+				/*
+				// Slightly faster, but neko/php conflicts:
 				param = switch(Type.typeof(param))
 				{
 					case ValueType.TInt: param;
@@ -279,6 +283,7 @@ class DatabaseConnection
 					case ValueType.TBool: Std.string(param);
 					default: this.connection.quote(Std.string(param));
 				}
+				*/
 			}
 			else
 				param = 'NULL';
