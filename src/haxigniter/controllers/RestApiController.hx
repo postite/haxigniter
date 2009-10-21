@@ -103,7 +103,7 @@ class RestApiController extends Controller
 	 * @param	params Query parameters
 	 * @return  Any value that the controller returns.
 	 */
-	public override function handleRequest(uriSegments : Array<String>, method : String, query : Hash<String>, rawQuery : String) : Dynamic
+	public override function handleRequest(uriSegments : Array<String>, method : String, query : Hash<String>, rawQuery : String, ?rawRequestData : String) : Dynamic
 	{
 		var response : RestApiResponse;
 		var outputFormat : RestApiFormat = null;
@@ -161,16 +161,20 @@ class RestApiController extends Controller
 				default: throw new RestApiException('Invalid request type: ' + method, RestErrorType.invalidRequestType);
 			}
 			
-			// Get the raw posted data.
-			var data : String = Web.getPostData();
-			
 			// TODO: User authorization, with the help of query.
 			
 			// Parse the raw query
 			var selectors = RestApiParser.parse(rawQuery, output);
 			
 			// Create the RestApiRequest object and pass it along to the handler.
-			var request = new RestApiRequest(type, Lambda.array(Lambda.map(selectors, this.parsedSegmentToResource)), outputFormat, apiVersion, query, data);
+			var request = new RestApiRequest(
+				type, 
+				Lambda.array(Lambda.map(selectors, this.parsedSegmentToResource)), 
+				outputFormat, 
+				apiVersion, 
+				query, 
+				(rawRequestData == null) ? Web.getPostData() : rawRequestData
+				);
 			
 			// Debugging
 			if(this.debugMode != null)
