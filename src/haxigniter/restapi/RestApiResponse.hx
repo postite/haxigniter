@@ -13,12 +13,6 @@ enum RestErrorType
 	unknown;
 }
 
-typedef RestResponseOutput = {
-	var contentType : String;
-	var charSet : String;
-	var output : String;
-}
-
 class RestDataCollection
 {
 	public var startIndex(default, null) : Int;

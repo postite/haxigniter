@@ -104,26 +104,6 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		badParse('/bazaars///', ~/Invalid resource: /, RestErrorType.invalidResource);
 	}
 
-	public function test_Then_output_format_should_be_detected()
-	{
-		output = parse('/bazaars/', null);
-		this.assertApiResource(output[0], 'bazaars', null);
-
-		output = parse('/bazaars.xml/', 'xml');		
-		this.assertApiResource(output[0], 'bazaars', null);
-		
-		output = parse('/bazaars/1/libraries.json/4', 'json');
-		this.assertApiResource(output[0], 'bazaars', 1);
-		this.assertApiResource(output[1], 'libraries', 4);
-		
-		output = parse('/bazaars/3/libraries.csv/', 'csv');
-		this.assertApiResource(output[0], 'bazaars', 3);
-		this.assertApiResource(output[1], 'libraries', null);
-		
-		// More than one output format is an error.
-		badParse('/bazaars.xml/3/libraries.csv/', ~/Multiple output formats specified: "xml" and "csv"./, RestErrorType.invalidOutputFormat);
-	}
-	
 	public function test_Then_SOME_selectors_should_be_parsed_properly()
 	{
 		output = parse('/bazaars/[id=3][name ^= Boris]/');
@@ -268,13 +248,8 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 		}
 	}
 	
-	private function parse(input : String, ?outputFormat : RestApiFormat) : Array<RestApiParsedSegment>
+	private function parse(input : String) : Array<RestApiParsedSegment>
 	{
-		var output = { format: null };
-		var test = RestApiParser.parse(input, output);
-		
-		this.assertEqual(outputFormat, output.format);
-		
-		return test;
+		return RestApiParser.parse(input);
 	}
 }

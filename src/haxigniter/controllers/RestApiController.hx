@@ -8,14 +8,18 @@ import neko.Lib;
 import neko.Web;
 #end
 
+import haxigniter.libraries.DebugLevel;
+
+import haxigniter.restapi.RestApiInterface;
 import haxigniter.restapi.RestApiParser;
 import haxigniter.restapi.RestApiRequest;
 import haxigniter.restapi.RestApiResponse;
 import haxigniter.restapi.RestApiAuthorization;
+import haxigniter.restapi.RestApiOutputHandler;
 
 import haxigniter.exceptions.RestApiException;
 
-class RestApiController extends Controller
+class RestApiController extends Controller, implements RestApiOutputHandler
 {
 	public static var commonMimeTypes = {
 		haxigniter: 'application/vnd.haxe.serialized', 
@@ -26,26 +30,216 @@ class RestApiController extends Controller
 	};
 	
 	public var apiRequestHandler : RestApiRequestHandler;
-	public var apiAuthorization : RestApiAuthorization;
+	public var apiOutputHandler : RestApiOutputHandler;
+	//public var apiAuthorization : RestApiAuthorization;
 
 	public var noOutput : Bool;
-	public var debugMode : haxigniter.libraries.DebugLevel;
+	public var debugMode : DebugLevel;
+	public var logLevel : DebugLevel;
 	
-	private var viewTranslations : Hash<Hash<String>>;
-
-	public function new(?apiRequestHandler : RestApiRequestHandler, ?apiAuthorization : RestApiAuthorization)
+	public function new(?apiRequestHandler : RestApiRequestHandler, ?apiOutputHandler : RestApiOutputHandler)// , ?apiAuthorization : RestApiAuthorization)
 	{
-		// Default behavior: If no handler specified, use a RestApiSqlRequestHandler.
+		// Default behavior: If no request handler specified, use a RestApiSqlRequestHandler.
 		if(apiRequestHandler == null)
 			this.apiRequestHandler = new haxigniter.restapi.RestApiSqlRequestHandler(this.db);
 		else
 			this.apiRequestHandler = apiRequestHandler;
+
+		// Default behavior: If no output handler specified, use itself, which handles haxigniter format (serialized).
+		if(apiOutputHandler == null)
+		{
+			this.apiOutputHandler = this;
+			this.outputFormats = ['haxigniter'];
+		}
+		else
+			this.apiOutputHandler = apiOutputHandler;
+
+		//this.apiAuthorization = apiAuthorization;
 		
-		this.apiAuthorization = apiAuthorization;
-		
+		this.logLevel = DebugLevel.error;
 		this.viewTranslations = new Hash<Hash<String>>();
 		this.noOutput = false;
 	}
+	
+	///// RestApiOutputHandler implementation ///////////////////////
+
+	// Set in constructor to haxigniter, the only format supported by RestApiController.
+	public var outputFormats(default, null) : Array<RestApiFormat>;
+
+	public function outputApiResponse(response : RestApiResponse, outputFormat : RestApiFormat) : RestResponseOutput
+	{
+		return {
+			contentType: commonMimeTypes.haxigniter,
+			charSet: null,
+			output: haxe.Serializer.run(response)
+		};
+	}
+
+	private static var apiRequestPattern = ~/^.*?\/[vV](\d+)\/\?(\/[^&]+)&?(.*)/;
+	private static var apiFormatPattern = ~/\/\w+\.(\w+)\//;
+	
+	private function parseUrl(url : String) : { api: Int, query: String, parameters: Hash<String>, format: RestApiFormat }
+	{
+		if(!apiRequestPattern.match(url))
+			return null;
+		else
+		{
+			var query = apiRequestPattern.matched(2);
+			var format : RestApiFormat = null;
+			
+			// Parse format from query, if any.
+			// The slash prepending the query is kept so this pattern can detect the format:
+			if(apiFormatPattern.match(query))
+			{
+				format = apiFormatPattern.matched(1);
+				//throw new RestApiException('Multiple output formats specified: "' + outputFormat + '" and "' + resourceData[1] + '".', RestErrorType.invalidOutputFormat);
+			}
+			
+			var parameters = haxigniter.libraries.Input.parseQuery(apiRequestPattern.matched(3));
+			
+			if(StringTools.endsWith(query, '/'))
+				query = query.substr(0, query.length - 1);			
+			
+			return { api: Std.parseInt(apiRequestPattern.matched(1)), query: query.substr(1), parameters: parameters, format: format };
+		}
+	}
+	
+	/////////////////////////////////////////////////////////////////
+
+	private function sendRequest(apiVersion : Int, type : RestApiRequestType, query : String, data : Hash<String>, queryParameters : Hash<String>) : RestApiResponse
+	{
+		// Urldecode the query so it can be parsed.
+		query = StringTools.urlDecode(query);
+
+		try
+		{
+			// Parse the query
+			var selectors = RestApiParser.parse(query);
+
+			// Create the RestApiRequest object and pass it along to the handler.
+			var request = new RestApiRequest(
+				type, 
+				Lambda.array(Lambda.map(selectors, this.parsedSegmentToResource)), 
+				apiVersion, 
+				queryParameters, 
+				data
+				);
+			
+			// Debugging
+			var oldTraceQueries = this.db.traceQueries;
+			
+			if(this.debugMode != null)
+			{
+				this.db.traceQueries = this.debugMode;				
+				this.trace(request);
+			}
+			
+			var response = apiRequestHandler.handleApiRequest(request);
+
+			// Debugging
+			if(this.debugMode != null)
+			{
+				this.db.traceQueries = oldTraceQueries;
+			}
+
+			return response;
+		}
+		catch(e : RestApiException)
+		{
+			return RestApiResponse.failure(e.message, e.error);
+		}
+		catch(e : Dynamic)
+		{
+			if(!this.config.development)
+			{
+				// Log the error if logLevel is high enough for the controller
+				haxigniter.libraries.Debug.log(e, this.logLevel);
+				return RestApiResponse.failure('An unknown error occured.', RestErrorType.unknown);
+			}
+			else
+				return RestApiResponse.failure(Std.string(e), RestErrorType.unknown);
+		}
+	}
+	
+	/**
+	 * Handle a page request.
+	 * @param	uriSegments Array of request segments (URL splitted with "/")
+	 * @param	method Request method, "GET" or "POST" most likely.
+	 * @param	params Query parameters
+	 * @return  Any value that the controller returns.
+	 */
+	public override function handleRequest(uriSegments : Array<String>, method : String, query : Hash<String>, rawQuery : String, ?rawRequestData : String) : Dynamic
+	{
+		var response : RestApiResponse;		
+		var urlParts : { api: Int, query: String, parameters: Hash<String>, format: RestApiFormat } = this.parseUrl(uriSegments.join('/') + '/?' + rawQuery);
+
+		// Test if format is supported by the output handler.
+		if(urlParts.format != null && !Lambda.has(apiOutputHandler.outputFormats, urlParts.format))
+		{
+			response = RestApiResponse.failure('Invalid output format: ' + urlParts.format, RestErrorType.invalidOutputFormat);
+		}
+		else
+		{
+			if(urlParts.format == null)
+				urlParts.format = apiOutputHandler.outputFormats[0];
+		
+			// Convert the raw request data to hash
+			if(rawRequestData == null)
+				rawRequestData = Web.getPostData();
+			
+			var requestData = (rawRequestData != null) ? haxigniter.libraries.Input.parseQuery(rawRequestData) : new Hash<String>();
+
+			// Create the request type depending on method
+			var type = switch(method)
+			{
+				case 'POST': RestApiRequestType.create;
+				case 'DELETE': RestApiRequestType.delete;
+				case 'GET': RestApiRequestType.read;
+				case 'PUT': RestApiRequestType.update;
+				default: null;
+			}
+			
+			if(type == null)
+				response = RestApiResponse.failure('Invalid request type: ' + method, RestErrorType.invalidRequestType);
+			else
+			{
+				// Make the request.
+				response = this.sendRequest(urlParts.api, type, urlParts.query, requestData, urlParts.parameters);
+			}
+		}
+		
+		var finalOutput : RestResponseOutput = apiOutputHandler.outputApiResponse(response, urlParts.format);
+
+		// Debugging
+		if(this.debugMode != null)
+		{
+			this.trace(RestApiDebug.responseToString(response));
+			this.trace(finalOutput);
+		}
+		
+		if(!this.noOutput)
+		{
+			// Format the final output according to response and send it to the client.
+			var header = [];
+			
+			if(finalOutput.contentType != null)
+				header.push(finalOutput.contentType);
+			if(finalOutput.charSet != null)
+				header.push('charset=' + finalOutput.charSet);
+			
+			if(header.length > 0 && this.debugMode == null)
+				Web.setHeader('Content-Type', header.join('; '));
+
+			if(this.debugMode == null)
+				Lib.print(finalOutput.output);
+		}
+		
+		return finalOutput;
+	}
+
+	///// View translations /////////////////////////////////////////
+	
+	private var viewTranslations : Hash<Hash<String>>;
 
 	private function translateView(resourceName : String, viewName : String) : String
 	{
@@ -73,6 +267,8 @@ class RestApiController extends Controller
 		
 		views.set(viewName, viewTranslation);
 	}
+
+	/////////////////////////////////////////////////////////////////
 	
 	private function parsedSegmentToResource(segment : RestApiParsedSegment) : RestApiResource
 	{
@@ -94,137 +290,5 @@ class RestApiController extends Controller
 				// Selectors are parsed already, just pass them on.
 				return {name: name, selectors: selectors};
 		}
-	}
-	
-	/**
-	 * Handle a page request.
-	 * @param	uriSegments Array of request segments (URL splitted with "/")
-	 * @param	method Request method, "GET" or "POST" most likely.
-	 * @param	params Query parameters
-	 * @return  Any value that the controller returns.
-	 */
-	public override function handleRequest(uriSegments : Array<String>, method : String, query : Hash<String>, rawQuery : String, ?rawRequestData : String) : Dynamic
-	{
-		var response : RestApiResponse;
-		var outputFormat : RestApiFormat = null;
-
-		// Prepare for eventual debugging
-		var oldTraceQueries = this.db.traceQueries;
-		
-		// Strip the api query from the query hash before urldecoding the raw query.
-		for(getParam in query.keys())
-		{
-			if(getParam.indexOf('/') > = 0)
-			{
-				query.remove(getParam);
-				break;
-			}
-		}
-		
-		// Then strip everything after (and including) the first &.
-		if(rawQuery.indexOf('&') >= 0)
-			rawQuery = rawQuery.substr(0, rawQuery.indexOf('&'));
-
-		// Finally, urldecode the query so it can be parsed.
-		rawQuery = StringTools.urlDecode(rawQuery);
-
-		try
-		{
-			// Parse the query string to get the output format early, so it can be used in error handling.
-			var output = { format: null };
-			
-			if(output.format != null)
-			{
-				// Test if format is supported by the request handler.
-				if(!Lambda.has(apiRequestHandler.supportedOutputFormats, outputFormat))
-					throw new RestApiException('Invalid output format: ' + outputFormat, RestErrorType.invalidOutputFormat);
-				
-				outputFormat = output.format;
-			}
-			else
-				outputFormat = apiRequestHandler.supportedOutputFormats[0];
-
-			// Extract api version from second segment
-			var versionTest = ~/^[vV](\d+)$/;
-			if(uriSegments[1] == null || !versionTest.match(uriSegments[1]))
-				throw new RestApiException('Invalid API version: ' + uriSegments[1], RestErrorType.invalidApiVersion);
-
-			var apiVersion : Int = Std.parseInt(versionTest.matched(1));
-			
-			// Create the request type depending on method
-			var type : RestApiRequestType = switch(method)
-			{
-				case 'POST': RestApiRequestType.create;
-				case 'DELETE': RestApiRequestType.delete;
-				case 'GET': RestApiRequestType.read;
-				case 'PUT': RestApiRequestType.update;
-				default: throw new RestApiException('Invalid request type: ' + method, RestErrorType.invalidRequestType);
-			}
-			
-			// TODO: User authorization, with the help of query.
-			
-			// Parse the raw query
-			var selectors = RestApiParser.parse(rawQuery, output);
-			
-			// Create the RestApiRequest object and pass it along to the handler.
-			var request = new RestApiRequest(
-				type, 
-				Lambda.array(Lambda.map(selectors, this.parsedSegmentToResource)), 
-				outputFormat, 
-				apiVersion, 
-				query, 
-				(rawRequestData == null) ? Web.getPostData() : rawRequestData
-				);
-			
-			// Debugging
-			if(this.debugMode != null)
-			{
-				this.db.traceQueries = this.debugMode;		
-				this.trace(request);
-			}
-			
-			// If authorization exists, it must go through.
-			if(apiAuthorization != null && !apiAuthorization.authorizeRequest(request))
-				throw new RestApiException('Unauthorized request.', RestErrorType.unauthorizedRequest);
-			
-			response = apiRequestHandler.handleApiRequest(request);
-		}
-		catch(e : RestApiException)
-		{
-			response = RestApiResponse.failure(e.message, e.error);
-		}
-		catch(e : Dynamic)
-		{
-			response = RestApiResponse.failure(Std.string(e), RestErrorType.unknown);
-		}
-		
-		var finalOutput : RestResponseOutput = apiRequestHandler.outputApiResponse(response, outputFormat);
-
-		// Debugging
-		if(this.debugMode != null)
-		{
-			this.trace(RestApiDebug.responseToString(response));
-			this.trace(finalOutput);
-			this.db.traceQueries = oldTraceQueries;
-		}
-		
-		if(!this.noOutput)
-		{
-			// Format the final output according to response and send it to the client.
-			var header = [];
-			
-			if(finalOutput.contentType != null)
-				header.push(finalOutput.contentType);
-			if(finalOutput.charSet != null)
-				header.push('charset=' + finalOutput.charSet);
-			
-			if(header.length > 0 && this.debugMode == null)
-				Web.setHeader('Content-Type', header.join('; '));
-
-			if(this.debugMode == null)
-				Lib.print(finalOutput.output);
-		}
-		
-		return finalOutput;
 	}
 }

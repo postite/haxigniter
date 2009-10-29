@@ -37,23 +37,14 @@ typedef SqlQueryBase = {
 
 class RestApiSqlRequestHandler implements RestApiRequestHandler
 {
-	public var supportedContentTypes(default, null) : Hash<String>;
-	
 	private var db : DatabaseConnection;
 	
 	public function new(db : DatabaseConnection)
 	{
-		this.db = db;
-		
-		supportedContentTypes = new Hash<String>();
-		supportedContentTypes.set('haxigniter', RestApiController.commonMimeTypes.haxigniter);
-		
-		supportedOutputFormats = ['haxigniter'];
+		this.db = db;		
 	}
 
 	///// RestApiRequestHandler implementation //////////////////////
-
-	public var supportedOutputFormats(default, null) : Array<RestApiFormat>;
 
 	public function handleApiRequest(request : RestApiRequest) : RestApiResponse
 	{
@@ -72,10 +63,9 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 
 	private inline function requestData(request : RestApiRequest) : Hash<String>
 	{
-		var data = haxigniter.libraries.Input.parseQuery(request.data);
 		var empty = true;
 		
-		for(key in data.keys())
+		for(key in request.data.keys())
 		{
 			// Test for malicious keys.
 			this.db.testAlphaNumeric(key);
@@ -85,7 +75,7 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		if(empty)
 			throw new RestApiException('No data specified in request.', RestErrorType.invalidData);
 
-		return data;
+		return request.data;
 	}
 	
 	public function handleCreateRequest(request : RestApiRequest) : RestApiResponse
@@ -254,15 +244,6 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		}
 	}
 	
-	public function outputApiResponse(response : RestApiResponse, outputFormat : RestApiFormat) : RestResponseOutput
-	{
-		return {
-			contentType: supportedContentTypes.get(supportedOutputFormats[0]),
-			charSet: null,
-			output: haxe.Serializer.run(response)
-		};
-	}
-
 	/////////////////////////////////////////////////////////////////
 
 	public function selectSqlId(query : SqlQueryBase) : Array<Int>
@@ -435,11 +416,5 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		}
 		
 		return { name: '', sql: joins.join(' '), values: values };
-	}
-	
-	private function contentType(outputFormat : RestApiFormat)
-	{
-		return supportedContentTypes.exists(outputFormat) ? supportedContentTypes.get(outputFormat) : supportedContentTypes.get(supportedOutputFormats[0]);
-	}
-
+	}	
 }

@@ -304,10 +304,9 @@ class RestApiParser
 		return output;
 	}
 	
-	public static function parse(decodedUrl : String, output : {format: RestApiFormat}) : Array<RestApiParsedSegment>
+	public static function parse(decodedUrl : String) : Array<RestApiParsedSegment>
 	{
 		var parsed = new Array<RestApiParsedSegment>();
-		var outputFormat : RestApiFormat = null;
 		
 		// Split url and pair the resources with the types
 		var urlSegments = parseSegments(decodedUrl);
@@ -318,15 +317,8 @@ class RestApiParser
 			// Test valid resource and return an array of [resource name, output format]
 			var resourceData = validResourceTest(urlSegments[i++]);
 			
-			if(outputFormat == null)
-				outputFormat = resourceData[1];
-			else if(resourceData[1] != null)
-				throw new RestApiException('Multiple output formats specified: "' + outputFormat + '" and "' + resourceData[1] + '".', RestErrorType.invalidOutputFormat);
-				
 			parsed.push(parseSelector(resourceData[0], urlSegments[i++]));
 		}
-		
-		output.format = outputFormat;
 		
 		return parsed;
 	}

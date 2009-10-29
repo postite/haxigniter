@@ -6,6 +6,7 @@ import haxigniter.tests.TestCase;
 
 import haxigniter.controllers.RestApiController;
 
+import haxigniter.restapi.RestApiOutputHandler;
 import haxigniter.restapi.RestApiRequest;
 import haxigniter.restapi.RestApiResponse;
 
@@ -15,9 +16,7 @@ class TestRestApi extends haxigniter.controllers.RestApiController, implements R
 {
 	public function new()
 	{
-		super(this, null);
-		
-		this.supportedOutputFormats = ['haxigniter'];
+		super(this, null);		
 		this.noOutput = true;
 	}
 	
@@ -25,15 +24,13 @@ class TestRestApi extends haxigniter.controllers.RestApiController, implements R
 	
 	///// Interface implementation //////////////////////////////////
 	
-	public var supportedOutputFormats(default, null) : Array<RestApiFormat>;
-	
 	public function handleApiRequest(request : RestApiRequest) : RestApiResponse
 	{
 		this.lastRequest = request;
 		return RestApiResponse.success([]);
 	}
 
-	public function outputApiResponse(response : RestApiResponse, outputFormat : RestApiFormat) : RestResponseOutput
+	public override function outputApiResponse(response : RestApiResponse, outputFormat : RestApiFormat) : RestResponseOutput
 	{
 		switch(response)
 		{
@@ -77,11 +74,6 @@ class When_using_RestApiController extends haxigniter.tests.TestCase
 		
 		this.assertEqual(1, api.lastRequest.apiVersion);
 		
-		// Data can be null if testing outside a web environment.
-		if(api.lastRequest.data != null)
-			this.assertEqual('', api.lastRequest.data);
-		
-		this.assertEqual('haxigniter', api.lastRequest.format);
 		this.assertEqual('{}', Std.string(api.lastRequest.queryParameters));
 		this.assertEqual(1, api.lastRequest.resources.length);
 		this.assertEqual(RestApiRequestType.read, api.lastRequest.type);
@@ -93,11 +85,6 @@ class When_using_RestApiController extends haxigniter.tests.TestCase
 		
 		this.assertEqual(23, api.lastRequest.apiVersion);
 		
-		// Data can be null if testing outside a web environment.
-		if(api.lastRequest.data != null)
-			this.assertEqual('', api.lastRequest.data);
-		
-		this.assertEqual('haxigniter', api.lastRequest.format);
 		this.assertEqual('{}', Std.string(api.lastRequest.queryParameters));
 		this.assertEqual(2, api.lastRequest.resources.length);
 		this.assertEqual(RestApiRequestType.delete, api.lastRequest.type);
