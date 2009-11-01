@@ -14,12 +14,12 @@ import haxigniter.restapi.RestApiInterface;
 import haxigniter.restapi.RestApiParser;
 import haxigniter.restapi.RestApiRequest;
 import haxigniter.restapi.RestApiResponse;
-import haxigniter.restapi.RestApiAuthorization;
-import haxigniter.restapi.RestApiOutputHandler;
+import haxigniter.restapi.RestApiSecurityHandler;
+import haxigniter.restapi.RestApiFormatHandler;
 
 import haxigniter.exceptions.RestApiException;
 
-class RestApiController extends Controller, implements RestApiOutputHandler
+class RestApiController extends Controller, implements RestApiFormatHandler
 {
 	public static var commonMimeTypes = {
 		haxigniter: 'application/vnd.haxe.serialized', 
@@ -30,29 +30,29 @@ class RestApiController extends Controller, implements RestApiOutputHandler
 	};
 	
 	public var apiRequestHandler : RestApiRequestHandler;
-	public var apiOutputHandler : RestApiOutputHandler;
+	public var apiFormatHandler : RestApiFormatHandler;
 	//public var apiAuthorization : RestApiAuthorization;
 
 	public var noOutput : Bool;
 	public var debugMode : DebugLevel;
 	public var logLevel : DebugLevel;
 	
-	public function new(?apiRequestHandler : RestApiRequestHandler, ?apiOutputHandler : RestApiOutputHandler)// , ?apiAuthorization : RestApiAuthorization)
+	public function new(?apiRequestHandler : RestApiRequestHandler, ?apiFormatHandler : RestApiFormatHandler)// , ?apiAuthorization : RestApiAuthorization)
 	{
-		// Default behavior: If no request handler specified, use a RestApiSqlRequestHandler.
+		// If no request handler specified, use a RestApiSqlRequestHandler.
 		if(apiRequestHandler == null)
 			this.apiRequestHandler = new haxigniter.restapi.RestApiSqlRequestHandler(this.db);
 		else
 			this.apiRequestHandler = apiRequestHandler;
 
-		// Default behavior: If no output handler specified, use itself, which handles haxigniter format (serialized).
-		if(apiOutputHandler == null)
+		// If no format handler specified, use itself, which handles haxigniter format (serialized).
+		if(apiFormatHandler == null)
 		{
-			this.apiOutputHandler = this;
-			this.outputFormats = ['haxigniter'];
+			this.apiFormatHandler = this;
+			this.restApiFormats = ['haxigniter'];
 		}
 		else
-			this.apiOutputHandler = apiOutputHandler;
+			this.apiFormatHandler = apiFormatHandler;
 
 		//this.apiAuthorization = apiAuthorization;
 		
@@ -61,12 +61,20 @@ class RestApiController extends Controller, implements RestApiOutputHandler
 		this.noOutput = false;
 	}
 	
-	///// RestApiOutputHandler implementation ///////////////////////
+	///// RestApiFormatHandler implementation ///////////////////////
 
 	// Set in constructor to haxigniter, the only format supported by RestApiController.
-	public var outputFormats(default, null) : Array<RestApiFormat>;
+	public var restApiFormats(default, null) : Array<RestApiFormat>;
 
-	public function outputApiResponse(response : RestApiResponse, outputFormat : RestApiFormat) : RestResponseOutput
+	public function restApiInput(data : String, inputFormat : RestApiFormat) : Dynamic
+	{
+		if(data == '') 
+			return null;
+		else 
+			return haxe.Unserializer.run(data);
+	}
+	
+	public function restApiOutput(response : RestApiResponse, outputFormat : RestApiFormat) : RestResponseOutput
 	{
 		return {
 			contentType: commonMimeTypes.haxigniter,
@@ -74,6 +82,8 @@ class RestApiController extends Controller, implements RestApiOutputHandler
 			output: haxe.Serializer.run(response)
 		};
 	}
+	
+	/////////////////////////////////////////////////////////////////
 
 	private static var apiRequestPattern = ~/^.*?\/[vV](\d+)\/\?(\/[^&]+)&?(.*)/;
 	private static var apiFormatPattern = ~/\/\w+\.(\w+)\//;
@@ -106,7 +116,7 @@ class RestApiController extends Controller, implements RestApiOutputHandler
 	
 	/////////////////////////////////////////////////////////////////
 
-	private function sendRequest(apiVersion : Int, type : RestApiRequestType, query : String, data : Hash<String>, queryParameters : Hash<String>) : RestApiResponse
+	private function sendRequest(apiVersion : Int, type : RestApiRequestType, query : String, data : Dynamic, queryParameters : Hash<String>) : RestApiResponse
 	{
 		// Urldecode the query so it can be parsed.
 		query = StringTools.urlDecode(query);
@@ -174,20 +184,21 @@ class RestApiController extends Controller, implements RestApiOutputHandler
 		var urlParts : { api: Int, query: String, parameters: Hash<String>, format: RestApiFormat } = this.parseUrl(uriSegments.join('/') + '/?' + rawQuery);
 
 		// Test if format is supported by the output handler.
-		if(urlParts.format != null && !Lambda.has(apiOutputHandler.outputFormats, urlParts.format))
+		if(urlParts.format != null && !Lambda.has(apiFormatHandler.restApiFormats, urlParts.format))
 		{
 			response = RestApiResponse.failure('Invalid output format: ' + urlParts.format, RestErrorType.invalidOutputFormat);
 		}
 		else
 		{
 			if(urlParts.format == null)
-				urlParts.format = apiOutputHandler.outputFormats[0];
+				urlParts.format = apiFormatHandler.restApiFormats[0];
 		
-			// Convert the raw request data to hash
+			// If no raw request exists, take it from the web request.
 			if(rawRequestData == null)
 				rawRequestData = Web.getPostData();
-			
-			var requestData = (rawRequestData != null) ? haxigniter.libraries.Input.parseQuery(rawRequestData) : new Hash<String>();
+
+			// Convert the raw request data using the RestApiFormatHandler.
+			var requestData = (rawRequestData != null) ? apiFormatHandler.restApiInput(rawRequestData, urlParts.format) : null;
 
 			// Create the request type depending on method
 			var type = switch(method)
@@ -208,7 +219,7 @@ class RestApiController extends Controller, implements RestApiOutputHandler
 			}
 		}
 		
-		var finalOutput : RestResponseOutput = apiOutputHandler.outputApiResponse(response, urlParts.format);
+		var finalOutput : RestResponseOutput = apiFormatHandler.restApiOutput(response, urlParts.format);
 
 		// Debugging
 		if(this.debugMode != null)

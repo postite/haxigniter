@@ -9,6 +9,18 @@ import haxigniter.restapi.RestApiResponse;
 
 import haxigniter.tests.unit.MockDatabaseConnection;
 
+class TestRestCreate
+{
+	var firstname : String;
+	var lastname : String;
+	
+	public function new(firstname : String, lastname : String)
+	{
+		this.firstname = firstname;
+		this.lastname = lastname;
+	}
+}
+
 class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 {
 	var controller : RestApiController;
@@ -52,6 +64,24 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 
 		this.request('/bazaars/:random');
 		this.assertQueries(['SELECT bazaars.* FROM bazaars ORDER BY RAND()']);
+
+		this.request('/bazaars/:eq(5)');
+		this.assertQueries([
+			'SELECT bazaars.* FROM bazaars LIMIT 5,1', 
+			'SELECT COUNT(*) FROM bazaars'
+			]);
+
+		this.request('/bazaars/:lt(4)');
+		this.assertQueries([
+			'SELECT bazaars.* FROM bazaars LIMIT 4',
+			'SELECT COUNT(*) FROM bazaars'
+			]);
+
+		this.request('/bazaars/:gt(10)');
+		this.assertQueries([
+			'SELECT bazaars.* FROM bazaars LIMIT 10,999999999',
+			'SELECT COUNT(*) FROM bazaars'
+			]);
 	}
 
 	public function test_Then_read_requests_should_create_proper_sql_for_multiple_resources()
@@ -77,20 +107,38 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 	
 	///// Create, update, delete /////
 
-	public function test_Then_create_requests_should_create_proper_sql()
+	public function test_Then_create_requests_should_create_proper_sql_for_anonymous_objects()
 	{
 		// Very hard to unit test this without mock objects. It has to stay like this until further.
-		this.request('/bazaars/4/libraries', 'POST', 'firstname=Boris&lastname=Doris');		
+		// Also testing serialized objects and anonymous object here.
+		var anon = { firstname: 'Boris', lastname: 'Doris' };		
+		
+		this.request('/bazaars/4/libraries', 'POST', haxe.Serializer.run(anon));
 		this.assertQueries([
 			'SELECT bazaars.id FROM bazaars WHERE bazaars.id = Q*4*Q'
 			//, 'INSERT...'
 			]);
 	}
 
+	public function test_Then_create_requests_should_create_proper_sql_for_objects()
+	{
+		// Very hard to unit test this without mock objects. It has to stay like this until further.
+		var object = new TestRestCreate('Boris', 'Doris');
+		
+		this.request('/bazaars/4/libraries', 'POST', haxe.Serializer.run(object));
+		this.assertQueries([
+			'SELECT bazaars.id FROM bazaars WHERE bazaars.id = Q*4*Q'
+			//, 'INSERT...'
+			]);		
+	}
+
 	public function test_Then_update_requests_should_create_proper_sql()
 	{
 		// Very hard to unit test this without mock objects. It has to stay like this until further.
-		this.request('/bazaars/10/libraries', 'PUT', 'firstname=Boris&lastname=Doris');		
+		// Also testing serialized Hash here.
+		var hash = haxigniter.libraries.Input.parseQuery('firstname=Boris&lastname=Doris');
+		
+		this.request('/bazaars/10/libraries', 'PUT', haxe.Serializer.run(hash));
 		this.assertQueries([
 			'SELECT libraries.id FROM libraries INNER JOIN bazaars ON (bazaars.id = libraries.bazaarId AND bazaars.id = Q*10*Q)'
 			//, 'UPDATE libraries SET lastname=Q*Doris*Q, firstname=Q*Boris*Q WHERE libraries.id IN()'
@@ -122,7 +170,7 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 	
 	private function request(query : String, ?type = 'GET', ?rawRequestData : String) : Void
 	{
-		this.db.queries.splice(0, this.db.queries.length);		
+		this.db.queries.splice(0, this.db.queries.length);
 		this.controller.handleRequest(['api', 'v1'], type, new Hash<String>(), query, rawRequestData);
 	}
 }

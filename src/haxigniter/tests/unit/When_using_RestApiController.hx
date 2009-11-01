@@ -6,7 +6,7 @@ import haxigniter.tests.TestCase;
 
 import haxigniter.controllers.RestApiController;
 
-import haxigniter.restapi.RestApiOutputHandler;
+import haxigniter.restapi.RestApiFormatHandler;
 import haxigniter.restapi.RestApiRequest;
 import haxigniter.restapi.RestApiResponse;
 
@@ -30,7 +30,7 @@ class TestRestApi extends haxigniter.controllers.RestApiController, implements R
 		return RestApiResponse.success([]);
 	}
 
-	public override function outputApiResponse(response : RestApiResponse, outputFormat : RestApiFormat) : RestResponseOutput
+	public override function restApiOutput(response : RestApiResponse, outputFormat : RestApiFormat) : RestResponseOutput
 	{
 		switch(response)
 		{

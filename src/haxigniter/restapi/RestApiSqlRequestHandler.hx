@@ -3,6 +3,8 @@ package haxigniter.restapi;
 import haxigniter.libraries.Inflection;
 import haxigniter.libraries.Database;
 
+import Type;
+
 #if php
 import php.Lib;
 import php.Web;
@@ -61,21 +63,44 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		}
 	}
 
-	private inline function requestData(request : RestApiRequest) : Hash<String>
+	private function requestData(request : RestApiRequest) : Hash<Dynamic>
 	{
+		var output : Hash<Dynamic>;
 		var empty = true;
 		
-		for(key in request.data.keys())
+		if(Std.is(request.data, Hash))
 		{
-			// Test for malicious keys.
-			this.db.testAlphaNumeric(key);
-			empty = false;
+			output = cast(request.data, Hash<Dynamic>);
+			
+			for(key in output.keys())
+			{
+				// Test for malicious keys.
+				this.db.testAlphaNumeric(key);
+				empty = false;
+			}
+		}
+		else if(Reflect.isObject(request.data))
+		{
+			output = new Hash<Dynamic>();
+			
+			for(key in Reflect.fields(request.data))
+			{
+				// Test for malicious keys.
+				this.db.testAlphaNumeric(key);
+				output.set(key, Reflect.field(request.data, key));
+				
+				empty = false;
+			}
+		}
+		else
+		{
+			throw new RestApiException('Request data format not supported by RestApiSqlRequestHandler.', RestErrorType.invalidData);
 		}
 		
 		if(empty)
 			throw new RestApiException('No data specified in request.', RestErrorType.invalidData);
 
-		return request.data;
+		return output;
 	}
 	
 	public function handleCreateRequest(request : RestApiRequest) : RestApiResponse
@@ -300,9 +325,63 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 					case func(name, args):
 						switch(name.toLowerCase())
 						{
+							case 'gt':
+								if(limit != null)
+									throw new RestApiException('Limiting can only be done once in a selector.', RestErrorType.invalidQuery);
+
+								if(args.length != 1)
+									throw new RestApiException('gt() takes exactly one argument.', RestErrorType.invalidQuery);
+								
+								var start = Std.parseInt(args[0]);
+								
+								if(start == null)
+									throw new RestApiException('Error in gt() when parsing "' + args[0] + '" to integer.', RestErrorType.invalidQuery);
+
+								if(start < 0)
+									throw new RestApiException('Argument to gt() cannot be negative.', RestErrorType.invalidQuery);
+
+								limit = 999999999;
+								offset = start;
+
+							case 'lt':
+								if(limit != null)
+									throw new RestApiException('Limiting can only be done once in a selector.', RestErrorType.invalidQuery);
+
+								if(args.length != 1)
+									throw new RestApiException('lt() takes exactly one argument.', RestErrorType.invalidQuery);
+								
+								var start = Std.parseInt(args[0]);
+								
+								if(start == null)
+									throw new RestApiException('Error in lt() when parsing "' + args[0] + '" to integer.', RestErrorType.invalidQuery);
+
+								if(start < 0)
+									throw new RestApiException('Argument to lt() cannot be negative.', RestErrorType.invalidQuery);
+
+								limit = start;
+								offset = 0;
+
+							case 'eq':
+								if(limit != null)
+									throw new RestApiException('Limiting can only be done once in a selector.', RestErrorType.invalidQuery);
+
+								if(args.length != 1)
+									throw new RestApiException('eq() takes exactly one argument.', RestErrorType.invalidQuery);
+								
+								var start = Std.parseInt(args[0]);
+								
+								if(start == null)
+									throw new RestApiException('Error in eq() when parsing "' + args[0] + '" to integer.', RestErrorType.invalidQuery);
+
+								if(start < 0)
+									throw new RestApiException('Argument to eq() cannot be negative.', RestErrorType.invalidQuery);
+
+								limit = 1;
+								offset = start;
+
 							case 'range':
 								if(limit != null)
-									throw new RestApiException('range() can only be called once in a selector.', RestErrorType.invalidQuery);
+									throw new RestApiException('Limiting can only be done once in a selector.', RestErrorType.invalidQuery);
 
 								if(args.length != 2)
 									throw new RestApiException('range() takes exactly two arguments.', RestErrorType.invalidQuery);
@@ -315,7 +394,13 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 
 								if(end == null)
 									throw new RestApiException('Error in range() when parsing "' + args[1] + '" to integer.', RestErrorType.invalidQuery);
-								
+
+								if(start < 0)
+									throw new RestApiException('Start of range() cannot be negative.', RestErrorType.invalidQuery);
+
+								if(end < 0)
+									throw new RestApiException('End of range() cannot be negative.', RestErrorType.invalidQuery);
+
 								if(end < start)
 									throw new RestApiException('Start of range() cannot be higher than the end.', RestErrorType.invalidQuery);
 

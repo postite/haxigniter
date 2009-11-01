@@ -61,9 +61,9 @@ class RestApiRequest
     public var resources(default, null) : Array<RestApiResource>;
     public var apiVersion(default, null) : Int;
 	public var queryParameters(default, null) : Hash<String>;
-    public var data(default, null) : Hash<String>; // Any extra data for create/update
+    public var data(default, null) : Dynamic; // Any extra data for create/update
 
-	public function new(type : RestApiRequestType, resources : Array<RestApiResource>, apiVersion : Int, queryParameters : Hash<String>, data : Hash<String>)
+	public function new(type : RestApiRequestType, resources : Array<RestApiResource>, apiVersion : Int, queryParameters : Hash<String>, ?data : Dynamic)
 	{
 		if(type == null)
 			throw new RestApiException('No request type specified.', RestErrorType.invalidRequestType);
