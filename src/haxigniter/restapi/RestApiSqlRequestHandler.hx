@@ -23,18 +23,123 @@ import haxigniter.restapi.RestApiResponse;
 
 import haxigniter.exceptions.RestApiException;
 
-typedef SqlQueryPart = {
-	var name : String;
-	var sql: String;
-	var values: Array<String>;
+typedef SqlTable = {
+	var name: String;
+	var attributes: Array<String>;
 }
 
-typedef SqlQueryBase = {
-	var joins : SqlQueryPart;
-	var where : SqlQueryPart;
-	var order : String;
-	var limit : Int;
-	var offset : Int;
+enum SqlJoinDir {
+	parentOnRight;
+	parentOnLeft;
+}
+
+class SelectQuery
+{
+	public var tables : Array<SqlTable>;
+	public var order : String;	
+	public var limit : Int;
+	public var offset : Int;
+	
+	private var db : DatabaseConnection;
+	
+	public function new(db : DatabaseConnection)
+	{
+		this.db = db;
+		
+		this.tables = new Array<SqlTable>();
+
+		// Order, limit and offset needs to be null so pseudo-functions can set them and test for exceptions.
+	}
+	
+	public function clone(?pos = 0, ?end = -1) : SelectQuery
+	{
+		var output = new SelectQuery(this.db);
+
+		output.tables = this.tables.slice(pos, end);
+		output.order = this.order;
+		output.limit = this.limit;
+		output.offset = this.offset;
+		
+		return output;
+	}
+	
+	public function select(?joins : Array<SqlJoinDir>) : List<Dynamic>
+	{
+		return db.query('SELECT ' + tables[0].name + '.* FROM ' + tables[0].name + ' ' + generateQuery(joins)).results();
+	}
+
+	public function ids(?joins : Array<SqlJoinDir>) : List<Int>
+	{
+		var output = new List<Int>();
+		for(id in db.query('SELECT ' + tables[0].name + '.id FROM ' + tables[0].name + ' ' + generateQuery(joins)))
+		{
+			output.add(cast id);
+		}
+		
+		return output;
+	}
+
+	public function count(?joins : Array<SqlJoinDir>) : Int
+	{
+		return db.queryInt('SELECT COUNT(*) FROM ' + tables[0].name + ' ' + generateQuery(joins, false));
+	}
+
+	private function generateQuery(?joins : Array<SqlJoinDir>, ?useLimit = true)
+	{
+		var buffer = new StringBuf();
+
+		if(joins == null)
+		{
+			joins = new Array<SqlJoinDir>();
+			
+			for(i in 0 ... tables.length-1)
+				joins.push(SqlJoinDir.parentOnRight);
+		}
+
+		//trace(this.tables);
+		//trace([start, end, joins].join(' - '));
+
+		for(i in 0 ... tables.length-1)
+		{
+			buffer.add(generateJoin(tables[i], tables[i + 1], joins[i]) + ' ');
+		}
+		
+		buffer.add(generateWhere(0));
+		
+		if(this.order != '')
+		{
+			buffer.add(' ');
+			buffer.add('ORDER BY ' + this.order);
+		}
+		
+		if(useLimit && (limit > 0 || offset > 0))
+			buffer.add(' LIMIT ' + (offset > 0 ? offset + ',' : '') + limit);
+		
+		return buffer.toString();
+	}
+	
+	private function generateWhere(i : Int) : String
+	{
+		if(tables[i].attributes.length == 0)
+			return '';
+		
+		return 'WHERE ' + tables[i].attributes.join(' AND ');
+	}
+	
+	private function generateJoin(leftTable : SqlTable, rightTable : SqlTable, direction : SqlJoinDir) : String
+	{
+		var sql = 'INNER JOIN ' + rightTable.name + ' ON (';
+		
+		if(direction == SqlJoinDir.parentOnRight)
+			sql += rightTable.name + '.id = ' + leftTable.name + '.' + Inflection.singularize(rightTable.name) + 'Id';
+		else
+			sql += rightTable.name + '.' + Inflection.singularize(leftTable.name) + 'Id = ' + leftTable.name + '.id';
+		
+		if(rightTable.attributes.length > 0)
+			sql += ' AND ' + rightTable.attributes.join(' AND ');
+			
+		return sql + ')';
+	}
 }
 
 class RestApiSqlRequestHandler implements RestApiRequestHandler
@@ -103,6 +208,8 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		return output;
 	}
 	
+	///// Handle request methods ////////////////////////////////////
+	
 	public function handleCreateRequest(request : RestApiRequest) : RestApiResponse
 	{
 		var createResource = request.resources[request.resources.length - 1];
@@ -113,14 +220,14 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		var data = requestData(request);
 		
 		var output = new Array<Int>();
-		
+
 		if(request.resources.length > 1)
 		{
 			// Create a select query based on everything up to (but not including) the last resource, to get the ids for the foreign key.
-			var query = buildBaseSql(request.resources.slice(0, -1));
-			var foreignKey = Inflection.singularize(query.where.name) + 'Id';
-			
-			for(id in selectSqlId(query))
+			var query = createSelectQuery(request.resources.slice(0, -1));
+			var foreignKey = Inflection.singularize(request.resources[request.resources.length-2].name) + 'Id';
+
+			for(id in query.ids())
 			{
 				data.set(foreignKey, Std.string(id));
 				
@@ -131,8 +238,11 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		else
 		{
 			db.insert(createResource.name, data);
-			output.push(db.lastInsertId());			
+			output.push(db.lastInsertId());
 		}
+		
+		if(output.length == 0)
+			return RestApiResponse.failure('Create request failed.', RestErrorType.unknown);
 		
 		return RestApiResponse.success(output);
 	}
@@ -142,8 +252,8 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		var data = requestData(request);
 		var output = new Array<Int>();
 
-		var base = buildBaseSql(request.resources);
-		var ids = selectSqlId(base);
+		var query = createSelectQuery(request.resources);
+		var ids = query.ids();
 
 		var updateAll : Bool = request.resources.length == 1 && request.resources[0].selectors.length == 0;
 		var tableName = request.resources[request.resources.length - 1].name;
@@ -170,15 +280,15 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 			db.query(query, values);
 		}
 			
-		return RestApiResponse.success(ids);
+		return RestApiResponse.success(Lambda.array(ids));
 	}
 
 	public function handleDeleteRequest(request : RestApiRequest) : RestApiResponse
 	{
 		var output = new Array<Int>();
 
-		var base = buildBaseSql(request.resources);
-		var ids = selectSqlId(base);
+		var query = createSelectQuery(request.resources);
+		var ids = query.ids();
 
 		var deleteAll : Bool = request.resources.length == 1 && request.resources[0].selectors.length == 0;
 		var tableName = request.resources[request.resources.length - 1].name;
@@ -194,312 +304,239 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 			db.query(query);
 		}
 		
-		return RestApiResponse.success(ids);
+		return RestApiResponse.success(Lambda.array(ids));
 	}
 
 	public function handleReadRequest(request : RestApiRequest) : RestApiResponse
 	{
-		var query = buildBaseSql(request.resources);
-		var select = selectSql(query);
+		var query = createSelectQuery(request.resources);
 		
 		// TODO: Enforce upper limit
 		// TODO: Use SQL_CALC_FOUND_ROWS for the Mysql driver.
 
-		var results = db.query('SELECT ' + query.where.name + '.*' + select.sql, select.values);
+		var results = query.select();
 		var response : RestDataCollection;
 		
 		if(query.limit == 0 && query.offset == 0)
 		{
-			response = new RestDataCollection(0, cast(Math.max(0, results.length-1), Int), results.length, Lambda.array(results.results()));
+			response = new RestDataCollection(0, cast(Math.max(0, results.length-1), Int), results.length, Lambda.array(results));
 		}
 		else
 		{
-			var limitPos : Int;
-			
-			// Cut the query after the ORDER BY or LIMIT, it's not needed when counting.
-			if(query.order != '')
-				limitPos = select.sql.lastIndexOf('ORDER BY');
-			else if(query.limit > 0 || query.offset > 0)
-				limitPos = select.sql.lastIndexOf('LIMIT');
-			else
-				limitPos = select.sql.length;
-			
-			var count = db.queryInt('SELECT COUNT(*) ' + select.sql.substr(0, limitPos), select.values);
-			response = new RestDataCollection(query.offset, query.offset + results.length - 1, count, Lambda.array(results.results()));
+			var count = query.count();
+			response = new RestDataCollection(query.offset, query.offset + results.length - 1, count, Lambda.array(results));
 		}
 		
 		return haxigniter.restapi.RestApiResponse.successData(response);
 	}
 	
-	public function attributeToSql(name : String, operator : RestApiSelectorOperator, value : String, newValue : {val : String}) : String
+	/////////////////////////////////////////////////////////////////
+	
+	public function attributeToSql(name : String, operator : RestApiSelectorOperator, value : String) : String
 	{
-		newValue.val = value;
+		var output : String;
 		
 		switch(operator)
 		{
 			case contains:
-				newValue.val = '%' + value + '%';
-				return name + ' LIKE ?';
+				value = '%' + value + '%';
+				output = name + ' LIKE ?';
 			
 			case endsWith:
-				newValue.val = '%' + value;
-				return name + ' LIKE ?';
+				value = '%' + value;
+				output = name + ' LIKE ?';
 
 			case equals:
-				return name + ' = ?';
+				output = name + ' = ?';
 
 			case lessThan:
-				return name + ' < ?';
+				output = name + ' < ?';
 
 			case lessThanOrEqual:
-				return name + ' <= ?';
+				output = name + ' <= ?';
 
 			case moreThan:
-				return name + ' > ?';
+				output = name + ' > ?';
 
 			case moreThanOrEqual:
-				return name + ' >= ?';
+				output = name + ' >= ?';
 
 			case notEqual:
-				return name + ' != ?';
+				output = name + ' != ?';
 
 			case startsWith:
-				newValue.val = value + '%';
-				return name + ' LIKE ?';
+				value += '%';
+				output = name + ' LIKE ?';
 		}
+		
+		return StringTools.replace(output, '?', this.db.connection.quote(value));
 	}
 	
 	/////////////////////////////////////////////////////////////////
 
-	public function selectSqlId(query : SqlQueryBase) : Array<Int>
+	public function createSelectQuery(resources : Array<RestApiResource>) : SelectQuery
 	{
-		var output = new Array<Int>();
-		
-		var select = selectSql(query);
-		var foreignKey = Inflection.singularize(query.where.name) + 'Id';
-		
-		for(row in db.query('SELECT ' + query.where.name + '.id' + select.sql, select.values))
-		{
-			output.push(row.id);
-		}
-		
-		return output;
-	}
-	
-	public function selectSql(query : SqlQueryBase) : SqlQueryPart
-	{
-		// Query the database
-		var sql = ' FROM ' + query.where.name + ' ' + query.joins.sql + ' ';
-		
-		if(query.where.sql != '')
-			sql += 'WHERE ' + query.where.sql + ' ';
-		
-		if(query.order != '')
-			sql += 'ORDER BY ' + query.order + ' ';
-		
-		if(query.limit > 0 || query.offset > 0)
-			sql += 'LIMIT ' + (query.offset > 0 ? query.offset + ',' : '') + query.limit;
-
-		var values = query.joins.values.concat(query.where.values);
-		
-		return { name: '', sql: sql, values: values };
-	}
-	
-	public function buildBaseSql(resources : Array<RestApiResource>) : SqlQueryBase
-	{
-		var tables = [];
-		
-		var order = null;
-		var limit = null;
-		var offset = null;
-		
+		var query = new SelectQuery(this.db);
+			
 		for(resource in resources)
 		{
 			var attributes = [];
-			var values = [];
 			
 			for(selector in resource.selectors)
 			{
 				switch(selector)
 				{
 					case func(name, args):
-						switch(name.toLowerCase())
-						{
-							case 'gt':
-								if(limit != null)
-									throw new RestApiException('Limiting can only be done once in a selector.', RestErrorType.invalidQuery);
-
-								if(args.length != 1)
-									throw new RestApiException('gt() takes exactly one argument.', RestErrorType.invalidQuery);
-								
-								var start = Std.parseInt(args[0]);
-								
-								if(start == null)
-									throw new RestApiException('Error in gt() when parsing "' + args[0] + '" to integer.', RestErrorType.invalidQuery);
-
-								if(start < 0)
-									throw new RestApiException('Argument to gt() cannot be negative.', RestErrorType.invalidQuery);
-
-								limit = 999999999;
-								offset = start;
-
-							case 'lt':
-								if(limit != null)
-									throw new RestApiException('Limiting can only be done once in a selector.', RestErrorType.invalidQuery);
-
-								if(args.length != 1)
-									throw new RestApiException('lt() takes exactly one argument.', RestErrorType.invalidQuery);
-								
-								var start = Std.parseInt(args[0]);
-								
-								if(start == null)
-									throw new RestApiException('Error in lt() when parsing "' + args[0] + '" to integer.', RestErrorType.invalidQuery);
-
-								if(start < 0)
-									throw new RestApiException('Argument to lt() cannot be negative.', RestErrorType.invalidQuery);
-
-								limit = start;
-								offset = 0;
-
-							case 'eq':
-								if(limit != null)
-									throw new RestApiException('Limiting can only be done once in a selector.', RestErrorType.invalidQuery);
-
-								if(args.length != 1)
-									throw new RestApiException('eq() takes exactly one argument.', RestErrorType.invalidQuery);
-								
-								var start = Std.parseInt(args[0]);
-								
-								if(start == null)
-									throw new RestApiException('Error in eq() when parsing "' + args[0] + '" to integer.', RestErrorType.invalidQuery);
-
-								if(start < 0)
-									throw new RestApiException('Argument to eq() cannot be negative.', RestErrorType.invalidQuery);
-
-								limit = 1;
-								offset = start;
-
-							case 'range':
-								if(limit != null)
-									throw new RestApiException('Limiting can only be done once in a selector.', RestErrorType.invalidQuery);
-
-								if(args.length != 2)
-									throw new RestApiException('range() takes exactly two arguments.', RestErrorType.invalidQuery);
-								
-								var start = Std.parseInt(args[0]);
-								var end = Std.parseInt(args[1]);
-								
-								if(start == null)
-									throw new RestApiException('Error in range() when parsing "' + args[0] + '" to integer.', RestErrorType.invalidQuery);
-
-								if(end == null)
-									throw new RestApiException('Error in range() when parsing "' + args[1] + '" to integer.', RestErrorType.invalidQuery);
-
-								if(start < 0)
-									throw new RestApiException('Start of range() cannot be negative.', RestErrorType.invalidQuery);
-
-								if(end < 0)
-									throw new RestApiException('End of range() cannot be negative.', RestErrorType.invalidQuery);
-
-								if(end < start)
-									throw new RestApiException('Start of range() cannot be higher than the end.', RestErrorType.invalidQuery);
-
-								limit = end - start;
-								offset = start;
-						
-							case 'order':
-								if(order != null)
-									throw new RestApiException('Order can only be set once in a selector.', RestErrorType.invalidQuery);
-
-								var orders = new Array<String>();
-								for(i in 0 ... args.length)
-								{
-									if(i%2 == 1) continue;
-									
-									this.db.testAlphaNumeric(args[i]);
-									
-									if(args[i+1] == null)
-										orders.push(args[i]);
-									else
-									{
-										var orderBy = args[i+1].toUpperCase();
-										
-										if(orderBy == 'ASC' || orderBy == 'DESC')
-											orders.push(args[i] + ' ' + orderBy);
-										else
-											throw new RestApiException('order() keyword can only be ASC or DESC, was "' + orderBy + '".', RestErrorType.invalidQuery);
-									}										
-								}								
-								order = orders.join(', ');
-						
-							case 'random':
-								if(order != null)
-									throw new RestApiException('Order can only be set once in a selector.', RestErrorType.invalidQuery);
-
-								switch(this.db.driver)
-								{
-									case DatabaseDriver.mysql:
-										order = 'RAND()';
-									case DatabaseDriver.sqlite:
-										order = 'RANDOM()';
-								}
-								
-							default:
-								throw new RestApiException('pseudo-function "'+name+'" is not supported by the sql request handler.', RestErrorType.invalidQuery);
-						}
+						pseudoFunction(name, args, query);
 					
 					case attribute(name, operator, value):
 						var newValue = { val: '' };
-						attributes.push(attributeToSql(resource.name + '.' + name, operator, value, newValue));
-						values.push(newValue.val);
+						attributes.push(attributeToSql(resource.name + '.' + name, operator, value));
 				}
 			}
-			
-			tables.push({name: resource.name, attributes: attributes, values: values});
+
+			// Add tables in reverse order for the sql query to be generated properly.
+			query.tables.unshift({name: resource.name, attributes: attributes});
 		}
 		
-		return { 
-			joins: createSqlJoin(tables),
-			where: createSqlWhere(tables[tables.length-1]),
-			order: (order == null ? '' : order), 
-			limit: (limit == null ? 0 : limit), 
-			offset: (offset == null ? 0 : offset) 
-			};
-	}
+		// Set limit and offset if not set in pseudo-functions.
+		if(query.limit == null)
+			query.limit = 0;
 
-	private function createSqlWhere(table : {name: String, attributes: Array<String>, values: Array<String>}) : SqlQueryPart
-	{
-		return { name: table.name, sql: table.attributes.join(' AND '), values: table.values };
+		if(query.offset == null)
+			query.offset = 0;
+
+		if(query.order == null)
+			query.order = '';
+
+		return query;
 	}
 	
-	private function createSqlJoin(tables : Array<{name: String, attributes: Array<String>, values: Array<String>}>) : SqlQueryPart
+	private function pseudoFunction(name : String, args : Array<String>, query : SelectQuery) : Void
 	{
-		var values = new Array<String>();
-		var joins = new Array<String>();
-		
-		for(i in 0 ... tables.length-1)
+		switch(name.toLowerCase())
 		{
-			var sql = '';
-			var table = tables[i];
-			var joinTable = tables[i+1];
-			
-			// Create the join statement, with singularized foreign key.
-			sql += 'INNER JOIN ' + table.name + ' ON (' + table.name + '.id = ' + joinTable.name + '.' + Inflection.singularize(table.name) + 'Id';
-			
-			if(table.attributes.length > 0)
-			{
-				sql += ' AND ' + table.attributes.join(' AND ');
+			case 'gt':
+				if(query.limit != null)
+					throw new RestApiException('Limiting can only be done once in a selector.', RestErrorType.invalidQuery);
+
+				if(args.length != 1)
+					throw new RestApiException('gt() takes exactly one argument.', RestErrorType.invalidQuery);
 				
-				// Need to concatenate in reverse order here so they come in correct order in the sql query.
-				values = table.values.concat(values);
-			}
-			
-			sql += ")";
-			
-			// Need to shift them so they come in the correct order in the sql query.
-			joins.unshift(sql);
-		}
+				var start = Std.parseInt(args[0]);
+				
+				if(start == null)
+					throw new RestApiException('Error in gt() when parsing "' + args[0] + '" to integer.', RestErrorType.invalidQuery);
+
+				if(start < 0)
+					throw new RestApiException('Argument to gt() cannot be negative.', RestErrorType.invalidQuery);
+
+				query.limit = 999999999;
+				query.offset = start;
+
+			case 'lt':
+				if(query.limit != null)
+					throw new RestApiException('Limiting can only be done once in a selector.', RestErrorType.invalidQuery);
+
+				if(args.length != 1)
+					throw new RestApiException('lt() takes exactly one argument.', RestErrorType.invalidQuery);
+				
+				var start = Std.parseInt(args[0]);
+				
+				if(start == null)
+					throw new RestApiException('Error in lt() when parsing "' + args[0] + '" to integer.', RestErrorType.invalidQuery);
+
+				if(start < 0)
+					throw new RestApiException('Argument to lt() cannot be negative.', RestErrorType.invalidQuery);
+
+				query.limit = start;
+				query.offset = 0;
+
+			case 'eq':
+				if(query.limit != null)
+					throw new RestApiException('Limiting can only be done once in a selector.', RestErrorType.invalidQuery);
+
+				if(args.length != 1)
+					throw new RestApiException('eq() takes exactly one argument.', RestErrorType.invalidQuery);
+				
+				var start = Std.parseInt(args[0]);
+				
+				if(start == null)
+					throw new RestApiException('Error in eq() when parsing "' + args[0] + '" to integer.', RestErrorType.invalidQuery);
+
+				if(start < 0)
+					throw new RestApiException('Argument to eq() cannot be negative.', RestErrorType.invalidQuery);
+
+				query.limit = 1;
+				query.offset = start;
+
+			case 'range':
+				if(query.limit != null)
+					throw new RestApiException('Limiting can only be done once in a selector.', RestErrorType.invalidQuery);
+
+				if(args.length != 2)
+					throw new RestApiException('range() takes exactly two arguments.', RestErrorType.invalidQuery);
+				
+				var start = Std.parseInt(args[0]);
+				var end = Std.parseInt(args[1]);
+				
+				if(start == null)
+					throw new RestApiException('Error in range() when parsing "' + args[0] + '" to integer.', RestErrorType.invalidQuery);
+
+				if(end == null)
+					throw new RestApiException('Error in range() when parsing "' + args[1] + '" to integer.', RestErrorType.invalidQuery);
+
+				if(start < 0)
+					throw new RestApiException('Start of range() cannot be negative.', RestErrorType.invalidQuery);
+
+				if(end < 0)
+					throw new RestApiException('End of range() cannot be negative.', RestErrorType.invalidQuery);
+
+				if(end < start)
+					throw new RestApiException('Start of range() cannot be higher than the end.', RestErrorType.invalidQuery);
+
+				query.limit = end - start;
+				query.offset = start;
 		
-		return { name: '', sql: joins.join(' '), values: values };
-	}	
+			case 'order':
+				if(query.order != null)
+					throw new RestApiException('Order can only be set once in a selector.', RestErrorType.invalidQuery);
+
+				var orders = new Array<String>();
+				for(i in 0 ... args.length)
+				{
+					if(i%2 == 1) continue;
+					
+					this.db.testAlphaNumeric(args[i]);
+					
+					if(args[i+1] == null)
+						orders.push(args[i]);
+					else
+					{
+						var orderBy = args[i+1].toUpperCase();
+						
+						if(orderBy == 'ASC' || orderBy == 'DESC')
+							orders.push(args[i] + ' ' + orderBy);
+						else
+							throw new RestApiException('order() keyword can only be ASC or DESC, was "' + orderBy + '".', RestErrorType.invalidQuery);
+					}										
+				}								
+				query.order = orders.join(', ');
+		
+			case 'random':
+				if(query.order != null)
+					throw new RestApiException('Order can only be set once in a selector.', RestErrorType.invalidQuery);
+
+				switch(this.db.driver)
+				{
+					case DatabaseDriver.mysql:
+						query.order = 'RAND()';
+					case DatabaseDriver.sqlite:
+						query.order = 'RANDOM()';
+				}
+				
+			default:
+				throw new RestApiException('pseudo-function "'+name+'" is not supported by the sql request handler.', RestErrorType.invalidQuery);
+		}
+	}
 }

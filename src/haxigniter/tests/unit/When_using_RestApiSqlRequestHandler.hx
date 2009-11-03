@@ -2,9 +2,11 @@
 
 import haxe.Serializer;
 import haxe.Unserializer;
-import haxigniter.restapi.RestApiSqlRequestHandler;
 import haxigniter.controllers.RestApiController;
 
+import haxigniter.restapi.RestApiSqlRequestHandler;
+import haxigniter.restapi.RestApiFormatHandler;
+import haxigniter.restapi.RestApiRequest;
 import haxigniter.restapi.RestApiResponse;
 
 import haxigniter.tests.unit.MockDatabaseConnection;
@@ -21,9 +23,24 @@ class TestRestCreate
 	}
 }
 
+class TestController extends RestApiController
+{
+	public override function restApiOutput(response : RestApiResponse, outputFormat : RestApiFormat) : RestResponseOutput
+	{
+		switch(response)
+		{
+			case failure(message, errorType):
+				throw response;
+			
+			default:
+				return super.restApiOutput(response, outputFormat);
+		}
+	}
+}
+
 class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 {
-	var controller : RestApiController;
+	var controller : TestController;
 	var handler : RestApiSqlRequestHandler;
 	var db : MockDatabaseConnection;
 	
@@ -32,7 +49,7 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 		this.db = new MockDatabaseConnection();
 		this.handler = new RestApiSqlRequestHandler(this.db);
 		
-		this.controller = new RestApiController(this.handler);
+		this.controller = new TestController(this.handler);
 		this.controller.noOutput = true;
 	}
 	
@@ -41,9 +58,11 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 	}
 
 	///// Read /////
-	
 	public function test_Then_read_requests_should_create_proper_sql_for_single_resources()
 	{
+		// Set mock result to avoid request failures
+		this.db.setMockResults(['Mock']);
+		
 		this.request('/bazaars');
 		this.assertQueries(['SELECT bazaars.* FROM bazaars']);
 
@@ -86,6 +105,9 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 
 	public function test_Then_read_requests_should_create_proper_sql_for_multiple_resources()
 	{
+		// Set mock result to avoid request failures
+		this.db.setMockResults(['Mock']);
+
 		this.request('/bazaars/4/libraries');
 		this.assertQueries(['SELECT libraries.* FROM libraries INNER JOIN bazaars ON (bazaars.id = libraries.bazaarId AND bazaars.id = Q*4*Q)']);
 
@@ -106,60 +128,73 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 	}
 	
 	///// Create, update, delete /////
-
 	public function test_Then_create_requests_should_create_proper_sql_for_anonymous_objects()
 	{
-		// Very hard to unit test this without mock objects. It has to stay like this until further.
 		// Also testing serialized objects and anonymous object here.
 		var anon = { firstname: 'Boris', lastname: 'Doris' };		
 		
+		// Database should return the id of the bazaar.
+		this.db.setMockResults([4]);
+		
 		this.request('/bazaars/4/libraries', 'POST', haxe.Serializer.run(anon));
 		this.assertQueries([
-			'SELECT bazaars.id FROM bazaars WHERE bazaars.id = Q*4*Q'
-			//, 'INSERT...'
+			'SELECT bazaars.id FROM bazaars WHERE bazaars.id = Q*4*Q',
+			'INSERT INTO libraries (lastname, firstname, bazaarId) VALUES (Q*Doris*Q, Q*Boris*Q, Q*4*Q)'
 			]);
 	}
 
 	public function test_Then_create_requests_should_create_proper_sql_for_objects()
 	{
-		// Very hard to unit test this without mock objects. It has to stay like this until further.
 		var object = new TestRestCreate('Boris', 'Doris');
 		
-		this.request('/bazaars/4/libraries', 'POST', haxe.Serializer.run(object));
+		this.db.setMockResults([1,2,3]);
+		
+		this.request('/bazaars/4/libraries/[id<4]/news', 'POST', haxe.Serializer.run(object));
 		this.assertQueries([
-			'SELECT bazaars.id FROM bazaars WHERE bazaars.id = Q*4*Q'
-			//, 'INSERT...'
-			]);		
+			'SELECT libraries.id FROM libraries INNER JOIN bazaars ON (bazaars.id = libraries.bazaarId AND bazaars.id = Q*4*Q) WHERE libraries.id < Q*4*Q',
+			'INSERT INTO news (lastname, libraryId, firstname) VALUES (Q*Doris*Q, Q*1*Q, Q*Boris*Q)',
+			'INSERT INTO news (lastname, libraryId, firstname) VALUES (Q*Doris*Q, Q*2*Q, Q*Boris*Q)',
+			'INSERT INTO news (lastname, libraryId, firstname) VALUES (Q*Doris*Q, Q*3*Q, Q*Boris*Q)'
+			]);
 	}
 
+	public function test_Then_create_requests_with_single_resource_should_not_look_for_foreign_keys()
+	{
+		var object = new TestRestCreate('123', '456');
+		
+		this.request('/bazaars/', 'POST', haxe.Serializer.run(object));
+		this.assertQueries([
+			'INSERT INTO bazaars (lastname, firstname) VALUES (Q*456*Q, Q*123*Q)'
+			]);
+	}
+	
 	public function test_Then_update_requests_should_create_proper_sql()
 	{
-		// Very hard to unit test this without mock objects. It has to stay like this until further.
 		// Also testing serialized Hash here.
 		var hash = haxigniter.libraries.Input.parseQuery('firstname=Boris&lastname=Doris');
 		
+		this.db.setMockResults([9,8,7]);
+		
 		this.request('/bazaars/10/libraries', 'PUT', haxe.Serializer.run(hash));
 		this.assertQueries([
-			'SELECT libraries.id FROM libraries INNER JOIN bazaars ON (bazaars.id = libraries.bazaarId AND bazaars.id = Q*10*Q)'
-			//, 'UPDATE libraries SET lastname=Q*Doris*Q, firstname=Q*Boris*Q WHERE libraries.id IN()'
+			'SELECT libraries.id FROM libraries INNER JOIN bazaars ON (bazaars.id = libraries.bazaarId AND bazaars.id = Q*10*Q)',
+			'UPDATE libraries SET lastname=Q*Doris*Q, firstname=Q*Boris*Q WHERE libraries.id IN(9,8,7)'
 			]);
 	}
 
 	public function test_Then_delete_requests_should_create_proper_sql()
 	{
-		// Very hard to unit test this without mock objects. It has to stay like this until further.
-		this.request('/bazaars/15/libraries/20', 'DELETE');
+		this.db.setMockResults([123,456]);
+		
+		this.request('/bazaars/15/libraries/[anything=goes]', 'DELETE');
 		this.assertQueries([
-			'SELECT libraries.id FROM libraries INNER JOIN bazaars ON (bazaars.id = libraries.bazaarId AND bazaars.id = Q*15*Q) WHERE libraries.id = Q*20*Q'
-			//, 'DELETE FROM libraries WHERE libraries.id IN()'
+			'SELECT libraries.id FROM libraries INNER JOIN bazaars ON (bazaars.id = libraries.bazaarId AND bazaars.id = Q*15*Q) WHERE libraries.anything = Q*goes*Q',
+			'DELETE FROM libraries WHERE libraries.id IN(123,456)'
 			]);
 	}
-
 	
 	private function assertQueries(queries : Array<String>)
 	{
-		//trace(this.db.queries);
-		
 		this.assertEqual(queries.length, this.db.queries.length);
 		
 		for(i in 0 ... queries.length)
