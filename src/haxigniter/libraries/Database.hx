@@ -46,7 +46,23 @@ class DatabaseConnection
 	public var driver : DatabaseDriver;
 	public var debug : Bool;
 	
-	public var connection(default, null) : Connection;
+	public var connection(getConnection, null) : Connection;
+	private var myConnection : Connection;
+	private function getConnection() : Connection
+	{
+		if(this.myConnection == null)
+		{
+			switch(this.driver)
+			{
+				case mysql:
+					this.myConnection = Mysql.connect(this);
+				case sqlite:
+					this.myConnection = Sqlite.open(this.database);
+			}
+		}
+		
+		return this.myConnection;
+	}
 	
 	public var traceQueries : DebugLevel;
 	
@@ -65,38 +81,25 @@ class DatabaseConnection
 
 	public function open() : Void
 	{
-		if(this.connection != null)
+		if(this.myConnection != null)
 			throw new DatabaseException('Connection is already open.', this);
 		
-		if(this.driver == DatabaseDriver.mysql)
-			this.connection = Mysql.connect(this);
-		else if(this.driver == DatabaseDriver.sqlite)
-			this.connection = Sqlite.open(this.database);
-		else
-			throw new DatabaseException('No valid DatabaseDriver found.', this);		
+		getConnection();
 	}
 	
 	public function close() : Void
 	{
-		if(this.connection != null)
+		if(this.myConnection != null)
 		{
-			this.connection.close();
-			this.connection = null;
+			this.myConnection.close();
+			this.myConnection = null;
 		}
 	}
 	
-	private inline function testOpen() : Void
-	{
-		if(this.connection == null)
-			this.open();
-	}
-
 	///// Query methods /////////////////////////////////////////////
 	
 	public function query(query : String, ?params : Iterable<Dynamic>, ?pos : PosInfos) : ResultSet
 	{
-		this.testOpen();
-		
 		if(params != null)
 			query = this.queryParams(query, params);
 		
@@ -147,7 +150,6 @@ class DatabaseConnection
 	
 	public function insert(table : String, data : Dynamic, ?replace = false, ?pos : PosInfos) : Int
 	{
-		this.testOpen();
 		this.testAlphaNumeric(table);
 
 		var hash = makeHash(data);
@@ -175,7 +177,6 @@ class DatabaseConnection
 	
 	public function update(table : String, data : Dynamic, ?where : Dynamic, ?limit : Int, ?pos : PosInfos) : Int
 	{
-		this.testOpen();
 		this.testAlphaNumeric(table);
 		
 		var hash = makeHash(data);
@@ -215,7 +216,6 @@ class DatabaseConnection
 	
 	public function delete(table : String, ?where : Dynamic, ?limit : Int, ?pos : PosInfos) : Int
 	{
-		this.testOpen();
 		this.testAlphaNumeric(table);
 		
 		var whereStr = '';
