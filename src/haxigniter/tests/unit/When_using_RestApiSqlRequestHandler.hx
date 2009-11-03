@@ -139,7 +139,11 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 		this.request('/bazaars/4/libraries', 'POST', haxe.Serializer.run(anon));
 		this.assertQueries([
 			'SELECT bazaars.id FROM bazaars WHERE bazaars.id = Q*4*Q',
+			#if neko
 			'INSERT INTO libraries (lastname, firstname, bazaarId) VALUES (Q*Doris*Q, Q*Boris*Q, Q*4*Q)'
+			#elseif php
+			'INSERT INTO libraries (firstname, lastname, bazaarId) VALUES (Q*Boris*Q, Q*Doris*Q, Q*4*Q)'
+			#end
 			]);
 	}
 
@@ -152,9 +156,15 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 		this.request('/bazaars/4/libraries/[id<4]/news', 'POST', haxe.Serializer.run(object));
 		this.assertQueries([
 			'SELECT libraries.id FROM libraries INNER JOIN bazaars ON (bazaars.id = libraries.bazaarId AND bazaars.id = Q*4*Q) WHERE libraries.id < Q*4*Q',
+			#if neko
 			'INSERT INTO news (lastname, libraryId, firstname) VALUES (Q*Doris*Q, Q*1*Q, Q*Boris*Q)',
 			'INSERT INTO news (lastname, libraryId, firstname) VALUES (Q*Doris*Q, Q*2*Q, Q*Boris*Q)',
 			'INSERT INTO news (lastname, libraryId, firstname) VALUES (Q*Doris*Q, Q*3*Q, Q*Boris*Q)'
+			#elseif php
+			'INSERT INTO news (firstname, lastname, libraryId) VALUES (Q*Boris*Q, Q*Doris*Q, Q*1*Q)',
+			'INSERT INTO news (firstname, lastname, libraryId) VALUES (Q*Boris*Q, Q*Doris*Q, Q*2*Q)',
+			'INSERT INTO news (firstname, lastname, libraryId) VALUES (Q*Boris*Q, Q*Doris*Q, Q*3*Q)'
+			#end
 			]);
 	}
 
@@ -164,7 +174,11 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 		
 		this.request('/bazaars/', 'POST', haxe.Serializer.run(object));
 		this.assertQueries([
+			#if neko
 			'INSERT INTO bazaars (lastname, firstname) VALUES (Q*456*Q, Q*123*Q)'
+			#elseif php
+			'INSERT INTO bazaars (firstname, lastname) VALUES (Q*123*Q, Q*456*Q)'
+			#end
 			]);
 	}
 	
@@ -178,7 +192,11 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 		this.request('/bazaars/10/libraries', 'PUT', haxe.Serializer.run(hash));
 		this.assertQueries([
 			'SELECT libraries.id FROM libraries INNER JOIN bazaars ON (bazaars.id = libraries.bazaarId AND bazaars.id = Q*10*Q)',
+			#if neko
 			'UPDATE libraries SET lastname=Q*Doris*Q, firstname=Q*Boris*Q WHERE libraries.id IN(9,8,7)'
+			#elseif php
+			'UPDATE libraries SET firstname=Q*Boris*Q, lastname=Q*Doris*Q WHERE libraries.id IN(9,8,7)'
+			#end
 			]);
 	}
 
@@ -193,13 +211,18 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 			]);
 	}
 	
-	private function assertQueries(queries : Array<String>)
+	private function assertQueries(queries : Array<Dynamic>)
 	{
 		this.assertEqual(queries.length, this.db.queries.length);
 		
 		for(i in 0 ... queries.length)
 		{
-			this.assertEqual(StringTools.trim(StringTools.replace(queries[i], '  ', ' ')), StringTools.trim(StringTools.replace(this.db.queries[i], '  ', ' ')));
+			var currentQuery = StringTools.trim(StringTools.replace(this.db.queries[i], '  ', ' '));
+			
+			if(Std.is(queries[i], String))
+				this.assertEqual(StringTools.trim(StringTools.replace(queries[i], '  ', ' ')), currentQuery);
+			else
+				this.assertPattern(queries[i], currentQuery);
 		}
 	}
 	
