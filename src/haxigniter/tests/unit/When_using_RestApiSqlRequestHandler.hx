@@ -157,7 +157,7 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 		this.assertEqual(expected.length, this.db.queries.length);
 
 		for(i in 0 ... this.db.queries.length)
-			this.assertEqual(StringTools.trim(this.db.queries[i]), StringTools.trim(expected[i]));
+			this.assertEqual(expected[i], StringTools.trim(this.db.queries[i]));
 	}
 
 	
