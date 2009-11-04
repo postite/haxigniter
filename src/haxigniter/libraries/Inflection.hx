@@ -76,7 +76,7 @@ class Inflection
         ~/(^analy)ses$/i,
         ~/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)ses$/i,
         ~/([ti])a$/i,
-        ~/(n)ews$/i,
+        ~/([n])ews$/i, // square brackets are required, otherwise PHP regexp fails!
         ~/(h|bl)ouses$/i,
         ~/(corpse)s$/i,
         ~/(us)es$/i,
