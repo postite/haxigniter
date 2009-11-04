@@ -50,7 +50,7 @@ interface RestApiRequestHandler
 	 * @param	request
 	 * @return
 	 */
-	function handleApiRequest(request : RestApiRequest) : RestApiResponse;
+	function handleApiRequest(request : RestApiRequest, security : RestApiSecurityHandler) : RestApiResponse;
 }
 
 /////////////////////////////////////////////////////////////////////

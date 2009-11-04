@@ -20,6 +20,7 @@ import haxigniter.libraries.Database;
 import haxigniter.controllers.RestApiController;
 import haxigniter.restapi.RestApiRequest;
 import haxigniter.restapi.RestApiResponse;
+import haxigniter.restapi.RestApiSecurityHandler;
 
 import haxigniter.exceptions.RestApiException;
 
@@ -181,20 +182,33 @@ class SelectQuery
 		var sql = 'INNER JOIN ' + rightTable.name + ' ON (';
 		
 		if(direction == SqlJoinDir.parentOnRight)
-			sql += rightTable.name + '.id = ' + leftTable.name + '.' + Inflection.singularize(rightTable.name) + 'Id';
+			sql += rightTable.name + '.id = ' + leftTable.name + '.' + this.singularize(rightTable.name) + 'Id';
 		else
-			sql += rightTable.name + '.' + Inflection.singularize(leftTable.name) + 'Id = ' + leftTable.name + '.id';
+			sql += rightTable.name + '.' + this.singularize(leftTable.name) + 'Id = ' + leftTable.name + '.id';
 		
 		if(rightTable.attributes.length > 0)
 			sql += ' AND ' + rightTable.attributes.join(' AND ');
 			
 		return sql + ')';
 	}
+	
+	private var singularizeCache : Hash<String>;
+	private function singularize(name : String) : String
+	{
+		if(singularizeCache == null)
+			singularizeCache = new Hash<String>();
+		
+		if(!singularizeCache.exists(name))
+			singularizeCache.set(name, Inflection.singularize(name));
+		
+		return singularizeCache.get(name);
+	}
 }
 
 class RestApiSqlRequestHandler implements RestApiRequestHandler
 {
 	private var db : DatabaseConnection;
+	private var security : RestApiSecurityHandler;
 	
 	public function new(db : DatabaseConnection)
 	{
@@ -203,8 +217,10 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 
 	///// RestApiRequestHandler implementation //////////////////////
 
-	public function handleApiRequest(request : RestApiRequest) : RestApiResponse
+	public function handleApiRequest(request : RestApiRequest, security : RestApiSecurityHandler) : RestApiResponse
 	{
+		this.security = security;
+		
 		switch(request.type)
 		{
 			case read:
@@ -267,8 +283,10 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		if(createResource.selectors.length > 0)
 			throw new RestApiException('Ending resource cannot have any selectors in create requests.', RestErrorType.invalidQuery);
 
+		// Test if security allows this request.
+		security.create(createResource.name, request.data, request.queryParameters);
+
 		var data = requestData(request);
-		
 		var output = new Array<Int>();
 
 		if(request.resources.length > 1)
@@ -308,6 +326,9 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		var updateAll : Bool = request.resources.length == 1 && request.resources[0].selectors.length == 0;
 		var tableName = request.resources[request.resources.length - 1].name;
 		
+		// Test if security allows this request.
+		security.update(tableName, ids, request.data, request.queryParameters);
+		
 		if(ids.length > 0 || updateAll)
 		{
 			var query = 'UPDATE ' + tableName + ' SET ';
@@ -343,6 +364,9 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		var deleteAll : Bool = request.resources.length == 1 && request.resources[0].selectors.length == 0;
 		var tableName = request.resources[request.resources.length - 1].name;
 
+		// Test if security allows this request.
+		security.delete(tableName, ids, request.queryParameters);
+
 		if(ids.length > 0 || deleteAll)
 		{
 			var query = 'DELETE FROM ' + tableName;
@@ -360,6 +384,7 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 	public function handleReadRequest(request : RestApiRequest) : RestApiResponse
 	{
 		var query = createSelectQuery(request.resources);
+		var tableName = request.resources[request.resources.length - 1].name;
 		
 		// TODO: Enforce upper limit
 		// TODO: Use SQL_CALC_FOUND_ROWS for the Mysql driver.
@@ -376,6 +401,9 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 			var count = query.count();
 			response = new RestDataCollection(query.offset, query.offset + results.length - 1, count, Lambda.array(results));
 		}
+		
+		// Test if security allows this request.
+		security.read(tableName, response, request.queryParameters);
 		
 		return haxigniter.restapi.RestApiResponse.successData(response);
 	}

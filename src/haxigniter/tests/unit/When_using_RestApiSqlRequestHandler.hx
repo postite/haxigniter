@@ -4,8 +4,10 @@ import haxe.Serializer;
 import haxe.Unserializer;
 import haxigniter.controllers.RestApiController;
 
+import haxigniter.restapi.RestApiInterface;
 import haxigniter.restapi.RestApiSqlRequestHandler;
 import haxigniter.restapi.RestApiFormatHandler;
+import haxigniter.restapi.RestApiSecurityHandler;
 import haxigniter.restapi.RestApiRequest;
 import haxigniter.restapi.RestApiResponse;
 
@@ -26,7 +28,7 @@ class TestRestCreate
 class TestController extends RestApiController
 {
 	public var acceptFailure : String;
-	
+
 	public override function restApiOutput(response : RestApiResponse, outputFormat : RestApiFormat) : RestResponseOutput
 	{
 		switch(response)
@@ -42,18 +44,55 @@ class TestController extends RestApiController
 	}
 }
 
+class TestSecurity implements RestApiSecurityHandler
+{
+	public var restApi : RestApiInterface;	
+	public var lastSecurity : { resource : String, ids : List<Int>, data : Dynamic, parameters : Hash<String> };
+
+	public function new()
+	{}
+	
+	public function install(api : RestApiInterface) : Void
+	{
+		this.restApi = api;
+	}
+	
+	public function create(resourceName : String, data : Dynamic, ?parameters : Hash<String>) : Void
+	{
+		this.lastSecurity = {resource: resourceName, ids: null, data: data, parameters: parameters};
+	}
+	
+	public function read(resourceName : String, data : RestDataCollection, ?parameters : Hash<String>) : Void
+	{
+		this.lastSecurity = {resource: resourceName, ids: null, data: data, parameters: parameters};
+	}
+	
+	public function update(resourceName : String, ids : List<Int>, data : Dynamic, ?parameters : Hash<String>) : Void
+	{
+		this.lastSecurity = {resource: resourceName, ids: ids, data: data, parameters: parameters};
+	}
+	
+	public function delete(resourceName : String, ids : List<Int>, ?parameters : Hash<String>) : Void
+	{
+		this.lastSecurity = {resource: resourceName, ids: ids, data: null, parameters: parameters};
+	}
+}
+
 class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 {
 	var controller : TestController;
 	var handler : RestApiSqlRequestHandler;
+	var security : 	TestSecurity;
+	
 	var db : MockDatabaseConnection;
 	
 	public override function setup()
 	{
 		this.db = new MockDatabaseConnection();
 		this.handler = new RestApiSqlRequestHandler(this.db);
+		this.security = new TestSecurity();
 		
-		this.controller = new TestController(this.handler);
+		this.controller = new TestController(this.security, this.handler);
 		this.controller.noOutput = true;
 	}
 	
@@ -106,6 +145,10 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 			'SELECT bazaars.* FROM bazaars LIMIT 10,999999999',
 			'SELECT COUNT(*) FROM bazaars'
 			]);
+		
+		// Test security
+		this.assertEqual(cast(this.controller, RestApiInterface), this.security.restApi);
+		this.assertEqual('bazaars', this.security.lastSecurity.resource);
 	}
 
 	public function test_Then_read_requests_should_create_proper_sql_for_multiple_resources()
@@ -131,6 +174,8 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 
 		this.request('/bazaars/1/libraries/3/news/5');
 		this.assertQueries(['SELECT news.* FROM news INNER JOIN libraries ON (libraries.id = news.libraryId AND libraries.id = Q*3*Q) INNER JOIN bazaars ON (bazaars.id = libraries.bazaarId AND bazaars.id = Q*1*Q) WHERE news.id = Q*5*Q']);
+
+		this.assertEqual('news', this.security.lastSecurity.resource);
 	}
 
 	public function test_Then_requests_should_detect_joins_automatically()
@@ -153,11 +198,13 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 			'SELECT news.* FROM news INNER JOIN libraries ON (libraries.id = news.libraryId AND libraries.id = Q*8*Q) INNER JOIN bazaars ON (bazaars.id = libraries.bazaarId AND bazaars.id = Q*4*Q)'
 			];
 		// (The last one will not be executed)
-			
+		
 		this.assertEqual(expected.length, this.db.queries.length);
 
 		for(i in 0 ... this.db.queries.length)
 			this.assertEqual(expected[i], StringTools.trim(this.db.queries[i]));
+		
+		// No need to test security here since it failed in the simulated DB error.
 	}
 
 	
@@ -179,6 +226,9 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 			'INSERT INTO libraries (firstname, lastname, bazaarId) VALUES (Q*Boris*Q, Q*Doris*Q, Q*4*Q)'
 			#end
 			]);
+		
+		this.assertEqual('libraries', this.security.lastSecurity.resource);
+		this.assertEqual(Std.string(anon), Std.string(this.security.lastSecurity.data));
 	}
 
 	public function test_Then_create_requests_should_create_proper_sql_for_objects()
@@ -200,6 +250,8 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 			'INSERT INTO news (firstname, lastname, libraryId) VALUES (Q*Boris*Q, Q*Doris*Q, Q*3*Q)'
 			#end
 			]);
+			
+		this.assertEqual('news', this.security.lastSecurity.resource);
 	}
 
 	public function test_Then_create_requests_with_single_resource_should_not_look_for_foreign_keys()
@@ -232,6 +284,9 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 			'UPDATE libraries SET firstname=Q*Boris*Q, lastname=Q*Doris*Q WHERE libraries.id IN(9,8,7)'
 			#end
 			]);
+		
+		this.assertEqual('libraries', this.security.lastSecurity.resource);
+		this.assertEqual(Std.string([9,8,7]), Std.string(Lambda.array(this.security.lastSecurity.ids)));
 	}
 
 	public function test_Then_delete_requests_should_create_proper_sql()
@@ -243,6 +298,8 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 			'SELECT libraries.id FROM libraries INNER JOIN bazaars ON (bazaars.id = libraries.bazaarId AND bazaars.id = Q*15*Q) WHERE libraries.anything = Q*goes*Q',
 			'DELETE FROM libraries WHERE libraries.id IN(123,456)'
 			]);
+		
+		this.assertEqual('libraries', this.security.lastSecurity.resource);
 	}
 	
 	private function assertQueries(queries : Array<Dynamic>)

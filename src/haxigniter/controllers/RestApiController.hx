@@ -19,7 +19,7 @@ import haxigniter.restapi.RestApiFormatHandler;
 
 import haxigniter.exceptions.RestApiException;
 
-class RestApiController extends Controller, implements RestApiFormatHandler
+class RestApiController extends Controller, implements RestApiFormatHandler, implements RestApiInterface
 {
 	public static var commonMimeTypes = {
 		haxigniter: 'application/vnd.haxe.serialized', 
@@ -31,13 +31,13 @@ class RestApiController extends Controller, implements RestApiFormatHandler
 	
 	public var apiRequestHandler : RestApiRequestHandler;
 	public var apiFormatHandler : RestApiFormatHandler;
-	//public var apiAuthorization : RestApiAuthorization;
+	public var apiSecurityHandler : RestApiSecurityHandler;
 
 	public var noOutput : Bool;
 	public var debugMode : DebugLevel;
 	public var logLevel : DebugLevel;
 	
-	public function new(?apiRequestHandler : RestApiRequestHandler, ?apiFormatHandler : RestApiFormatHandler)// , ?apiAuthorization : RestApiAuthorization)
+	public function new(apiSecurityHandler : RestApiSecurityHandler, ?apiRequestHandler : RestApiRequestHandler, ?apiFormatHandler : RestApiFormatHandler)
 	{
 		// If no request handler specified, use a RestApiSqlRequestHandler.
 		if(apiRequestHandler == null)
@@ -54,13 +54,43 @@ class RestApiController extends Controller, implements RestApiFormatHandler
 		else
 			this.apiFormatHandler = apiFormatHandler;
 
-		//this.apiAuthorization = apiAuthorization;
+		// A SecurityHandler must be specified.
+		this.apiSecurityHandler = apiSecurityHandler;
+		this.apiSecurityHandler.install(this);
 		
 		this.logLevel = DebugLevel.error;
 		this.viewTranslations = new Hash<Hash<String>>();
 		this.noOutput = false;
 	}
 	
+	///// RestApiInterface implementation ///////////////////////////
+	
+	public function create(url : String, data : Dynamic, callBack : RestApiResponse -> Void) : Void
+	{
+		restApiRequest(url, data, callBack, RestApiRequestType.create);
+	}
+	
+	public function read(url : String, callBack : RestApiResponse -> Void) : Void
+	{
+		restApiRequest(url, null, callBack, RestApiRequestType.read);
+	}
+	
+	public function update(url : String, data : Dynamic, callBack : RestApiResponse -> Void) : Void
+	{
+		restApiRequest(url, data, callBack, RestApiRequestType.update);
+	}
+	
+	public function delete(url : String, callBack : RestApiResponse -> Void) : Void
+	{
+		restApiRequest(url, null, callBack, RestApiRequestType.delete);
+	}
+	
+	private function restApiRequest(url : String, data : Dynamic, callBack : RestApiResponse -> Void, requestType : RestApiRequestType) : Void
+	{
+		var urlData = parseUrl(url);
+		callBack(sendRequest(urlData.api, requestType, urlData.query, data, urlData.parameters));		
+	}
+
 	///// RestApiFormatHandler implementation ///////////////////////
 
 	// Set in constructor to haxigniter, the only format supported by RestApiController.
@@ -144,7 +174,7 @@ class RestApiController extends Controller, implements RestApiFormatHandler
 				this.trace(request);
 			}
 			
-			var response = apiRequestHandler.handleApiRequest(request);
+			var response = apiRequestHandler.handleApiRequest(request, this.apiSecurityHandler);
 
 			// Debugging
 			if(this.debugMode != null)
@@ -186,7 +216,7 @@ class RestApiController extends Controller, implements RestApiFormatHandler
 		// Test if format is supported by the output handler.
 		if(urlParts.format != null && !Lambda.has(apiFormatHandler.restApiFormats, urlParts.format))
 		{
-			response = RestApiResponse.failure('Invalid output format: ' + urlParts.format, RestErrorType.invalidOutputFormat);
+			response = RestApiResponse.failure('Non-supported format: ' + urlParts.format, RestErrorType.invalidOutputFormat);
 		}
 		else
 		{

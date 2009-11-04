@@ -6,25 +6,52 @@ import haxigniter.tests.TestCase;
 
 import haxigniter.controllers.RestApiController;
 
+import haxigniter.restapi.RestApiInterface;
+import haxigniter.restapi.RestApiSecurityHandler;
 import haxigniter.restapi.RestApiFormatHandler;
 import haxigniter.restapi.RestApiRequest;
 import haxigniter.restapi.RestApiResponse;
 
 import haxigniter.libraries.Request;
 
+class SecurityMock implements RestApiSecurityHandler
+{
+	public function new() {}
+	
+	public function install(api : RestApiInterface) : Void
+	{
+	}
+	
+	public function create(resourceName : String, data : Dynamic, ?parameters : Hash<String>) : Void
+	{
+	}
+	
+	public function read(resourceName : String, data : RestDataCollection, ?parameters : Hash<String>) : Void
+	{
+	}
+	
+	public function update(resourceName : String, ids : List<Int>, data : Dynamic, ?parameters : Hash<String>) : Void
+	{
+	}
+	
+	public function delete(resourceName : String, ids : List<Int>, ?parameters : Hash<String>) : Void
+	{
+	}
+}
+
 class TestRestApi extends haxigniter.controllers.RestApiController, implements RestApiRequestHandler
 {
+	public var lastRequest : RestApiRequest;
+	
 	public function new()
 	{
-		super(this, null);		
+		super(new SecurityMock(), this);
 		this.noOutput = true;
 	}
 	
-	public var lastRequest : RestApiRequest;
-	
 	///// Interface implementation //////////////////////////////////
 	
-	public function handleApiRequest(request : RestApiRequest) : RestApiResponse
+	public function handleApiRequest(request : RestApiRequest, security : RestApiSecurityHandler) : RestApiResponse
 	{
 		this.lastRequest = request;
 		return RestApiResponse.success([]);
@@ -57,7 +84,7 @@ class When_using_RestApiController extends haxigniter.tests.TestCase
 	
 	public override function setup()
 	{
-		this.api = new TestRestApi();		
+		this.api = new TestRestApi();
 		this.oldNs = Request.defaultPackage;
 		
 		Request.defaultPackage = 'haxigniter.tests.unit';
@@ -87,7 +114,7 @@ class When_using_RestApiController extends haxigniter.tests.TestCase
 		
 		this.assertEqual('{}', Std.string(api.lastRequest.queryParameters));
 		this.assertEqual(2, api.lastRequest.resources.length);
-		this.assertEqual(RestApiRequestType.delete, api.lastRequest.type);
+		this.assertEqual(RestApiRequestType.delete, api.lastRequest.type);		
 	}
 
 	public function test_Then_a_request_should_generate_valid_resources()
