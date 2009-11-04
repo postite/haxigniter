@@ -14,6 +14,7 @@ class MockConnection implements Connection
 {
 	public var queries : Array<String>;
 	public var mockResults : Array<Dynamic>;
+	public var mockError : String;
 	
 	public function new()
 	{
@@ -28,9 +29,13 @@ class MockConnection implements Connection
 	public function quote( s : String ) : String { return 'Q*' + s + '*Q'; }
 	
 	public function request( sql : String ) : ResultSet
-	{ 
+	{
 		queries.push(sql);
-		return new MockResultSet(mockResults);
+
+		if(mockError != null)
+			throw mockError;
+		else
+			return new MockResultSet(mockResults);
 	}
 	
 	public function rollback() : Void {}
@@ -40,6 +45,11 @@ class MockConnection implements Connection
 class MockDatabaseConnection extends DatabaseConnection
 {
 	private var mockConnection : MockConnection;
+	
+	public function simulateError(error : String) : Void
+	{
+		this.mockConnection.mockError = error;
+	}
 	
 	public function setMockResults(results : Array<Dynamic>) : Void
 	{

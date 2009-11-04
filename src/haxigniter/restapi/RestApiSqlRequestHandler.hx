@@ -63,31 +63,8 @@ class SelectQuery
 		return output;
 	}
 	
-	public function select(?joins : Array<SqlJoinDir>) : List<Dynamic>
+	private function query(prefix : String, ?joins : Array<SqlJoinDir>, ?useLimit = true, ?joinCount = 1) : ResultSet
 	{
-		return db.query('SELECT ' + tables[0].name + '.* FROM ' + tables[0].name + ' ' + generateQuery(joins)).results();
-	}
-
-	public function ids(?joins : Array<SqlJoinDir>) : List<Int>
-	{
-		var output = new List<Int>();
-		for(id in db.query('SELECT ' + tables[0].name + '.id FROM ' + tables[0].name + ' ' + generateQuery(joins)))
-		{
-			output.add(cast id);
-		}
-		
-		return output;
-	}
-
-	public function count(?joins : Array<SqlJoinDir>) : Int
-	{
-		return db.queryInt('SELECT COUNT(*) FROM ' + tables[0].name + ' ' + generateQuery(joins, false));
-	}
-
-	private function generateQuery(?joins : Array<SqlJoinDir>, ?useLimit = true)
-	{
-		var buffer = new StringBuf();
-
 		if(joins == null)
 		{
 			joins = new Array<SqlJoinDir>();
@@ -95,6 +72,79 @@ class SelectQuery
 			for(i in 0 ... tables.length-1)
 				joins.push(SqlJoinDir.parentOnRight);
 		}
+		
+		var sql = prefix + ' ' + generateQuery(joins, useLimit);
+		
+		try
+		{
+			return db.query(sql);
+		}
+		catch(e : Dynamic)
+		{
+			// Database error, switch the joins one step. (Detecting reversed joins)
+			joinCount = switchJoins(joins, joinCount);			
+			return this.query(prefix, joins, useLimit, joinCount);
+		}
+	}
+	
+	private function switchJoins(joins : Array<SqlJoinDir>, count : Int) : Int
+	{
+		// If counter is above total number of join combinations, throw exception.
+		if(count > joins.length * 2)
+			throw new RestApiException('No valid relations found for query.', RestErrorType.invalidQuery);
+		
+		/* 
+		 Flip each join based on its position and the count:
+		   0 - 000 (First position, not used)
+		   1 - 100
+		   2 - 010
+		   3 - 110
+		   4 - 001
+		   5 - 101
+		   6 - 011
+		   7 - 111
+		*/		   
+		for(i in 0 ... joins.length)
+		{
+			if(count % (i + 1) == 0)
+			{
+				joins[i] = joins[i] == SqlJoinDir.parentOnRight ? SqlJoinDir.parentOnLeft : SqlJoinDir.parentOnRight;
+			}
+		}
+		
+		return count + 1;
+	}
+	
+	public function select() : List<Dynamic>
+	{
+		return this.query('SELECT ' + tables[0].name + '.* FROM ' + tables[0].name, null).results();
+	}
+
+	public function ids() : List<Int>
+	{
+		var output = new List<Int>();
+		for(id in this.query('SELECT ' + tables[0].name + '.id FROM ' + tables[0].name, null))
+		{
+			output.add(cast id);
+		}
+		
+		return output;
+	}
+
+	public function count() : Int
+	{
+		var output = 0;		
+		for(id in this.query('SELECT COUNT(*) FROM ' + tables[0].name, null, false))
+		{
+			output = cast(id, Int);
+		}
+		
+		return output;
+	}
+
+	private function generateQuery(joins : Array<SqlJoinDir>, ?useLimit = true)
+	{
+		var buffer = new StringBuf();
 
 		//trace(this.tables);
 		//trace([start, end, joins].join(' - '));

@@ -25,16 +25,20 @@ class TestRestCreate
 
 class TestController extends RestApiController
 {
+	public var acceptFailure : String;
+	
 	public override function restApiOutput(response : RestApiResponse, outputFormat : RestApiFormat) : RestResponseOutput
 	{
 		switch(response)
 		{
 			case failure(message, errorType):
-				throw response;
+				if(message != acceptFailure)
+					throw response;
 			
 			default:
-				return super.restApiOutput(response, outputFormat);
 		}
+		
+		return super.restApiOutput(response, outputFormat);
 	}
 }
 
@@ -61,7 +65,8 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 	public function test_Then_read_requests_should_create_proper_sql_for_single_resources()
 	{
 		// Set mock result to avoid request failures
-		this.db.setMockResults(['Mock']);
+		// Needs to be an int for COUNT(*)
+		this.db.setMockResults([1]);
 		
 		this.request('/bazaars');
 		this.assertQueries(['SELECT bazaars.* FROM bazaars']);
@@ -106,7 +111,8 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 	public function test_Then_read_requests_should_create_proper_sql_for_multiple_resources()
 	{
 		// Set mock result to avoid request failures
-		this.db.setMockResults(['Mock']);
+		// Needs to be an int for COUNT(*)
+		this.db.setMockResults([1]);
 
 		this.request('/bazaars/4/libraries');
 		this.assertQueries(['SELECT libraries.* FROM libraries INNER JOIN bazaars ON (bazaars.id = libraries.bazaarId AND bazaars.id = Q*4*Q)']);
@@ -126,6 +132,34 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 		this.request('/bazaars/1/libraries/3/news/5');
 		this.assertQueries(['SELECT news.* FROM news INNER JOIN libraries ON (libraries.id = news.libraryId AND libraries.id = Q*3*Q) INNER JOIN bazaars ON (bazaars.id = libraries.bazaarId AND bazaars.id = Q*1*Q) WHERE news.id = Q*5*Q']);
 	}
+
+	public function test_Then_requests_should_detect_joins_automatically()
+	{
+		// Set mock result to avoid request failures
+		// Needs to be an int for COUNT(*)
+		this.db.setMockResults([1]);
+		this.controller.acceptFailure = 'No valid relations found for query.';
+		
+		this.db.simulateError('No join found.');
+
+		this.request('/bazaars/4/libraries/8/news');
+		
+		// When a join fails, the request handler will juggle the joins around, hoping to find a valid one.
+		var expected = [
+			'SELECT news.* FROM news INNER JOIN libraries ON (libraries.id = news.libraryId AND libraries.id = Q*8*Q) INNER JOIN bazaars ON (bazaars.id = libraries.bazaarId AND bazaars.id = Q*4*Q)',
+			'SELECT news.* FROM news INNER JOIN libraries ON (libraries.newsId = news.id AND libraries.id = Q*8*Q) INNER JOIN bazaars ON (bazaars.id = libraries.bazaarId AND bazaars.id = Q*4*Q)',
+			'SELECT news.* FROM news INNER JOIN libraries ON (libraries.id = news.libraryId AND libraries.id = Q*8*Q) INNER JOIN bazaars ON (bazaars.libraryId = libraries.id AND bazaars.id = Q*4*Q)',
+			'SELECT news.* FROM news INNER JOIN libraries ON (libraries.newsId = news.id AND libraries.id = Q*8*Q) INNER JOIN bazaars ON (bazaars.libraryId = libraries.id AND bazaars.id = Q*4*Q)',
+			'SELECT news.* FROM news INNER JOIN libraries ON (libraries.id = news.libraryId AND libraries.id = Q*8*Q) INNER JOIN bazaars ON (bazaars.id = libraries.bazaarId AND bazaars.id = Q*4*Q)'
+			];
+		// (The last one will not be executed)
+			
+		this.assertEqual(expected.length, this.db.queries.length);
+
+		for(i in 0 ... this.db.queries.length)
+			this.assertEqual(StringTools.trim(this.db.queries[i]), StringTools.trim(expected[i]));
+	}
+
 	
 	///// Create, update, delete /////
 	public function test_Then_create_requests_should_create_proper_sql_for_anonymous_objects()
