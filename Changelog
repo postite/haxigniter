@@ -1,5 +1,10 @@
 Changelog for haXigniter
 
+Current
+=======
+Changed
+ - haxigniter.EReg2 moved to haxigniter.libraries.ERegTools. Use EReg for regexps instead.
+
 v0.57 (2009-10-18)
 ==================
 Features

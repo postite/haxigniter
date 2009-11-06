@@ -1,7 +1,7 @@
 package haxigniter.libraries;
 
 import haxigniter.Application;
-import haxigniter.EReg2;
+import haxigniter.libraries.ERegTools;
 
 #if php
 import php.Sys;
@@ -150,7 +150,7 @@ class Url
 	{
 		// Build a regexp from the permitted chars and test it.
 		// Adding slash at the beginning since it's a part of any valid URI.
-		var regexp = '^[/' + EReg2.quoteMeta(config.permittedUriChars) + ']*$';
+		var regexp = '^[/' + ERegTools.quoteMeta(config.permittedUriChars) + ']*$';
 		var validUrl = new EReg(regexp, 'i');
 		
 		if(!validUrl.match(uri))
