@@ -4,6 +4,9 @@ import haxigniter.restapi.RestApiResponse;
 
 typedef RestApiFormat = String;
 
+// The PropertyObject can be an Object with properties or a Hash.
+typedef PropertyObject = Dynamic;
+
 typedef RestResponseOutput = {
 	var contentType : String;
 	var charSet : String;
@@ -23,7 +26,7 @@ interface RestApiFormatHandler
 	 * @param	outputFormat must be in the supportedOutputFormat array.
 	 * @return
 	 */
-	function restApiInput(data : String, inputFormat : RestApiFormat) : Dynamic;
+	function restApiInput(data : String, inputFormat : RestApiFormat) : PropertyObject;
 
 	/**
 	 * Format a response according to an output format.

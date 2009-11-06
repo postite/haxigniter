@@ -2,6 +2,7 @@
 
 import haxigniter.exceptions.RestApiException;
 import haxigniter.restapi.RestApiResponse;
+import haxigniter.restapi.RestApiFormatHandler;
 
 enum RestApiSelectorOperator
 {
@@ -61,9 +62,9 @@ class RestApiRequest
     public var resources(default, null) : Array<RestApiResource>;
     public var apiVersion(default, null) : Int;
 	public var queryParameters(default, null) : Hash<String>;
-    public var data(default, null) : Dynamic; // Any extra data for create/update
+    public var data(default, null) : PropertyObject; // Any extra data for create/update
 
-	public function new(type : RestApiRequestType, resources : Array<RestApiResource>, apiVersion : Int, queryParameters : Hash<String>, ?data : Dynamic)
+	public function new(type : RestApiRequestType, resources : Array<RestApiResource>, apiVersion : Int, queryParameters : Hash<String>, ?data : PropertyObject)
 	{
 		if(type == null)
 			throw new RestApiException('No request type specified.', RestErrorType.invalidRequestType);

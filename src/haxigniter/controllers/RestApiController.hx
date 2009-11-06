@@ -96,7 +96,7 @@ class RestApiController extends Controller, implements RestApiFormatHandler, imp
 	// Set in constructor to haxigniter, the only format supported by RestApiController.
 	public var restApiFormats(default, null) : Array<RestApiFormat>;
 
-	public function restApiInput(data : String, inputFormat : RestApiFormat) : Dynamic
+	public function restApiInput(data : String, inputFormat : RestApiFormat) : PropertyObject
 	{
 		if(data == '') 
 			return null;
@@ -146,7 +146,7 @@ class RestApiController extends Controller, implements RestApiFormatHandler, imp
 	
 	/////////////////////////////////////////////////////////////////
 
-	private function sendRequest(apiVersion : Int, type : RestApiRequestType, query : String, data : Dynamic, queryParameters : Hash<String>) : RestApiResponse
+	private function sendRequest(apiVersion : Int, type : RestApiRequestType, query : String, data : PropertyObject, queryParameters : Hash<String>) : RestApiResponse
 	{
 		// Urldecode the query so it can be parsed.
 		query = StringTools.urlDecode(query);
@@ -228,7 +228,7 @@ class RestApiController extends Controller, implements RestApiFormatHandler, imp
 				rawRequestData = Web.getPostData();
 
 			// Convert the raw request data using the RestApiFormatHandler.
-			var requestData = (rawRequestData != null) ? apiFormatHandler.restApiInput(rawRequestData, urlParts.format) : null;
+			var requestData : PropertyObject = (rawRequestData != null) ? apiFormatHandler.restApiInput(rawRequestData, urlParts.format) : null;
 
 			// Create the request type depending on method
 			var type = switch(method)
