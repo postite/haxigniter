@@ -22,17 +22,20 @@ class Url
 	{
 		if(Url.my_segments == null)
 		{
-			// TODO: Need testing of getURI() on many systems. Is it reliable?
 			var currentUri : String = Web.getURI();
 			
 			// Segments will be accessed in the controller, so it's safe to do the URI test here.
 			if(config.permittedUriChars != null)
 				Url.testValidUri(currentUri);
-				
-			var segmentString : String = currentUri.substr(config.indexPath.length + 1); // +1 for the ending slash
 
-			// Strip empty segment at the end of the string.
-			if(segmentString.charAt(segmentString.length-1) == '/')
+			// Trim the index path and file from the uri to get the segments.
+			var segmentString = currentUri.substr(config.indexPath.length + config.indexFile.length);
+			
+			// Trim segments from slashes
+			if(StringTools.startsWith(segmentString, '/'))
+				segmentString = segmentString.substr(1);
+
+			if(StringTools.endsWith(segmentString, '/'))
 				segmentString = segmentString.substr(0, segmentString.length-1);
 
 			Url.my_segments = segmentString.length > 0 ? segmentString.split('/') : [];
@@ -75,18 +78,7 @@ class Url
 	 */
 	public static function linkUrl() : String
 	{
-		var output = config.indexPath;
-		
-		// Somewhat hacky, but it should work to handle mod_rewrite as well.
-		if(!new EReg('\\.\\w+$', '').match(output))
-		{
-			return (output == '/') ? '' : output;
-		}
-		else
-		{
-			output = haxigniter.libraries.Server.dirname(output);
-			return (output.length == 1) ? '' : output;
-		}
+		return config.indexPath.substr(0, config.indexPath.length - 1);
 	}
 	
 	public static function siteUrl(segments = '') : String

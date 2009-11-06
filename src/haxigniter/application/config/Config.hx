@@ -47,35 +47,47 @@ class Config extends haxigniter.libraries.Config
 		/* ===================================================================== */
 		/* === Paths ============================================================*/
 		/* ===================================================================== */
+
+		/*
+		|--------------------------------------------------------------------------
+		| Index file
+		|--------------------------------------------------------------------------
+		|
+		| Filename of the index file. It can be autodetected for PHP, so leave it
+		| as null unless you're using mod_rewrite (see below). 
+		|
+		| If you're using Neko or autodetection doesn't work, the most common value
+		| is "index.php" for PHP and "index.n" for Neko.
+		|
+		| NOTE: If you are using mod_rewrite to remove the index page, set this 
+		| value to "" (empty string).
+		|
+		*/
+		#if php
+		indexFile = null;
+		#elseif neko
+		indexFile = 'index.n';
+		#end
 		
 		/*
 		|--------------------------------------------------------------------------
-		| Index file web Path
+		| Index path
 		|--------------------------------------------------------------------------
 		|
 		| This is the absolute web path to your index file. Usually for PHP it can 
-		| be autodetected, so you can set it to one of these values:
-		|
-		| 'AUTO'         - Normal autodetection, works in most cases.
-		| 'AUTO_REWRITE' - If you're using mod_rewrite to remove the index page,
-		|                  this setting will take that into consideration.
+		| be autodetected, so you can set leave it as null.
 		|
 		| If you're using Neko or autodetection doesn't work, you must specify it
 		| manually. For example, if the index file is located in the folder 
 		| "haxigniter" on the web server, indexPath should be set to 
-		| "/haxigniter/index.php". If your application is in the root of the web 
-		| server, it will be just "/index.php" (or "/index.n" for Neko).
-		|
-		| If you are using mod_rewrite to remove the index page, set it to "" if
-		| in the root, or "/subdir" if in a subdirectory.
-		|
-		| Note that this path should not end with a slash.
+		| "/haxigniter/". If your application is in the root of the web 
+		| server, it will be just "/". Remember to include a trailing slash.
 		|
 		*/
 		#if php
-		indexPath = 'AUTO';
+		indexPath = null;
 		#elseif neko
-		indexPath = '/index.n';
+		indexPath = '/';
 		#end
 
 		/*

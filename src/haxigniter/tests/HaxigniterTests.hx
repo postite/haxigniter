@@ -8,6 +8,7 @@ import haxigniter.tests.unit.When_using_library_Url;
 import haxigniter.tests.unit.When_using_library_Database;
 import haxigniter.tests.unit.When_using_library_Input;
 import haxigniter.tests.unit.When_using_library_Inflection;
+import haxigniter.tests.unit.When_using_library_Server;
 
 #if php
 import php.Lib;
@@ -21,7 +22,7 @@ import neko.Lib;
  */
 class HaxigniterTests extends haxigniter.tests.TestRunner
 {
-	//new haxigniter.tests.HaxigniterTests().runAndDisplayOnError();
+	//new haxigniter.tests.HaxigniterTests().runAndDisplay();
 	
 	public function new()
 	{
@@ -35,5 +36,6 @@ class HaxigniterTests extends haxigniter.tests.TestRunner
 		this.add(new When_using_library_Url());
 		this.add(new When_using_library_Input());
 		this.add(new When_using_library_Inflection());
+		this.add(new When_using_library_Server());
 	}
 }

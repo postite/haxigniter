@@ -2,8 +2,12 @@ Changelog for haXigniter
 
 Current
 =======
+Features
+ - Added Server.basename(), to get a filename without directory.
+ 
 Changed
  - haxigniter.EReg2 moved to haxigniter.libraries.ERegTools. Use EReg for regexps instead.
+ - config.indexPath split into indexPath and indexFile, to fix the mod_rewrite problem.
 
 v0.57 (2009-10-18)
 ==================
