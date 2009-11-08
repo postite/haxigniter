@@ -40,6 +40,8 @@ class RestDataCollection
 		this.totalCount = totalCount;
 		this.data = data;
 	}
+	
+	public function iterator() { return data.iterator(); }
 }
 
 class RestApiDebug
