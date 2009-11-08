@@ -9,6 +9,7 @@ enum RestErrorType
 	invalidOutputFormat;
 	invalidData;
 	
+	configurationError;	
 	unauthorizedRequest;
 	unknown;
 }
