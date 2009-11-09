@@ -148,19 +148,6 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 		{
 			this.assertPattern(~/No rights found for resource: testResource$/, e.message);
 		}
-
-		// Set one right and test if it passes through now.
-		rights.set('testAgain', null);
-		
-		try
-		{
-			security.create('testAgain', null);
-		}
-		catch(e : String)
-		{
-			// The access fields for the
-			this.assertPattern(~/^Invalid field access : guest$/, e);
-		}
 	}
 
 	public function test_Then_write_requests_fails_if_no_data()
@@ -203,7 +190,7 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 		
 		try
 		{
-			security.create('testResource', null, parameters);
+			security.create('testResource', {name: 'Doris'}, parameters);
 		}
 		catch(e : RestApiException)
 		{
@@ -215,7 +202,7 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 	{
 		rights.set('testResource', {guest: {create: 'ALL', read: 'ALL', update: 'ALL', delete: 'ALL'}, owner: null, admin: null});
 		
-		security.create('testResource', {});
+		security.create('testResource', {name: 'Boris'});
 		//security.read('testResource', null);
 		//security.update('testResource', null, null);
 		//security.delete('testResource', null);
@@ -223,9 +210,23 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 		this.assertTrue(true); // Just passin' through...
 	}
 
+	public function test_Then_no_access_if_not_specified()
+	{
+		rights.set('testResource', {guest: null, owner: null, admin: null});
+		
+		try
+		{
+			security.create('testResource', {name: 'Doris'});
+		}
+		catch(e : RestApiException)
+		{
+			this.assertPattern(~/^Unauthorized access.$/, e.message);
+		}
+	}
+
 	///// Create access /////////////////////////////////////////////
 
-	public function test_Then_admin_has_access_if_null()
+	public function test_Then_admin_has_access_if_rights_is_null()
 	{
 		var self = this;
 		
@@ -238,10 +239,7 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 			return RestApiResponse.successData(new RestDataCollection(0, 0, 1, [{id: 1, isAdmin: 1}]));
 		}
 		
-		// Input data is not needed since admin has full access by default.
-		security.create('testResource', null, parameters);
-		
-		this.assertTrue(true); // Just passin' through...
+		security.create('testResource', {name: 'Boris'}, parameters);
 	}
 	
 	public function test_Then_owner_has_write_access_if_specified_for_foreign_keys()
@@ -258,8 +256,10 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 			return RestApiResponse.successData(new RestDataCollection(0, 0, 1, [{id: 1, name: 'Boris'}]));
 		}
 		
-		security.create('libraries', data, parameters);		
+		security.create('libraries', data, parameters);
+		
 		this.assertEqual(1, data.userId);
+		this.assertEqual('ABC', data.name);
 	}
 
 	public function test_Then_owner_has_access_if_specified_for_foreign_keys_and_multiple_resources()
@@ -316,7 +316,7 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 			return RestApiResponse.successData(new RestDataCollection(0, 0, 1, [{id: 123, name: 'Doris'}]));
 		}
 		
-		security.create('users', {}, parameters);
+		security.create('users', {name: 'Boris'}, parameters);
 	}
 
 	public function test_Then_guest_has_write_access_to_specific_fields_when_specified()
@@ -327,7 +327,7 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 		rights.set('news', { guest: {create: ['name', 'count']}, owner: null, admin: null } );		
 
 		security.create('news', data, null);
-		this.assertEqual(1,1);
+		this.assertTrue(true);
 	}
 
 	public function test_Then_guest_has_write_access_to_field_subset_when_specified()
@@ -338,7 +338,7 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 		rights.set('news', { guest: {create: ['name', 'count']}, owner: null, admin: null } );		
 
 		security.create('news', data, null);
-		this.assertEqual(1,1);
+		this.assertTrue(true);
 	}
 
 	public function test_Then_guest_cannot_write_to_unspecified_fields()
