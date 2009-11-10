@@ -147,7 +147,7 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 			}
 			
 			data[i] = filtered;
-		}
+		}		
 	}
 
 	private function accessArray(access : Dynamic) : Array<String>
@@ -284,6 +284,7 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 	private function accessFor(type : RestApiRequestType, access : Dynamic) : Dynamic
 	{
 		if(access == null) return null;
+		if(access == 'ALL') return 'ALL';
 		
 		var typeString = Std.string(type);
 		return Reflect.hasField(access, typeString) ? Reflect.field(access, typeString) : null;
@@ -302,46 +303,34 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 			throw new RestApiException('No request data found!', RestErrorType.invalidData);
 
 		var self = this;
+		
+		var testWriteAccess = function(access : Dynamic) : Bool
+		{
+			self.testWriteAccess(access, data);
+			return true;			
+		}
 
 		requestAccess(resourceName, parameters, RestApiRequestType.create,
-			function(access : Dynamic) : Bool
-			{
-				// Admin has full access so set it to ALL if no rights is set.
-				self.testWriteAccess(access == null ? 'ALL' : access, data);
-				return true;
-			},
+			testWriteAccess,
 			
 			function(access : Dynamic) : Bool
 			{
 				// An owner must have a parent resource specified to determine the foreign key (ownership key)
 				if(parentResource == null || parentId == null) return false;
 
-				if(access != null)
-				{
-					self.testWriteAccess(access, data);
-					
-					// If data access was ok, add foreign key to data if needed.
-					if(self.testDataOwnership(resourceName, [parentId], true))
-					{
-						self.setDataOwnership(data, parentResource, parentId);
-						return true;
-					}
-				}
+				self.testWriteAccess(access, data);
 				
-				return false;
-			},
-			
-			function(access : Dynamic) : Bool
-			{
-				if(access != null)
+				// If data access was ok, add foreign key to data if needed.
+				if(self.testDataOwnership(resourceName, [parentId], true))
 				{
-					// Got access, now test if the data is valid.
-					self.testWriteAccess(access, data);
+					self.setDataOwnership(data, parentResource, parentId);
 					return true;
 				}
 				else
 					return false;
-			}
+			},
+			
+			testWriteAccess
 		);		
 	}
 	
@@ -349,35 +338,24 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 	{
 		var self = this;
 		
+		var filterReadAccess = function(access : Dynamic) : Bool
+		{
+			self.filterReadAccess(access, data.data);
+			return true;
+		}
+		
 		requestAccess(resourceName, parameters, RestApiRequestType.read,
+			filterReadAccess,
+		
 			function(access : Dynamic) : Bool
 			{
-				// Admin has full access so set it to ALL if no rights is set.
-				self.filterReadAccess(access == null ? 'ALL' : access, data.data);
-				return true;
-			},
-			
-			function(access : Dynamic) : Bool
-			{
-				if(access != null && self.testDataOwnership(resourceName, self.mapIds(data), false))
-				{
-					self.filterReadAccess(access, data.data);
-					return true;
-				}
+				if(self.testDataOwnership(resourceName, self.mapIds(data), false))
+					return filterReadAccess(access);
 				else
 					return false;
 			},
 			
-			function(access : Dynamic) : Bool
-			{
-				if(access != null)
-				{
-					self.filterReadAccess(access, data.data);
-					return true;
-				}
-				else
-					return false;
-			}
+			filterReadAccess
 		);
 	}
 	
@@ -437,19 +415,19 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 		if(this.isAdmin)
 		{
 			access = this.accessFor(type, rights.admin);
-			if(adminAuthorized(access)) return;
+			if(access != null && adminAuthorized(access)) return;
 		}
 		
 		if(this.ownerID != null)
 		{
 			access = this.accessFor(type, rights.owner);
-			if(ownerAuthorized(access)) return;
+			if(access != null && ownerAuthorized(access)) return;
 		}
 		
 		// It's determined that the user is not admin nor owner of the requested data.
 		// Make a final attempt with guest access.
 		access = this.accessFor(type, rights.guest);
-		if(guestAuthorized(access)) return;
+		if(access != null && guestAuthorized(access)) return;
 		
 		this.authorizationFailed();
 	}

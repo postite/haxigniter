@@ -6,6 +6,8 @@ import haxigniter.restapi.RestApiConfigSecurityHandler;
 import haxigniter.restapi.RestApiInterface;
 import haxigniter.restapi.RestApiResponse;
 
+using haxigniter.libraries.IterableTools;
+
 class MockApiInterface implements RestApiInterface
 {
 	public var requests : Array<String -> RestApiResponse>;
@@ -24,8 +26,8 @@ class MockApiInterface implements RestApiInterface
 	
 	public function read(url : String, callBack : RestApiResponse -> Void) : Void
 	{
-		if(count > requests.length)
-			throw 'Expected only ' + count + ' requests for MockApiInterface.';
+		if(count >= requests.length)
+			throw 'Expected only ' + count + ' request(s) for MockApiInterface.';
 		
 		callBack(this.requests[count++](url));		
 	}
@@ -205,7 +207,7 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 		rights.set('testResource', {guest: {create: 'ALL', read: 'ALL', update: 'ALL', delete: 'ALL'}, owner: null, admin: null});
 		
 		security.create('testResource', {name: 'Boris'});
-		//security.read('testResource', null);
+		security.read('testResource', new RestDataCollection(0, 0, 1, [{id: 456, name: 'Boris'}]));
 		//security.update('testResource', null, null);
 		//security.delete('testResource', null);
 		
@@ -228,11 +230,34 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 
 	///// Create access /////////////////////////////////////////////
 
-	public function test_Then_admin_has_access_if_rights_is_null()
+	public function test_Then_admin_has_no_access_if_not_specified()
 	{
 		var self = this;
 		
 		rights.set('testResource', { guest: null, owner: null, admin: null } );
+
+		// User is admin in this case, so request is good.
+		this.api.requests[0] = function(url : String) : RestApiResponse
+		{
+			self.assertEqual('/?/USERS/[USER="User"][PASS="Pass\\"word"]', url);
+			return RestApiResponse.successData(new RestDataCollection(0, 0, 1, [{id: 1, isAdmin: 1}]));
+		}
+		
+		try
+		{
+			security.create('testResource', {name: 'Doris'});
+		}
+		catch(e : RestApiException)
+		{
+			this.assertPattern(~/^Unauthorized access.$/, e.message);
+		}
+	}
+
+	public function test_Then_admin_has_access_if_specified()
+	{
+		var self = this;
+		
+		rights.set('testResource', { guest: null, owner: null, admin: 'ALL' } );
 
 		// User is admin in this case, so request is good.
 		this.api.requests[0] = function(url : String) : RestApiResponse
@@ -389,4 +414,90 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 	}
 
 	///// Read access ///////////////////////////////////////////////
+	
+	public function test_Then_ALL_rights_gives_read_access_to_all_fields()
+	{
+		var self = this;
+		var data = new RestDataCollection(0, 0, 1, [ { id: 1, firstname: 'Boris', lastname: 'Doris' } ]);
+		
+		rights.set('testResource', { guest: {read: 'ALL'}, owner: null, admin: null } );
+		security.read('testResource', data, parameters);
+		
+		this.assertEqualObjects({ id: 1, firstname: 'Boris', lastname: 'Doris' }, data.data[0]);
+	}
+
+	public function test_Then_array_rights_gives_read_access_to_specified_fields()
+	{
+		var self = this;
+		var data = new RestDataCollection(0, 0, 1, [ { id: 1, firstname: 'Boris', lastname: 'Doris' } ]);
+		
+		rights.set('testResource', { guest: {read: ['id', 'firstname']}, owner: null, admin: null } );
+		security.read('testResource', data, parameters);
+		
+		this.assertEqualObjects({ id: 1, firstname: 'Boris' }, data.data[0]);
+	}
+
+	public function test_Then_owner_must_own_the_resources_for_read_access()
+	{
+		var self = this;
+		
+		var smalldata = new RestDataCollection(0, 0, 1, [ { id: 2, firstname: 'Justin', lastname: 'Case' } ]);
+		var data = new RestDataCollection(0, 0, 1, [ { id: 1, firstname: 'Boris', lastname: 'Doris' }, { id: 2, firstname: 'Justin', lastname: 'Case' } ]);
+		
+		rights.set('news', { guest: null, owner: { read: ['id', 'firstname'] }, admin: null } );
+		ownerships[0] = ['users', 'libraries', 'news'];
+
+		this.api.requests[1] = function(url : String) : RestApiResponse
+		{
+			self.assertEqual('/?/users/123/libraries//news', url);
+			return RestApiResponse.successData(data);
+		}
+
+		security.read('news', smalldata, parameters);
+		
+		this.assertEqual(smalldata.totalCount, 1);
+		this.assertEqualObjects( { id: 2, firstname: 'Justin' }, smalldata.data[0]);
+	}
+
+	public function test_Then_if_owner_requests_more_than_he_owns_error_is_thrown()
+	{
+		var self = this;
+		
+		var smalldata = new RestDataCollection(0, 0, 1, [ { id: 2, firstname: 'Justin', lastname: 'Case' } ]);
+		var data = new RestDataCollection(0, 0, 1, [ { id: 1, firstname: 'Boris', lastname: 'Doris' }, { id: 2, firstname: 'Justin', lastname: 'Case' } ]);
+		
+		rights.set('news', { guest: null, owner: { read: ['id', 'firstname'] }, admin: null } );
+		ownerships[0] = ['users', 'libraries', 'news'];
+
+		this.api.requests[1] = function(url : String) : RestApiResponse
+		{
+			self.assertEqual('/?/users/123/libraries//news', url);
+			return RestApiResponse.successData(smalldata);
+		}
+
+		try
+		{
+			security.read('news', data, parameters);
+		}
+		catch(e : RestApiException)
+		{
+			this.assertPattern(~/Unauthorized access.$/, e.message);
+		}
+	}
+
+	/////////////////////////////////////////////////////////////////
+	
+	private function assertEqualObjects(o1 : Dynamic, o2 : Dynamic)
+	{
+		var f1 = Reflect.fields(o1);
+		var f2 = Reflect.fields(o2);
+		
+		this.assertEqual(f1.length, f2.length);
+		this.assertTrue(f1.isSubsetOf(f2));
+		
+		for(field in f1)
+		{
+			this.assertEqual(Reflect.field(o1, field), Reflect.field(o2, field));
+		}
+	}
 }
