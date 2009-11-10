@@ -5,6 +5,7 @@ import haxigniter.restapi.RestApiConfigSecurityHandler;
 
 import haxigniter.restapi.RestApiInterface;
 import haxigniter.restapi.RestApiResponse;
+import haxigniter.restapi.RestApiFormatHandler;
 
 using haxigniter.libraries.IterableTools;
 
@@ -53,6 +54,7 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 	private var security : RestApiConfigSecurityHandler;
 	private var rights : SecurityRights;
 	private var ownerships : Ownerships;
+	private var callbacks : Dynamic;
 	
 	public override function setup()
 	{
@@ -60,6 +62,7 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 
 		this.rights = new SecurityRights();
 		this.ownerships = new Ownerships();
+		this.callbacks = {};
 
 		this.api = new MockApiInterface();
 		this.api.requests[0] = function(url : String) : RestApiResponse
@@ -72,7 +75,7 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 		parameters.set('username', 'User');
 		parameters.set('password', 'Pass"word');
 
-		security = new RestApiConfigSecurityHandler(rights, ownerships);
+		security = new RestApiConfigSecurityHandler(rights, ownerships, callbacks);
 		
 		security.userNameField = 'USER';
 		security.userPasswordField = 'PASS';
@@ -99,6 +102,8 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 		Reflect.setField(security, 'ownerships', ownerships);
 	}
 
+	/////////////////////////////////////////////////////////////////
+	
 	public function test_Then_callbacks_must_have_valid_names()
 	{
 		try
@@ -626,6 +631,86 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 		}
 	}
 
+	///// Test callbacks ////////////////////////////////////////////
+	
+	public function test_Then_guest_callbacks_should_work_when_specified()
+	{
+		var self = this;
+		
+		Reflect.setField(this.callbacks, 'guestCreateNews', function(restApi : RestApiInterface, data : PropertyObject, ?parentResource : String, ?parentId : Int, ?parameters : Hash<String>) {
+			self.assertEqualObjects(data, { name: 'ABC', count: 123 } );
+		});
+		
+		rights.set('news', { guest: 'ALL', owner: null, admin: null } );
+
+		security.create('news', { name: 'ABC', count: 123 }, null);
+	}
+
+	public function test_Then_guest_callbacks_should_throw_exception_when_failing()
+	{
+		var self = this;
+		
+		Reflect.setField(this.callbacks, 'guestCreateNews', function(restApi : RestApiInterface, data : PropertyObject, ?parentResource : String, ?parentId : Int, ?parameters : Hash<String>) {
+			throw new RestApiException('Test error', RestErrorType.invalidData);
+		});
+		
+		rights.set('news', { guest: 'ALL', owner: null, admin: null } );
+
+		try
+		{
+			security.create('news', { name: 'ABC', count: 123 }, null);
+		}		
+		catch(e : RestApiException)
+		{
+			this.assertEqual('Test error', e.message);
+		}
+	}
+
+	#if neko
+	public function test_Then_callbacks_should_throw_RestApiException_when_incorrect_parameters()
+	{
+		var self = this;
+		
+		Reflect.setField(this.callbacks, 'guestCreateNews', function(restApi : RestApiInterface, data : String) {
+			// Doing nothing but has invalid parameters.
+		});
+		
+		rights.set('news', { guest: 'ALL', owner: null, admin: null } );
+
+		try
+		{
+			security.create('news', { name: 'ABC', count: 123 }, null);
+		}		
+		catch(e : RestApiException)
+		{
+			this.assertEqual('Invalid parameters for callback "guestCreateNews".', e.message);
+		}
+	}
+	#end
+
+	public function test_Then_owner_callbacks_should_work_when_specified()
+	{
+		var self = this;
+		
+		Reflect.setField(this.callbacks, 'ownerCreateNews', function(restApi : RestApiInterface, data : PropertyObject, ?parentResource : String, ?parentId : Int, ?parameters : Hash<String>) {
+			self.assertEqual(3, parentId);
+			self.assertEqual('libraries', parentResource);
+			self.assertEqualObjects({ name: 'ABC', count: 456, libraryId: 3 }, data);
+		});
+
+		rights.set('news', { guest: null, owner: { create: 'ALL' }, admin: null } );
+		ownerships[0] = ['users', 'libraries', 'news'];
+
+		var data = new RestDataCollection(0, 0, 1, [ { id: 3, name: 'TestLibrary' } ]);
+		this.api.requests[1] = function(url : String) : RestApiResponse
+		{
+			self.assertEqual('/?/users/123/libraries', url);
+			return RestApiResponse.successData(data);
+		}
+
+		security.create('news', { name: 'ABC', count: 456 }, 'libraries', 3, parameters);
+	}
+	
 	/////////////////////////////////////////////////////////////////
 	
 	private function assertEqualObjects(o1 : Dynamic, o2 : Dynamic)

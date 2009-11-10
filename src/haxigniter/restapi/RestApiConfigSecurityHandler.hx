@@ -1,5 +1,11 @@
 ﻿package haxigniter.restapi;
 
+#if php
+import php.Lib;
+#elseif neko
+import neko.Lib;
+#end
+
 import haxe.PosInfos;
 import haxigniter.exceptions.RestApiException;
 
@@ -13,12 +19,6 @@ using haxigniter.libraries.IterableTools;
 
 /////////////////////////////////////////////////////////////////////
 
-enum UserType {
-	guest;
-	owner;
-	admin;
-}
-
 typedef UserRights = {
 	var guest : Dynamic;
 	var owner : Dynamic;
@@ -28,11 +28,6 @@ typedef UserRights = {
 typedef Ownerships = Array<Array<String>>;
 typedef SecurityRights = Hash<UserRights>;
 typedef AnonymousObject = Dynamic;
-
-typedef CreateCallback = RestApiInterface -> PropertyObject -> Hash<String> -> Void;
-typedef ReadCallback = RestApiInterface -> RestDataCollection -> Hash<String> -> Void;
-typedef UpdateCallback = RestApiInterface -> List<Int> -> PropertyObject -> Hash<String> -> Void;
-typedef DeleteCallback = RestApiInterface -> List<Int> -> Hash<String> -> Void;
 
 /////////////////////////////////////////////////////////////////////
 
@@ -169,9 +164,14 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 		
 		var resourcePos = table.arraySearch(resourceName);
 		if(resourcePos == null) return null;
-			
+		
 		// If a create request is made, strip the last table since the request should get the foreign key.
-		var requestTable = createRequest ? table.slice(1, resourcePos) : table.slice(1, resourcePos+1);
+		var requestTable : Array<String>;
+		
+		if(resourcePos > 0)
+			requestTable = createRequest ? table.slice(1, resourcePos) : table.slice(1, resourcePos + 1);
+		else
+			requestTable = [];
 		
 		// [users, libraries, news] becomes /?/users/ownerID/libraries//news
 		return '/?/' + table[0] + '/' + this.ownerID + '/' + requestTable.join('//');
@@ -182,9 +182,11 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 		return Lambda.map(data, function(row : Dynamic) {
 			if(!Reflect.hasField(row, 'id'))
 				throw new RestApiException('Field "id" not found when mapping ids.', RestErrorType.configurationError);
+			else if(Std.is(row.id, Int))
+				return untyped row.id;
 			else
-				return cast(row.id, Int);
-		});		
+				throw new RestApiException('Field "id" is not an integer.', RestErrorType.configurationError);
+		});
 	}
 	
 	private var requestIdsCache : Hash<List<Int>>;
@@ -204,13 +206,13 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 				{
 					case successData(responseData):
 						self.requestIdsCache.set(request, self.mapIds(responseData));
-					
+						
 					default:
 						throw new RestApiException('Ids request failed.', RestErrorType.unknown);
 				}
 			});
 		}
-		
+
 		return this.requestIdsCache.get(request);
 	}
 	
@@ -227,7 +229,7 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 
 		for(ownerTable in this.ownerships)
 		{
-			var request = buildOwnerRequest(resourceName, ownerTable, createRequest);
+			var request = buildOwnerRequest(resourceName, ownerTable, createRequest);			
 			if(request == null) continue;
 			
 			return ids.isSubsetOf(this.requestIds(request));
@@ -330,7 +332,12 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 					return false;
 			},
 			
-			testWriteAccess
+			testWriteAccess,
+			
+			function(callBack : Dynamic) : Void
+			{
+				callBack(self.restApi, data, parentResource, parentId, parameters);
+			}
 		);		
 	}
 	
@@ -355,7 +362,12 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 					return false;
 			},
 			
-			filterReadAccess
+			filterReadAccess,
+			
+			function(callBack : Dynamic) : Void
+			{
+				callBack(self.restApi, data, parameters);
+			}
 		);
 	}
 	
@@ -378,7 +390,12 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 				return self.testDataOwnership(resourceName, ids, false);
 			},
 			
-			testWriteAccess
+			testWriteAccess,
+
+			function(callBack : Dynamic) : Void
+			{
+				callBack(self.restApi, ids, data, parameters);
+			}
 		);
 	}
 	
@@ -396,7 +413,12 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 				return self.testDataOwnership(resourceName, ids, false);
 			},
 			
-			allowDeleteAccess
+			allowDeleteAccess,
+
+			function(callBack : Dynamic) : Void
+			{
+				callBack(self.restApi, ids, parameters);
+			}
 		);
 	}
 	
@@ -404,7 +426,9 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 	
 	/////////////////////////////////////////////////////////////////
 
-	private function requestAccess(resourceName : String, parameters : Hash<String>, type : RestApiRequestType, adminAuthorized : Dynamic -> Bool, ownerAuthorized : Dynamic -> Bool, guestAuthorized : Dynamic -> Bool) : Void
+	private function requestAccess(resourceName : String, parameters : Hash<String>, type : RestApiRequestType, 
+									adminAuthorized : Dynamic -> Bool, ownerAuthorized : Dynamic -> Bool, guestAuthorized : Dynamic -> Bool,
+									callBack : Dynamic -> Void) : Void
 	{
 		var rights : UserRights = this.dataResourceCheck(resourceName);
 		var access : Dynamic;
@@ -414,20 +438,59 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 		if(this.isAdmin)
 		{
 			access = this.accessFor(type, rights.admin);
-			if(access != null && adminAuthorized(access)) return;
+			if(access != null && adminAuthorized(access))
+			{
+				testCallback(resourceName, type, 'admin', callBack);
+				return;
+			}
 		}
 		
 		if(this.ownerID != null)
 		{
 			access = this.accessFor(type, rights.owner);
-			if(access != null && ownerAuthorized(access)) return;
+			if(access != null && ownerAuthorized(access))
+			{
+				testCallback(resourceName, type, 'owner', callBack);
+				return;
+			}
 		}
 		
 		// It's determined that the user is not admin nor owner of the requested data.
 		// Make a final attempt with guest access.
 		access = this.accessFor(type, rights.guest);
-		if(access != null && guestAuthorized(access)) return;
+		if(access != null && guestAuthorized(access))
+		{
+			testCallback(resourceName, type, 'guest', callBack);
+			return;
+		}
 		
 		this.authorizationFailed();
+	}
+	
+	private function testCallback(resourceName : String, type: RestApiRequestType, user: String, callBack : Dynamic -> Void) : Void
+	{
+		var typeString = Std.string(type);
+		var methodName = user.toLowerCase() + typeString.substr(0, 1).toUpperCase() + typeString.substr(1) + resourceName.substr(0, 1).toUpperCase() + resourceName.substr(1);
+
+		if(!Reflect.hasField(this.callbacks, methodName))
+			return;
+		else
+		{
+			#if php
+			callBack(Reflect.field(this.callbacks, methodName));
+			#elseif neko
+			try
+			{
+				callBack(Reflect.field(this.callbacks, methodName));
+			}
+			catch(e : String)
+			{
+				if(e == 'Invalid call')
+					throw new RestApiException('Invalid parameters for callback "' + methodName + '".', RestErrorType.configurationError);
+				else
+					Lib.rethrow(e);
+			}
+			#end
+		}
 	}
 }
