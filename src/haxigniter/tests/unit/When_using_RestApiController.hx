@@ -22,7 +22,7 @@ class SecurityMock implements RestApiSecurityHandler
 	{
 	}
 	
-	public function create(resourceName : String, data : Dynamic, ?parameters : Hash<String>) : Void
+	public function create(resourceName : String, data : Dynamic, ?parentResource : String, ?parentId : Int, ?parameters : Hash<String>) : Void
 	{
 	}
 	

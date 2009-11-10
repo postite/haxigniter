@@ -57,7 +57,7 @@ class TestSecurity implements RestApiSecurityHandler
 		this.restApi = api;
 	}
 	
-	public function create(resourceName : String, data : Dynamic, ?parameters : Hash<String>) : Void
+	public function create(resourceName : String, data : Dynamic, ?parentResource : String, ?parentId : Int, ?parameters : Hash<String>) : Void
 	{
 		this.lastSecurity = {resource: resourceName, ids: null, data: data, parameters: parameters};
 	}

@@ -283,9 +283,6 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		if(createResource.selectors.length > 0)
 			throw new RestApiException('Ending resource cannot have any selectors in create requests.', RestErrorType.invalidQuery);
 
-		// Test if security allows this request.
-		security.create(createResource.name, request.data, request.queryParameters);
-
 		var data = requestData(request);
 		var output = new Array<Int>();
 
@@ -293,10 +290,15 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		{
 			// Create a select query based on everything up to (but not including) the last resource, to get the ids for the foreign key.
 			var query = createSelectQuery(request.resources.slice(0, -1));
-			var foreignKey = Inflection.singularize(request.resources[request.resources.length-2].name) + 'Id';
+			
+			var parentResource = request.resources[request.resources.length - 2].name;
+			var foreignKey = Inflection.singularize(parentResource) + 'Id';
 
 			for(id in query.ids())
 			{
+				// Test if security allows this request.
+				security.create(createResource.name, request.data, parentResource, id, request.queryParameters);
+
 				data.set(foreignKey, Std.string(id));
 				
 				db.insert(createResource.name, data);
@@ -305,6 +307,9 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		}
 		else
 		{
+			// Test if security allows this request.
+			security.create(createResource.name, request.data, null, null, request.queryParameters);
+
 			db.insert(createResource.name, data);
 			output.push(db.lastInsertId());
 		}

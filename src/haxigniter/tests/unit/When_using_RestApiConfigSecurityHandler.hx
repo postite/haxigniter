@@ -119,7 +119,7 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 		}
 		catch(e : RestApiException)
 		{
-			this.assertPattern(~/No rights found for resource: testResource$/, e.message);
+			this.assertPattern(~/No request data found!$/, e.message);
 		}
 
 		try
@@ -131,6 +131,7 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 			this.assertPattern(~/No rights found for resource: testResource$/, e.message);
 		}
 
+		/*
 		try
 		{
 			security.update('testResource', null, null);
@@ -148,6 +149,7 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 		{
 			this.assertPattern(~/No rights found for resource: testResource$/, e.message);
 		}
+		*/
 	}
 
 	public function test_Then_write_requests_fails_if_no_data()
@@ -250,15 +252,42 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 		rights.set('libraries', { guest: null, owner: {create: 'ALL'}, admin: null } );		
 		ownerships[0] = ['users', 'libraries'];
 
+		// Current ownerID is 123.
+		// The security check returns a user with incorrect ID:
 		this.api.requests[1] = function(url : String) : RestApiResponse
 		{
 			self.assertEqual('/?/users/123/', url);
-			return RestApiResponse.successData(new RestDataCollection(0, 0, 1, [{id: 1, name: 'Boris'}]));
+			return RestApiResponse.successData(new RestDataCollection(0, 0, 1, [{id: 456, name: 'Boris'}]));
 		}
 		
-		security.create('libraries', data, parameters);
+		try
+		{
+			// Try to add something to users with incorrect id.
+			security.create('libraries', data, 'users', 1, parameters);
+		}
+		catch(e : RestApiException)
+		{
+			this.assertPattern(~/^Unauthorized access.$/, e.message);
+		}
 		
-		this.assertEqual(1, data.userId);
+		// Returns a user with correct ID this time. OwnerID is now 456.
+		this.api.requests[2] = function(url : String) : RestApiResponse
+		{
+			self.assertEqual('/?/USERS/[USER="User"][PASS="Pass\\"word"]', url);
+			return RestApiResponse.successData(new RestDataCollection(0, 0, 1, [{id: 456, isAdmin: 0}]));
+		}
+		
+		// The return value from the security check now matches the ownerID:
+		this.api.requests[3] = function(url : String) : RestApiResponse
+		{
+			self.assertEqual('/?/users/456/', url);
+			return RestApiResponse.successData(new RestDataCollection(0, 0, 1, [{id: 456, name: 'Boris'}]));
+		}
+		
+		// Creating a library with users as parent table.
+		security.create('libraries', data, 'users', 456, parameters);
+		
+		this.assertEqual(456, data.userId);
 		this.assertEqual('ABC', data.name);
 	}
 
@@ -267,42 +296,20 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 		var self = this;
 		var data : Dynamic = { name: 'ABC' };
 		
-		rights.set('news', { guest: null, owner: {create: 'ALL'}, admin: null } );		
+		rights.set('news', { guest: null, owner: {create: 'ALL'}, admin: null } );
 		ownerships[0] = ['users', 'libraries', 'news'];
 
 		this.api.requests[1] = function(url : String) : RestApiResponse
 		{
 			self.assertEqual('/?/users/123/libraries', url);
-			return RestApiResponse.successData(new RestDataCollection(0, 0, 1, [{id: 2, name: 'Boris'}]));
+			return RestApiResponse.successData(new RestDataCollection(0, 0, 1, [{id: 1, name: 'Boris'}, {id:2, name: 'Doris'}]));
 		}
-		
-		security.create('news', data, parameters);		
+
+		// Now the ID must be included in the above resultset or access is denied.
+		security.create('news', data, 'libraries', 2, parameters);
 		this.assertEqual(2, data.libraryId);
 	}
 
-	public function test_Then_owner_has_access_if_specified_for_primary_keys()
-	{
-		var self = this;
-		
-		rights.set('users', { guest: null, owner: {create: 'ALL'}, admin: null } );		
-		ownerships[0] = ['users'];
-
-		this.api.requests[1] = function(url : String) : RestApiResponse
-		{
-			self.assertEqual('/?/users/123/', url);
-			return RestApiResponse.successData(new RestDataCollection(0, 0, 1, [{id: 123, name: 'Doris'}]));
-		}
-		
-		// Do the test.
-		var data : Hash<String> = new Hash<String>();
-		data.set('name', 'ABC');
-		
-		security.create('users', data, parameters);
-		
-		this.assertEqual(data.get('name'), 'ABC');
-		this.assertFalse(data.exists('id'));
-	}
-	
 	public function test_Then_owner_has_access_if_specified_for_subset_of_ownerships()
 	{
 		var self = this;
@@ -316,7 +323,30 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 			return RestApiResponse.successData(new RestDataCollection(0, 0, 1, [{id: 123, name: 'Doris'}]));
 		}
 		
-		security.create('users', {name: 'Boris'}, parameters);
+		security.create('users', {name: 'Boris'}, 'libraries', 123, parameters);
+	}
+
+	public function test_Then_guest_rights_is_used_if_owner_access_fails()
+	{
+		var self = this;
+		
+		rights.set('users', { guest: {create: ['name']}, owner: null, admin: null } );		
+		ownerships[0] = ['users', 'libraries', 'news'];
+
+		this.api.requests[0] = function(url : String) : RestApiResponse
+		{
+			self.assertEqual('/?/USERS/[USER="User"][PASS="Pass\\"word"]', url);
+			return RestApiResponse.successData(new RestDataCollection(0, 0, 1, [{id: 999, name: "Valid user but no access rights exists."}]));
+		}
+
+		try
+		{
+			security.create('users', { name: 'Boris', count: 123 }, parameters);
+		}
+		catch(e : RestApiException)
+		{
+			this.assertPattern(~/Unauthorized access to fields "count".$/, e.message);
+		}
 	}
 
 	public function test_Then_guest_has_write_access_to_specific_fields_when_specified()

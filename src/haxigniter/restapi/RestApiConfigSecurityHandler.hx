@@ -9,6 +9,8 @@ import haxigniter.restapi.RestApiRequest;
 import haxigniter.restapi.RestApiResponse;
 import haxigniter.restapi.RestApiFormatHandler;
 
+using haxigniter.libraries.IterableTools;
+
 /////////////////////////////////////////////////////////////////////
 
 enum UserType {
@@ -59,6 +61,13 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 		
 		if(ownerships == null)
 			ownerships = [];
+		else
+		{
+			// Test ownership table for valid resources
+			for(ownership in ownerships)
+				if(ownerships.length < 2)
+					throw new RestApiException('Single or empty ownership relations is not possible.', RestErrorType.configurationError);
+		}
 			
 		if(callbacks != null)
 		{
@@ -93,106 +102,74 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 	 * @param	data
 	 * @return
 	 */
-	private function dataAccessCheck(access : Dynamic, data : Array<PropertyObject>, writeAccess : Bool) : Void
+	private function testWriteAccess(access : Dynamic, data : PropertyObject) : Void
 	{
 		// If accessArray is null, all fields are valid.
-		var accessArray : Array<String>;
+		var accessArray : Array<String> = this.accessArray(access);
 		
-		if(Std.is(access, String) && cast access == 'ALL')
-			accessArray = null;
-		else if(Std.is(access, Array))
-			accessArray = cast access;
+		if(accessArray == null)
+		{
+			// Access to all fields is allowed, but cannot write to the "id" field unless stated in the access array.
+			if(Reflect.hasField(data, 'id'))
+				throw new RestApiException('Field "id" cannot be modified.', RestErrorType.invalidData);
+		}
 		else
-			throw new RestApiException('Invalid data access type: ' + Type.typeof(access), RestErrorType.configurationError);
-
-		Lambda.iter(data, function(obj : PropertyObject)
 		{
-			if(accessArray == null)
-			{
-				// Access to all fields is allowed, but cannot write to the "id" field unless stated in the access array.
-				if(writeAccess && Reflect.hasField(obj, 'id'))
-					throw new RestApiException('Field "id" cannot be modified.', RestErrorType.invalidData);
-			}
-			else
-			{
-				var errorFields = new List<Dynamic>();
-				
-				// If access is specified as an array, only allow a subset of the specified rules.
-				for(dataField in Reflect.fields(obj))
-				{
-					if(!Lambda.has(accessArray, dataField))
-						errorFields.push(dataField);
-				}
-				
-				if(errorFields.length > 0)
-					throw new RestApiException('Unauthorized access to fields "' + errorFields.join(',') + '".', RestErrorType.unauthorizedRequest);
-			}
-		});
-	}
-	
-	private function dataOwnerCheck(resourceName : String, ids : List<Int>) : Void
-	{
-		if(this.ownerID != null)
-		{
-			var self = this;
+			// If user is writing this data, only allow a subset of the specified rules.
+			var errorFields = new List<Dynamic>();
 			
-			// Ownership is handled by checking the ownerID with the ownership list.
-			for(ownerTable in this.ownerships)
+			for(dataField in Reflect.fields(data))
 			{
-				var resourcePos = 0;
-				for(i in 0 ... ownerTable.length)
-				{
-					if(ownerTable[i] == resourceName)
-					{
-						resourcePos = i;
-						break;
-					}
-				}
-				
-				// Make the request and set key/value if it returns ok.
-				this.restApi.read(buildOwnerRequest(resourceName, ownerTable, resourcePos, false), function(response : RestApiResponse)
-				{
-					switch(response)
-					{
-						case successData(data):
-							var bigSet = new List<Int>();
-							Lambda.iter(data, function(row : Dynamic) {
-								bigSet.push(row.id);
-							});
-							
-							if(!self.isSubsetOf(ids, bigSet))
-								throw new RestApiException('Unauthorized owner data access.', RestErrorType.unauthorizedRequest);
-							
-						default:
-							throw new RestApiException('Unauthorized owner data access.', RestErrorType.unauthorizedRequest);
-					}
-				});
-			}			
+				if(!Lambda.has(accessArray, dataField))
+					errorFields.push(dataField);
+			}
+			
+			if(errorFields.length > 0)
+				throw new RestApiException('Unauthorized access to fields "' + errorFields.join(',') + '".', RestErrorType.unauthorizedRequest);
 		}
-		else
+	}
+
+	private function filterReadAccess(access : Dynamic, data : Array<PropertyObject>) : Void
+	{
+		// If accessArray is null, all fields are valid.
+		var accessArray : Array<String> = this.accessArray(access);
+		
+		if(accessArray == null)
+			return;
+
+		for(i in 0 ... data.length)
 		{
-			throw new RestApiException('Unauthorized owner data access.', RestErrorType.unauthorizedRequest);
+			var filtered = {};
+			for(field in accessArray)
+			{
+				if(Reflect.hasField(data[i], field))
+					Reflect.setField(filtered, field, Reflect.field(data[i], field));
+			}
+			
+			data[i] = filtered;
 		}
+	}
+
+	private function accessArray(access : Dynamic) : Array<String>
+	{
+		if(Std.is(access, String) && cast access == 'ALL')
+			return null;
+		else if(Std.is(access, Array))
+			return cast access;
+		else
+			throw new RestApiException('Invalid data access type: ' + Type.typeof(access), RestErrorType.configurationError);		
 	}
 
 	/////////////////////////////////////////////////////////////////
 	
-	private function isSubsetOf<T>(subSet : List<T>, bigSet : List<T>) : Bool
-	{
-		for(v in subSet)
-		{
-			if(!Lambda.has(bigSet, v))
-				return false;
-		}
-		
-		return true;
-	}
-	
-	private function buildOwnerRequest(resourceName : String, table : Array<String>, resourcePos : Int, createRequest : Bool) : String
+	private function buildOwnerRequest(resourceName : String, table : Array<String>, createRequest : Bool) : String
 	{
 		if(this.ownerID == null)
 			throw new RestApiException('Unauthorized owner data access.', RestErrorType.unauthorizedRequest);
 		
+		var resourcePos = table.arraySearch(resourceName);
+		if(resourcePos == null) return null;
+			
 		// If a create request is made, strip the last table since the request should get the foreign key.
 		var requestTable = createRequest ? table.slice(1, resourcePos) : table.slice(1, resourcePos+1);
 		
@@ -200,86 +177,66 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 		return '/?/' + table[0] + '/' + this.ownerID + '/' + requestTable.join('//');
 	}
 
-	private function setDataOwnership(resourceName : String, data : PropertyObject) : Void
+	private function mapIds(data : Iterable<Dynamic>) : List<Int>
 	{
-		if(this.ownerID == null)
-			throw new RestApiException('Unauthorized owner data access.', RestErrorType.unauthorizedRequest);
+		return Lambda.map(data, function(row : Dynamic) {
+			if(!Reflect.hasField(row, 'id'))
+				throw new RestApiException('Field "id" not found when mapping ids.', RestErrorType.configurationError);
+			else
+				return cast(row.id, Int);
+		});		
+	}
+	
+	private var requestIdsCache : Hash<List<Int>>;
+	private function requestIds(request : String) : List<Int>
+	{
+		if(this.requestIdsCache == null)
+			this.requestIdsCache = new Hash<List<Int>>();
 
-		var done = false;
-		
-		for(ownerTable in this.ownerships)
+		if(!this.requestIdsCache.exists(request))
 		{
-			var resourcePos = 0;
-			for(i in 0 ... ownerTable.length)
-			{
-				if(ownerTable[i] == resourceName)
-				{
-					resourcePos = i;
-					break;
-				}
-			}
-
-			var request = buildOwnerRequest(resourceName, ownerTable, resourcePos, true);
-
+			var self = this;
+			
 			// Make the request and set key/value if it returns ok.
 			this.restApi.read(request, function(response : RestApiResponse)
 			{
 				switch(response)
 				{
 					case successData(responseData):
-						if(responseData.totalCount == 1)
-						{
-							if(resourcePos > 0)
-							{
-								var keyField = haxigniter.libraries.Inflection.singularize(ownerTable[resourcePos-1]) + 'Id';
-								
-								// Single resource request, set output to id field.
-								if(!Reflect.hasField(responseData.data[0], 'id'))
-									throw new RestApiException('Field "id" not found when determining user ownership for "'+resourceName+'".', RestErrorType.configurationError);
-
-								// Output value is always the id field of the data row, since it was specified as the
-								// last resource in the request string created by buildOwnerRequest().
-								Reflect.setField(data, keyField, responseData.data[0].id);
-								done = true;
-							}
-						}
-						
+						self.requestIdsCache.set(request, self.mapIds(responseData));
+					
 					default:
-						throw new RestApiException('Determining ownership for resource "'+resourceName+'" failed.', RestErrorType.configurationError);
+						throw new RestApiException('Ids request failed.', RestErrorType.unknown);
 				}
 			});
-			
-			if(done) break;
 		}
-	}
-
-	/////////////////////////////////////////////////////////////////
-
-	/*
-	private function isWriteRequest(type : RestApiRequestType) : Bool
-	{
-		return type != RestApiRequestType.read;
-	}
-
-	private function testAdminAccess(resourceName : String, writeRequest : Bool, ids : List<Int>, data : Array<Dynamic>) : Void
-	{
-		if(!this.isAdmin)
-			return false;
-		else if(this.rights.get(resourceName).admin == null)
-			return true;
 		
-		var writeRequest = this.isWriteRequest(type);
-			
+		return this.requestIdsCache.get(request);
 	}
 	
-	private function guestHasAccess(resourceName : String, type : RestApiRequestType, data : PropertyObject) : Bool
+	private function setDataOwnership(data : PropertyObject, resource : String, id : Int) : Void
 	{
-		if(this.rights.get(resourceName).guest == null)
-			return false;
-		
-		return validResourceAccess(this.rights.get(resourceName).guest, type, data);
+		var keyField = (resource == 'id') ? 'id' : haxigniter.libraries.Inflection.singularize(resource) + 'Id';
+		Reflect.setField(data, keyField, id);
 	}
-	*/
+
+	private function testDataOwnership(resourceName : String, ids : Iterable<Int>, createRequest : Bool) : Bool
+	{
+		if(this.ownerID == null)
+			throw new RestApiException('Unauthorized owner data access.', RestErrorType.unauthorizedRequest);
+
+		for(ownerTable in this.ownerships)
+		{
+			var request = buildOwnerRequest(resourceName, ownerTable, createRequest);
+			if(request == null) continue;
+			
+			return ids.isSubsetOf(this.requestIds(request));
+		}
+		
+		return false;
+	}
+	
+	/////////////////////////////////////////////////////////////////
 
 	/**
 	 * After this method is called, this.ownerID and this.isAdmin is set or exception is thrown.
@@ -324,55 +281,6 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 		});
 	}
 
-	private function authorizationFailed(message = 'Unauthorized access.', ?pos : PosInfos) : Void
-	{
-		throw new RestApiException(message, RestErrorType.unauthorizedRequest, null, pos);
-	}
-	
-	///// RestApiSecurityHandler implementation /////////////////////
-	
-	public function create(resourceName : String, data : PropertyObject, ?parameters : Hash<String>) : Void
-	{
-		var rights : UserRights = this.dataResourceCheck(resourceName);
-		var access : Dynamic;
-
-		if(data == null || Reflect.fields(data).length == 0)
-			throw new RestApiException('No request data found!', RestErrorType.invalidData);
-
-		this.authorizeUser(parameters);
-		
-		if(this.isAdmin)
-		{
-			access = this.accessFor(RestApiRequestType.create, rights.admin);
-			
-			// Admin has full access so set it to ALL if no rights is set.
-			this.dataAccessCheck(access == null ? 'ALL' : access, [data], true);
-			return;
-		}
-		
-		if(this.ownerID != null)
-		{
-			access = this.accessFor(RestApiRequestType.create, rights.owner);
-
-			if(access != null)
-			{
-				this.dataAccessCheck(access, [data], true);
-				// If data access was ok, add foreign key to data if needed.
-				
-				this.setDataOwnership(resourceName, data);
-				return;
-			}
-		}
-		
-		// Finally, test guest access.
-		access = this.accessFor(RestApiRequestType.create, rights.guest);
-		
-		if(access != null)
-			this.dataAccessCheck(access, [data], true);
-		else
-			this.authorizationFailed();
-	}
-	
 	private function accessFor(type : RestApiRequestType, access : Dynamic) : Dynamic
 	{
 		if(access == null) return null;
@@ -380,24 +288,169 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 		var typeString = Std.string(type);
 		return Reflect.hasField(access, typeString) ? Reflect.field(access, typeString) : null;
 	}
+
+	private function authorizationFailed(message = 'Unauthorized access.', ?pos : PosInfos) : Void
+	{
+		throw new RestApiException(message, RestErrorType.unauthorizedRequest, null, pos);
+	}
+
+	///// RestApiSecurityHandler implementation /////////////////////
+	
+	public function create(resourceName : String, data : PropertyObject, ?parentResource : String, ?parentId : Int, ?parameters : Hash<String>) : Void
+	{
+		if(data == null || Reflect.fields(data).length == 0)
+			throw new RestApiException('No request data found!', RestErrorType.invalidData);
+
+		var self = this;
+
+		requestAccess(resourceName, parameters, RestApiRequestType.create,
+			function(access : Dynamic) : Bool
+			{
+				// Admin has full access so set it to ALL if no rights is set.
+				self.testWriteAccess(access == null ? 'ALL' : access, data);
+				return true;
+			},
+			
+			function(access : Dynamic) : Bool
+			{
+				// An owner must have a parent resource specified to determine the foreign key (ownership key)
+				if(parentResource == null || parentId == null) return false;
+
+				if(access != null)
+				{
+					self.testWriteAccess(access, data);
+					
+					// If data access was ok, add foreign key to data if needed.
+					if(self.testDataOwnership(resourceName, [parentId], true))
+					{
+						self.setDataOwnership(data, parentResource, parentId);
+						return true;
+					}
+				}
+				
+				return false;
+			},
+			
+			function(access : Dynamic) : Bool
+			{
+				if(access != null)
+				{
+					// Got access, now test if the data is valid.
+					self.testWriteAccess(access, data);
+					return true;
+				}
+				else
+					return false;
+			}
+		);		
+	}
 	
 	public function read(resourceName : String, data : RestDataCollection, ?parameters : Hash<String>) : Void
 	{
-		this.dataResourceCheck(resourceName);
-		throw new RestApiException('Not implemented.', RestErrorType.unauthorizedRequest);
+		var self = this;
+		
+		requestAccess(resourceName, parameters, RestApiRequestType.read,
+			function(access : Dynamic) : Bool
+			{
+				// Admin has full access so set it to ALL if no rights is set.
+				self.filterReadAccess(access == null ? 'ALL' : access, data.data);
+				return true;
+			},
+			
+			function(access : Dynamic) : Bool
+			{
+				if(access != null && self.testDataOwnership(resourceName, self.mapIds(data), false))
+				{
+					self.filterReadAccess(access, data.data);
+					return true;
+				}
+				else
+					return false;
+			},
+			
+			function(access : Dynamic) : Bool
+			{
+				if(access != null)
+				{
+					self.filterReadAccess(access, data.data);
+					return true;
+				}
+				else
+					return false;
+			}
+		);
 	}
 	
 	public function update(resourceName : String, ids : List<Int>, data : PropertyObject, ?parameters : Hash<String>) : Void
 	{
-		this.dataResourceCheck(resourceName);
+		/*
+		requestAccess(resourceName, parameters, RestApiRequestType.create,
+			function(access : Dynamic) : Bool
+			{
+			},
+			
+			function(access : Dynamic) : Bool
+			{
+			},
+			
+			function(access : Dynamic) : Bool
+			{
+			}
+		);
+		*/
+
 		throw new RestApiException('Not implemented.', RestErrorType.unauthorizedRequest);
 	}
 	
 	public function delete(resourceName : String, ids : List<Int>, ?parameters : Hash<String>) : Void
 	{
-		this.dataResourceCheck(resourceName);
+		/*
+		requestAccess(resourceName, parameters, RestApiRequestType.create,
+			function(access : Dynamic) : Bool
+			{
+			},
+			
+			function(access : Dynamic) : Bool
+			{
+			},
+			
+			function(access : Dynamic) : Bool
+			{
+			}
+		);
+		*/
+
 		throw new RestApiException('Not implemented.', RestErrorType.unauthorizedRequest);
 	}
 	
 	public function install(api : RestApiInterface) { this.restApi = api; }
+	
+	/////////////////////////////////////////////////////////////////
+
+	private function requestAccess(resourceName : String, parameters : Hash<String>, type : RestApiRequestType, adminAuthorized : Dynamic -> Bool, ownerAuthorized : Dynamic -> Bool, guestAuthorized : Dynamic -> Bool) : Void
+	{
+		var rights : UserRights = this.dataResourceCheck(resourceName);
+		var access : Dynamic;
+
+		this.authorizeUser(parameters);
+		
+		if(this.isAdmin)
+		{
+			access = this.accessFor(type, rights.admin);
+			if(adminAuthorized(access)) return;
+		}
+		
+		if(this.ownerID != null)
+		{
+			access = this.accessFor(type, rights.owner);
+			if(ownerAuthorized(access)) return;
+		}
+		
+		// It's determined that the user is not admin nor owner of the requested data.
+		// Make a final attempt with guest access.
+		access = this.accessFor(type, rights.guest);
+		if(guestAuthorized(access)) return;
+		
+		this.authorizationFailed();
+	}
 }
