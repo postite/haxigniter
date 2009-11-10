@@ -219,7 +219,7 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 		var keyField = (resource == 'id') ? 'id' : haxigniter.libraries.Inflection.singularize(resource) + 'Id';
 		Reflect.setField(data, keyField, id);
 	}
-
+	
 	private function testDataOwnership(resourceName : String, ids : Iterable<Int>, createRequest : Bool) : Bool
 	{
 		if(this.ownerID == null)
@@ -307,7 +307,7 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 		var testWriteAccess = function(access : Dynamic) : Bool
 		{
 			self.testWriteAccess(access, data);
-			return true;			
+			return true;
 		}
 
 		requestAccess(resourceName, parameters, RestApiRequestType.create,
@@ -361,44 +361,43 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 	
 	public function update(resourceName : String, ids : List<Int>, data : PropertyObject, ?parameters : Hash<String>) : Void
 	{
-		/*
-		requestAccess(resourceName, parameters, RestApiRequestType.create,
-			function(access : Dynamic) : Bool
-			{
-			},
+		var self = this;
+		
+		var testWriteAccess = function(access : Dynamic) : Bool
+		{
+			self.testWriteAccess(access, data);
+			return true;
+		}
+		
+		requestAccess(resourceName, parameters, RestApiRequestType.update,
+			testWriteAccess,
 			
 			function(access : Dynamic) : Bool
 			{
+				self.testWriteAccess(access, data);
+				return self.testDataOwnership(resourceName, ids, false);
 			},
 			
-			function(access : Dynamic) : Bool
-			{
-			}
+			testWriteAccess
 		);
-		*/
-
-		throw new RestApiException('Not implemented.', RestErrorType.unauthorizedRequest);
 	}
 	
 	public function delete(resourceName : String, ids : List<Int>, ?parameters : Hash<String>) : Void
 	{
-		/*
-		requestAccess(resourceName, parameters, RestApiRequestType.create,
-			function(access : Dynamic) : Bool
-			{
-			},
+		var self = this;
+		
+		var allowDeleteAccess = function(access : Dynamic) { return true; }
+		
+		requestAccess(resourceName, parameters, RestApiRequestType.delete,
+			allowDeleteAccess,
 			
 			function(access : Dynamic) : Bool
 			{
+				return self.testDataOwnership(resourceName, ids, false);
 			},
 			
-			function(access : Dynamic) : Bool
-			{
-			}
+			allowDeleteAccess
 		);
-		*/
-
-		throw new RestApiException('Not implemented.', RestErrorType.unauthorizedRequest);
 	}
 	
 	public function install(api : RestApiInterface) { this.restApi = api; }

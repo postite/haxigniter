@@ -133,7 +133,6 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 			this.assertPattern(~/No rights found for resource: testResource$/, e.message);
 		}
 
-		/*
 		try
 		{
 			security.update('testResource', null, null);
@@ -151,7 +150,6 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 		{
 			this.assertPattern(~/No rights found for resource: testResource$/, e.message);
 		}
-		*/
 	}
 
 	public function test_Then_write_requests_fails_if_no_data()
@@ -208,8 +206,8 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 		
 		security.create('testResource', {name: 'Boris'});
 		security.read('testResource', new RestDataCollection(0, 0, 1, [{id: 456, name: 'Boris'}]));
-		//security.update('testResource', null, null);
-		//security.delete('testResource', null);
+		security.update('testResource', Lambda.list([1,2,3]), {test: 'hello'});
+		security.delete('testResource', Lambda.list([1,2,3]));
 		
 		this.assertTrue(true); // Just passin' through...
 	}
@@ -442,7 +440,7 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 		var self = this;
 		
 		var smalldata = new RestDataCollection(0, 0, 1, [ { id: 2, firstname: 'Justin', lastname: 'Case' } ]);
-		var data = new RestDataCollection(0, 0, 1, [ { id: 1, firstname: 'Boris', lastname: 'Doris' }, { id: 2, firstname: 'Justin', lastname: 'Case' } ]);
+		var data = new RestDataCollection(0, 0, 2, [ { id: 1, firstname: 'Boris', lastname: 'Doris' }, { id: 2, firstname: 'Justin', lastname: 'Case' } ]);
 		
 		rights.set('news', { guest: null, owner: { read: ['id', 'firstname'] }, admin: null } );
 		ownerships[0] = ['users', 'libraries', 'news'];
@@ -464,7 +462,7 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 		var self = this;
 		
 		var smalldata = new RestDataCollection(0, 0, 1, [ { id: 2, firstname: 'Justin', lastname: 'Case' } ]);
-		var data = new RestDataCollection(0, 0, 1, [ { id: 1, firstname: 'Boris', lastname: 'Doris' }, { id: 2, firstname: 'Justin', lastname: 'Case' } ]);
+		var data = new RestDataCollection(0, 0, 2, [ { id: 1, firstname: 'Boris', lastname: 'Doris' }, { id: 2, firstname: 'Justin', lastname: 'Case' } ]);
 		
 		rights.set('news', { guest: null, owner: { read: ['id', 'firstname'] }, admin: null } );
 		ownerships[0] = ['users', 'libraries', 'news'];
@@ -478,6 +476,149 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
 		try
 		{
 			security.read('news', data, parameters);
+		}
+		catch(e : RestApiException)
+		{
+			this.assertPattern(~/Unauthorized access.$/, e.message);
+		}
+	}
+	
+	///// Update access ///////////////////////////////////////////////
+	
+	public function test_Then_admin_has_update_access_if_specified()
+	{
+		var self = this;
+		
+		rights.set('users', {guest: null, owner: null, admin: {update: 'ALL'} });
+
+		// The call without parameters won't make a rest api request, so this is for the second request:
+		this.api.requests[0] = function(url : String) : RestApiResponse
+		{
+			self.assertEqual('/?/USERS/[USER="Admin"][PASS="nimdA"]', url);
+			return RestApiResponse.successData(new RestDataCollection(0, 0, 1, [{id: 10, isAdmin: 1}]));
+		}
+		
+		var params = new Hash<String>();
+		params.set('username', 'Admin');
+		params.set('password', 'nimdA');
+
+		try
+		{
+			security.update('users', Lambda.list([1, 2, 3]), { name: 'Boris' }, null);
+		}
+		catch(e : RestApiException)
+		{
+			this.assertPattern(~/Unauthorized access.$/, e.message);
+		}
+		
+		security.update('users', Lambda.list([4,5,6]), {name: 'Doris'}, params);
+	}
+
+	public function test_Then_owner_has_update_access_if_ids_are_owned()
+	{
+		var self = this;
+		var data = new RestDataCollection(0, 0, 3, [ { id: 1, firstname: 'Boris', }, { id: 2, firstname: 'Doris' }, { id: 3, firstname: 'Toris' } ]);
+		
+		rights.set('libraries', { guest: null, owner: { update: 'ALL' }, admin: null } );
+		ownerships[0] = ['users', 'libraries', 'news'];
+
+		this.api.requests[1] = function(url : String) : RestApiResponse
+		{
+			self.assertEqual('/?/users/123/libraries', url);
+			return RestApiResponse.successData(data);
+		}
+		
+		security.update('libraries', Lambda.list([1, 2, 3]), { name: 'Boris' }, parameters);
+	}
+
+	public function test_Then_owner_has_no_access_if_not_all_ids_are_owned()
+	{
+		var self = this;
+		
+		// Logged-in user only owns one library in this case:
+		var data = new RestDataCollection(0, 0, 1, [ { id: 2, firstname: 'Doris' } ]);
+		
+		rights.set('libraries', { guest: null, owner: { update: 'ALL' }, admin: null } );
+		ownerships[0] = ['users', 'libraries', 'news'];
+
+		this.api.requests[1] = function(url : String) : RestApiResponse
+		{
+			self.assertEqual('/?/users/123/libraries', url);
+			return RestApiResponse.successData(data);
+		}
+
+		try
+		{
+			security.update('libraries', Lambda.list([1, 2, 3]), { name: 'Boris' }, parameters);
+		}
+		catch(e : RestApiException)
+		{
+			this.assertPattern(~/Unauthorized access.$/, e.message);
+		}
+	}
+	
+	///// Delete access /////////////////////////////////////////////
+	
+	public function test_Then_admin_has_delete_access_if_specified()
+	{
+		var self = this;
+		
+		rights.set('users', {guest: null, owner: null, admin: {delete: 'ALL'} });
+
+		this.api.requests[0] = function(url : String) : RestApiResponse
+		{
+			self.assertEqual('/?/USERS/[USER="User"][PASS="Pass\\"word"]', url);
+			return RestApiResponse.successData(new RestDataCollection(0, 0, 1, [{id: 10, isAdmin: 1}]));
+		}
+
+		security.delete('users', Lambda.list([4, 5, 6]), parameters);
+		
+		try
+		{
+			security.delete('users', Lambda.list([4,5,6]), null);	
+		}
+		catch(e : RestApiException)
+		{
+			this.assertPattern(~/Unauthorized access.$/, e.message);
+		}
+	}
+
+	public function test_Then_owner_has_delete_access_if_ids_are_owned()
+	{
+		var self = this;
+		var data = new RestDataCollection(0, 0, 3, [ { id: 1, firstname: 'Boris', }, { id: 2, firstname: 'Doris' }, { id: 3, firstname: 'Toris' } ]);
+		
+		rights.set('libraries', { guest: null, owner: { delete: 'ALL' }, admin: null } );
+		ownerships[0] = ['users', 'libraries', 'news'];
+
+		this.api.requests[1] = function(url : String) : RestApiResponse
+		{
+			self.assertEqual('/?/users/123/libraries', url);
+			return RestApiResponse.successData(data);
+		}
+		
+		security.delete('libraries', Lambda.list([1, 2, 3]), parameters);
+	}
+
+	public function test_Then_owner_cannot_delete_if_not_all_ids_are_owned()
+	{
+		var self = this;
+		
+		// Logged-in user only owns one library in this case:
+		var data = new RestDataCollection(0, 0, 1, [ { id: 2, firstname: 'Doris' } ]);
+		
+		rights.set('libraries', { guest: null, owner: { delete: 'ALL' }, admin: null } );
+		ownerships[0] = ['users', 'libraries', 'news'];
+
+		this.api.requests[1] = function(url : String) : RestApiResponse
+		{
+			self.assertEqual('/?/users/123/libraries', url);
+			return RestApiResponse.successData(data);
+		}
+
+		try
+		{
+			security.delete('libraries', Lambda.list([1, 2, 3]), parameters);
 		}
 		catch(e : RestApiException)
 		{
