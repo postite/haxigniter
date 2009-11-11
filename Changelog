@@ -1,13 +1,20 @@
 Changelog for haXigniter
 
-Current
-=======
+v0.58 (2009-11-11)
+==================
 Features
  - Added Server.basename(), to get a filename without directory.
+ - Added haxigniter.libraries.IterableTools, for searching arrays and testing subsets of iterables.
+ - haxigniter.libraries.Request methods and Controller.handleRequest() now takes the raw query string as input.
  
 Changed
  - haxigniter.EReg2 moved to haxigniter.libraries.ERegTools. Use EReg for regexps instead.
  - config.indexPath split into indexPath and indexFile, to fix the mod_rewrite problem.
+ - DatabaseConnection is now auto-opened on all operations, not just queries.
+ - All parameters sent to the DatabaseConnection methods are now quoted.
+
+Bug fixes
+ - Fixed another PHP regexp bug in the inflection library.
 
 v0.57 (2009-10-18)
 ==================
