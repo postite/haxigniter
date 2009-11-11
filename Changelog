@@ -1,5 +1,10 @@
 Changelog for haXigniter
 
+Current
+=======
+Changed
+ - Neko session library moved to haxigniter.neko.Session.
+
 v0.68 (2009-11-11)
 ==================
 Features

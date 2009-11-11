@@ -20,7 +20,7 @@ import php.Web;
 typedef SessionLib = php.Session;
 #elseif neko
 import neko.Web;
-typedef SessionLib = neko.Session;
+typedef SessionLib = haxigniter.neko.Session;
 #end
 
 class Application

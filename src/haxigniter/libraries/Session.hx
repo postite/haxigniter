@@ -3,7 +3,7 @@ package haxigniter.libraries;
 #if php
 typedef InternalSession = php.Session;
 #elseif neko
-typedef InternalSession = neko.Session;
+typedef InternalSession = haxigniter.neko.Session;
 #end
 
 // TODO: Test flash vars in neko.
