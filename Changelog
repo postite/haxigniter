@@ -1,5 +1,11 @@
 Changelog for haXigniter
 
+v0.68 (2009-11-11)
+==================
+Features
+ - A comprehensive Rest API is now available in haXigniter! This release contains the server part, whereas 
+   the next version will have a client-side part as well. "haxigniter.restapi" is the package.
+
 v0.58 (2009-11-11)
 ==================
 Features
