@@ -1,6 +1,6 @@
-package haxigniter;
+package haxigniter.libraries;
 
-class EReg2 extends EReg
+class ERegTools
 {
 	private static var quoteMetaChars : String = '.\\+*?[^]($)';
 	
@@ -11,9 +11,9 @@ class EReg2 extends EReg
 	*/
 	public static function quoteMeta(str : String) : String
 	{
-		for(i in 0 ... EReg2.quoteMetaChars.length)
+		for(i in 0 ... ERegTools.quoteMetaChars.length)
 		{
-			var char = EReg2.quoteMetaChars.charAt(i);
+			var char = ERegTools.quoteMetaChars.charAt(i);
 			str = StringTools.replace(str, char, '\\' + char);
 		}
 		

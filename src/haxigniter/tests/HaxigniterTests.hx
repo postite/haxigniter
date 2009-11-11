@@ -8,6 +8,7 @@ import haxigniter.tests.unit.When_using_library_Url;
 import haxigniter.tests.unit.When_using_library_Database;
 import haxigniter.tests.unit.When_using_library_Input;
 import haxigniter.tests.unit.When_using_library_Inflection;
+import haxigniter.tests.unit.When_using_library_Server;
 
 import haxigniter.tests.unit.When_using_RestApiParser;
 import haxigniter.tests.unit.When_using_RestApiController;
@@ -40,6 +41,7 @@ class HaxigniterTests extends haxigniter.tests.TestRunner
 		this.add(new When_using_library_Url());
 		this.add(new When_using_library_Input());
 		this.add(new When_using_library_Inflection());
+		this.add(new When_using_library_Server());
 		
 		this.add(new When_using_RestApiParser());
 		this.add(new When_using_RestApiController());

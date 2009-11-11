@@ -18,6 +18,7 @@ class Config
 {
 	public var development : Bool;
 
+	public var indexFile : String;
 	public var indexPath : String;
 	public var siteUrl : String;
 	public var applicationPath : String;
@@ -56,25 +57,25 @@ class Config
 		{
 			applicationPath = Web.getCwd() + 'lib/haxigniter/application/';
 		}
-		
-		if(this.indexPath == 'AUTO' || this.indexPath == 'AUTO_REWRITE')
+
+		if(this.indexFile == null)
+		{
+			if(env.exists('SCRIPT_NAME'))
+			{
+				this.indexFile = Server.basename(env.get('SCRIPT_NAME'));
+			}
+			else
+			{
+				throw 'indexFile cannot be auto-detected. Please set it in "application/config/Config.hx".';
+			}
+		}
+
+		if(this.indexPath == null)
 		{
 			if(env.exists('SCRIPT_NAME'))
 			{
 				var script = env.get('SCRIPT_NAME');
-				
-				if(indexPath == 'AUTO')
-				{
-					indexPath = script;
-				}
-				else
-				{
-					// Rewrite is used, so strip the script.
-					indexPath = StringTools.replace(Server.dirname(script), '\\', '/');
-					
-					if(StringTools.endsWith(indexPath, '/'))
-						indexPath = indexPath.substr(0, indexPath.length - 1);
-				}
+				this.indexPath = script.substr(0, script.lastIndexOf('/') + 1);
 			}
 			else
 			{
@@ -84,7 +85,7 @@ class Config
 		
 		if(this.siteUrl == null)
 		{
-			var index = this.indexPath.length == 0 ? '/' : this.indexPath;
+			var index = this.indexPath + this.indexFile;
 			
 			// This works on Apache/PHP
 			if(env.exists('HTTP_HOST'))

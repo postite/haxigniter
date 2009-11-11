@@ -1,10 +1,12 @@
 ﻿package haxigniter.libraries;
 
 #if php
+import php.io.Path;
 import php.io.File;
 import php.Lib;
 import php.Web;
 #elseif neko
+import neko.io.Path;
 import neko.io.File;
 import neko.Lib;
 import neko.Web;
@@ -92,10 +94,28 @@ class Server
 	public static function dirname(path : String) : String
 	{
 		#if php
-		return php.io.Path.directory(path);
+		return Path.directory(path);
 		#elseif neko
-		var output = neko.io.Path.directory(path);
+		var output = Path.directory(path);
 		return output.length == 0 ? '.' : output;
 		#end
+	}
+
+	/**
+	 * Implementation of the php function basename().
+	 * Given a string containing a path to a file, this function will return the base name of the file.
+	 * 
+	 * @param	path
+	 * @param   suffix If the filename ends in suffix this will also be cut off.
+	 * @return  given a string containing a path to a file, this function will return the name of the directory.
+	 */
+	public static function basename(path : String, ?suffix : String) : String
+	{
+		var output = Path.withoutDirectory(path);
+		
+		if(suffix == null)
+			return output;
+		else
+			return StringTools.endsWith(output, suffix) ? output.substr(0, output.length - suffix.length) : output;
 	}
 }
