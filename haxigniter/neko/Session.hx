@@ -1,5 +1,9 @@
 ﻿#if neko
 package haxigniter.neko;
+
+import neko.Web;
+import neko.Sys;
+
 /**
 * TODO: TEST IT!
 */
