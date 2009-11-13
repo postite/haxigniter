@@ -1,0 +1,10 @@
+<project name="haxigniter" url="http://wiki.github.com/ciscoheat/haxigniter" license="BSD">
+    <user name="ciscoheat"/>
+    <tag v="web"/>
+    <tag v="framework"/>
+    <tag v="neko"/>
+    <tag v="php"/>
+    <tag v="restful"/>
+    <description>An easy-to-use web framework for haXe.</description>
+    <version name="0.68">First haxelib release!</version>
+</project>
