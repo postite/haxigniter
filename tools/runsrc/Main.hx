@@ -21,12 +21,16 @@ class Main
 	static var validCommandsHelp = [
 		'Display this help text.',
 		'Create a project structure in a specified directory.',
-		'Run the unit tests. Run with "-all" to run the haXigniter test suite too.'
+		'Run the haXigniter unit test suite.'
 		];
 	
 	static function main() 
 	{
-		var command = Sys.args()[0];
+		// Removed the last auto-appended argument (added by haxelib)
+		var args = Sys.args();
+		args.pop();
+		
+		var command = args[0];
 		
 		if(command == null || Lambda.has(['--help', '-help', '-?'], command))
 		{
@@ -47,10 +51,10 @@ class Main
 			
 			// Get path to the haxigniter library.
 			var process = new neko.io.Process('haxelib', ['path', 'haxigniter']);
-			libPath = process.stdout.readAll().toString();
+			libPath = StringTools.trim(process.stdout.readUntil(10));
 			
 			if(new EReg('not installed', '').match(libPath))
-				libPath = '.\\';
+				libPath = './';
 
 			process.close();
 			
@@ -114,10 +118,13 @@ class Main
 
 	static function unittest() : Int
 	{
-		var path = libPath + 'tools\\runsrc';
+		var path = libPath + 'tools/runsrc';			
+		Sys.setCwd(path);
+				
+		var status = Sys.command('haxe', ['-lib', 'haxigniter', '-main', 'RunUnitTests', '-x', 'rununittests.hx']);
 		
-		var status = Sys.command('haxe', ['-cp', path, '-main', 'RunUnitTests', '-x', path + '\\unittest.hx']);
-		FileSystem.deleteFile(path + '\\unittest.hx.n');
+		if(FileSystem.exists('rununittests.hx.n'))
+			FileSystem.deleteFile('rununittests.hx.n');
 		
 		return status;
 	}

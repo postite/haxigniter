@@ -3,6 +3,13 @@
 # Build run.n
 cd tools/runsrc
 haxe run.hxml
+
+if [ $? == 1 ]
+then
+	cd ../..
+	exit
+fi
+
 cd ../..
 
 # Zip haxigniter and test it with haxelib
