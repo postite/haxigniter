@@ -4,20 +4,28 @@ import haxigniter.libraries.Url;
 
 class When_using_library_Url extends haxigniter.tests.TestCase
 {
+	private var config : MockConfig;
+	private var url : Url;
+	
+	public override function setup()
+	{
+		this.config = new MockConfig();
+		this.url = new Url(this.config);
+	}
+	
+	public override function tearDown()
+	{
+	}
+
 	public function test_Then_linkUrl_should_strip_last_slash()
 	{
-		var config = haxigniter.application.config.Config.instance();
-		var old = config.indexPath;
-		
 		config.indexPath = '/';
-		this.assertEqual('', Url.linkUrl());
+		this.assertEqual('', url.linkUrl());
 		
 		config.indexPath = '/test/';
-		this.assertEqual('/test', Url.linkUrl());
+		this.assertEqual('/test', url.linkUrl());
 
 		config.indexPath = '/test/test2/';
-		this.assertEqual('/test/test2', Url.linkUrl());
-
-		config.indexPath = old;
+		this.assertEqual('/test/test2', url.linkUrl());
 	}
 }

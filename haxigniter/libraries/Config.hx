@@ -17,6 +17,7 @@ import neko.Sys;
 class Config
 {
 	public var development : Bool;
+	public var controllerPackage : String;
 
 	public var indexFile : String;
 	public var indexPath : String;
@@ -55,7 +56,7 @@ class Config
 		
 		if(this.applicationPath == null)
 		{
-			applicationPath = Web.getCwd() + 'lib/haxigniter/application/';
+			applicationPath = Web.getCwd() + 'lib/';
 		}
 
 		if(this.indexFile == null)

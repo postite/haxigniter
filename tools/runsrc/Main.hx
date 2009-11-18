@@ -121,10 +121,10 @@ class Main
 		var path = libPath + 'tools/runsrc';			
 		Sys.setCwd(path);
 				
-		var status = Sys.command('haxe', ['-lib', 'haxigniter', '-main', 'RunUnitTests', '-x', 'rununittests.hx']);
+		var status = Sys.command('haxe', ['-lib', 'haxigniter', '-main', 'RunUnitTests', '-x', 'rununittests']);
 		
-		if(FileSystem.exists('rununittests.hx.n'))
-			FileSystem.deleteFile('rununittests.hx.n');
+		if(FileSystem.exists('rununittests.n'))
+			FileSystem.deleteFile('rununittests.n');
 		
 		return status;
 	}

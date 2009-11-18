@@ -1,5 +1,7 @@
 package haxigniter.libraries;
 
+import haxe.io.Output;
+
 #if php
 import php.Lib;
 import php.io.File;
@@ -14,60 +16,77 @@ import neko.FileSystem;
 
 class Debug
 {
-	public static var traceLevel : DebugLevel = DebugLevel.info;
+	public var logOutput : Output;
+	public var htmlOutput : Bool;	
+	public var traceLevel : DebugLevel;
 	
-	private static var config = haxigniter.application.config.Config.instance();
+	private var config : Config;
 	
-	public static function log(message : Dynamic, ?debugLevel : DebugLevel) : Void
+	public function new(config : Config, ?traceLevel : DebugLevel, ?logOutput : Output, ?htmlOutput = true)
+	{
+		this.config = config;
+		this.traceLevel = traceLevel == null ? DebugLevel.info : traceLevel;
+		this.logOutput = logOutput;
+		this.htmlOutput = htmlOutput;
+	}
+	
+	public function log(message : Dynamic, ?debugLevel : DebugLevel) : Void
 	{
 		if(debugLevel == null) debugLevel = DebugLevel.info;
 
 		if(Debug.toInt(debugLevel) > Debug.toInt(config.logLevel))
 			return;
-		
-		var logFile = config.logPath + 'log-' + DateTools.format(Date.now(), "%Y-%m-%d");
-		
-		#if php
-		logFile += '.php';
-		#elseif neko
-		logFile += '.n';
-		#end
-		
-		var output = '';
-		
-		#if php
-		if(!FileSystem.exists(logFile))
-			output += "<?php exit; ?>\n\n";
-		#end
-		
-		output += Std.string(debugLevel).toUpperCase() + ' - ' + DateTools.format(Date.now(), config.logDateFormat) + ' --> ' + message + "\n";
-		
-		var file : FileOutput = File.append(logFile, false);
-		file.writeString(output);
-		file.close();
+
+		var output = Std.string(debugLevel).toUpperCase() + ' - ' + DateTools.format(Date.now(), config.logDateFormat) + ' --> ' + message + "\n";
+
+		if(logOutput == null)
+		{
+			var logFile = config.logPath + 'log-' + DateTools.format(Date.now(), "%Y-%m-%d");
+			
+			#if php
+			logFile += '.php';
+
+			if(!FileSystem.exists(logFile))
+				output = "<?php exit; ?>\n\n" + output;
+			#end
+			
+			var file : FileOutput = File.append(logFile, false);
+			file.writeString(output);
+			file.close();
+		}
+		else
+		{
+			logOutput.writeString(output);
+			logOutput.flush();
+		}
 	}
 	
-	public static function trace(data : Dynamic, ?traceLevel : DebugLevel, ?pos : haxe.PosInfos) : Void
+	public function trace(data : Dynamic, ?traceLevel : DebugLevel, ?pos : haxe.PosInfos) : Void
 	{
 		if(traceLevel == null) traceLevel = DebugLevel.info;
 		
-		if(Debug.toInt(traceLevel) > Debug.toInt(Debug.traceLevel))
+		if(Debug.toInt(traceLevel) > Debug.toInt(this.traceLevel))
 			return;
 		
-		Lib.print('<pre style="border:1px dashed green; padding:2px; background-color:#F9F8F6;">');
+		if(htmlOutput)
+			Lib.print('<pre style="border:1px dashed green; padding:2px; background-color:#F9F8F6;">');
 		
 		#if php
 		Debug.startBuffer();
 		haxe.Log.trace(data, pos);
 		var output = StringTools.htmlEscape(Debug.endBuffer());
 		
-		Lib.print(Debug.colorize(output));
+		if(htmlOutput)
+			output = colorize(output);
+		
+		Lib.print(output);
 		
 		#elseif neko
 		haxe.Log.trace(data, pos);
 		#end
 		
-		Lib.print('</pre>');
+		if(htmlOutput)
+			Lib.print('</pre>');
 	}
 	
 	public static function toInt(level : DebugLevel) : Int

@@ -17,7 +17,6 @@ import neko.db.ResultSet;
 
 import haxigniter.libraries.Database;
 
-import haxigniter.controllers.RestApiController;
 import haxigniter.restapi.RestApiRequest;
 import haxigniter.restapi.RestApiResponse;
 import haxigniter.restapi.RestApiSecurityHandler;

@@ -2,41 +2,37 @@
 
 import Type;
 import haxigniter.types.TypeFactory;
-import haxigniter.controllers.Controller;
+import haxigniter.server.Controller;
 
 class Request
 {
-	private static var config = haxigniter.application.config.Config.instance();	
-	public static var defaultPackage : String = 'haxigniter.application.controllers';
-
-	public static function fromString(request : String, ?method : String, ?query : Hash<String>, ?rawQuery : String) : Dynamic
+	private var config : Config;
+	
+	public function new(config : Config)
 	{
-		if(StringTools.startsWith(request, '/'))
-			request = request.substr(1);
-
-		if(StringTools.endsWith(request, '/'))
-			request = request.substr(0, request.length - 1);
-		
-		return fromArray(request.split('/'), method, query, rawQuery);
+		this.config = config;
 	}
 	
-	public static function fromArray(uriSegments : Array<String>, ?method : String, ?query : Hash<String>, ?rawQuery : String) : Dynamic
-	{
-		var controller : Controller = createController(uriSegments[0]);
-		return controller.handleRequest(uriSegments, method, query, rawQuery);
-	}
-		
-	public static function createController(controllerName : String) : Controller
+	public function createController(controllerName : String, ?controllerArgs : Array<Dynamic>) : Controller
 	{
 		var controllerClass : String = (controllerName == null || controllerName == '') ? config.defaultController : controllerName;
-		controllerClass = defaultPackage + '.' + controllerClass.substr(0, 1).toUpperCase() + controllerClass.substr(1);
+		controllerClass = config.controllerPackage + '.' + controllerClass.substr(0, 1).toUpperCase() + controllerClass.substr(1);
 		
-		// Instantiate a controller with this class name.
+		// Instantiate a controller with the above class name.
 		var classType : Class<Dynamic> = Type.resolveClass(controllerClass);
 		if(classType == null)
-			throw new haxigniter.exceptions.NotFoundException(controllerClass + ' not found. (Is it defined in application/config/Controllers.hx?)');
+			throw new haxigniter.exceptions.NotFoundException(controllerClass + ' not found. (Is it defined in Config.hx?)');
 
-		// TODO: Controller arguments?
-		return cast Type.createInstance(classType, []);
+		return cast(Type.createInstance(classType, controllerArgs == null ? [] : controllerArgs), Controller);
+	}
+	
+	public function execute(uri : String, ?method = 'GET', ?query : Hash<String>, ?rawQuery : String, ?rawRequestData : String) : Dynamic
+	{
+		var url = new Url(config);
+		var segments = url.split(uri);
+		
+		var controller = createController(segments[0]);
+		
+		return controller.requestHandler.handleRequest(controller, uri, method, query, rawQuery, rawRequestData);
 	}
 }

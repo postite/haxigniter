@@ -44,7 +44,8 @@ class DatabaseConnection
 	public var database : String;
 	public var socket : String;
 	public var driver : DatabaseDriver;
-	public var debug : Bool;
+	
+	public var debug : Debug;
 	
 	public var connection(getConnection, null) : Connection;
 	private var myConnection : Connection;
@@ -296,8 +297,8 @@ class DatabaseConnection
 
 	private function request(query : String, ?pos : PosInfos) : ResultSet
 	{
-		if(traceQueries != null)
-			Debug.trace('[Executing SQL] ' + query, traceQueries, pos);
+		if(traceQueries != null && this.debug != null)
+			debug.trace('[Executing SQL] ' + query, traceQueries, pos);
 
 		try
 		{
@@ -305,8 +306,8 @@ class DatabaseConnection
 		}
 		catch(e : Dynamic)
 		{
-			if(this.debug)
-				Debug.trace('[SQL Error]\n' + query, DebugLevel.error, pos);
+			if(this.debug != null)
+				debug.trace('[SQL Error]\n' + query, DebugLevel.error, pos);
 			
 			throw e;
 		}

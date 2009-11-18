@@ -1,5 +1,7 @@
 ﻿package haxigniter.tests;
 
+import haxigniter.libraries.Config;
+
 #if php
 import php.FileSystem;
 import php.io.File;
@@ -15,16 +17,11 @@ import neko.Web;
 class Integrity
 {
 	public var testMethodPrefix : String;
-	private var config : haxigniter.libraries.Config;
+	private var config : Config;
 	
-	public static function runTests() : Void
+	public function new(config : Config)
 	{
-		new haxigniter.application.tests.Integrity().run();
-	}
-	
-	public function new()
-	{
-		this.config = haxigniter.Application.instance().config;
+		this.config = config;		
 		this.testMethodPrefix = 'test';
 	}
 	
@@ -141,7 +138,7 @@ class Integrity
 
 		var htaccess = FileSystem.fullPath(config.applicationPath + '../../.htaccess');
 
-		title.value = '<b>"' + htaccess + '"</b> exists to prevent access to haXigniter files';
+		title.value = '<b>"' + config.applicationPath + '.htaccess"</b> exists to prevent access to haXigniter files';
 		
 		return FileSystem.exists(htaccess);
 	}

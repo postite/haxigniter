@@ -14,14 +14,21 @@ import neko.Web;
 
 class Server
 {
+	private var config : Config;
+	
+	public function new(config : Config)
+	{
+		this.config = config;
+	}
+	
 	#if php
 	/**
 	 * Convenience method for external libraries.
 	 * @param	path
 	 */
-	public static function requireExternal(path : String) : Void
+	public function requireExternal(path : String) : Void
 	{
-		untyped __call__('require_once', haxigniter.application.config.Config.instance().applicationPath + 'external/' + path);
+		untyped __call__('require_once', config.applicationPath + 'external/' + path);
 	}
 
 	/**
@@ -44,7 +51,7 @@ class Server
 	
 	///// Error handling ////////////////////////////////////////////
 	
-	public static function error404(?title : String, ?header : String, ?message : String)
+	public function error404(?title : String, ?header : String, ?message : String) : Void
 	{
 		// TODO: Multiple languages
 		if(title == null)
@@ -56,13 +63,11 @@ class Server
 		if(message == null)
 			message = 'The page you requested was not found.';
 		
-		error(title, header, message, 404);
+		this.error(title, header, message, 404);
 	}
 	
-	public static function error(title : String, header : String, message : String, returnCode : Int = null)
+	public function error(title : String, header : String, message : String, returnCode : Int = null) : Void
 	{
-		var config = haxigniter.application.config.Config.instance();
-		
 		var errorPage = returnCode == 404 ? config.error404Page : config.errorPage;
 		
 		if(returnCode != null)
@@ -71,7 +76,7 @@ class Server
 		if(errorPage == null)
 		{
 			// Super-simple content-replace of the views/error.html file.
-			var content = File.getContent(config.applicationPath + 'views/error.html');
+			var content = File.getContent(config.viewPath + 'error.html');
 			content = StringTools.replace(content, '::TITLE::', title);
 			content = StringTools.replace(content, '::HEADER::', header);
 			content = StringTools.replace(content, '::MESSAGE::', message);
@@ -80,7 +85,9 @@ class Server
 		}
 		else
 		{
-			haxigniter.libraries.Request.fromString(errorPage);
+			// Error page is specified, so request that controller.
+			var request = new Request(config);			
+			request.execute(errorPage);			
 		}
 	}
 

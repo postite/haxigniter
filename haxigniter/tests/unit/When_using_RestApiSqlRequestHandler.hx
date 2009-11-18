@@ -2,7 +2,8 @@
 
 import haxe.Serializer;
 import haxe.Unserializer;
-import haxigniter.controllers.RestApiController;
+import haxigniter.server.Controller;
+import haxigniter.server.request.RequestHandler;
 
 import haxigniter.restapi.RestApiInterface;
 import haxigniter.restapi.RestApiSqlRequestHandler;
@@ -10,6 +11,8 @@ import haxigniter.restapi.RestApiFormatHandler;
 import haxigniter.restapi.RestApiSecurityHandler;
 import haxigniter.restapi.RestApiRequest;
 import haxigniter.restapi.RestApiResponse;
+
+import haxigniter.server.request.RestApiHandler;
 
 import haxigniter.tests.unit.MockDatabaseConnection;
 
@@ -25,8 +28,10 @@ class TestRestCreate
 	}
 }
 
-class TestController extends RestApiController
+class TestHandler extends RestApiHandler, implements Controller
 {
+	public var requestHandler : RequestHandler;
+	
 	public var acceptFailure : String;
 
 	public override function restApiOutput(response : RestApiResponse, outputFormat : RestApiFormat) : RestResponseOutput
@@ -80,7 +85,7 @@ class TestSecurity implements RestApiSecurityHandler
 
 class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 {
-	var controller : TestController;
+	var requestHandler : TestHandler;
 	var handler : RestApiSqlRequestHandler;
 	var security : 	TestSecurity;
 	
@@ -92,8 +97,8 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 		this.handler = new RestApiSqlRequestHandler(this.db);
 		this.security = new TestSecurity();
 		
-		this.controller = new TestController(this.security, this.handler);
-		this.controller.noOutput = true;
+		this.requestHandler = new TestHandler(this.security, this.handler);
+		this.requestHandler.noOutput = true;
 	}
 	
 	public override function tearDown()
@@ -147,7 +152,7 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 			]);
 		
 		// Test security
-		this.assertEqual(cast(this.controller, RestApiInterface), this.security.restApi);
+		this.assertEqual(cast(this.requestHandler, RestApiInterface), this.security.restApi);
 		this.assertEqual('bazaars', this.security.lastSecurity.resource);
 	}
 
@@ -183,7 +188,7 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 		// Set mock result to avoid request failures
 		// Needs to be an int for COUNT(*)
 		this.db.setMockResults([1]);
-		this.controller.acceptFailure = 'No valid relations found for query.';
+		this.requestHandler.acceptFailure = 'No valid relations found for query.';
 		
 		this.db.simulateError('No join found.');
 
@@ -320,6 +325,6 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 	private function request(query : String, ?type = 'GET', ?rawRequestData : String) : Void
 	{
 		this.db.queries.splice(0, this.db.queries.length);
-		this.controller.handleRequest(['api', 'v1'], type, new Hash<String>(), query, rawRequestData);
+		this.requestHandler.handleRequest(this.requestHandler, 'api/v1', type, new Hash<String>(), query, rawRequestData);
 	}
 }

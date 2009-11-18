@@ -1,190 +1,93 @@
 package haxigniter;
 
-import haxigniter.libraries.Config;
-
-import haxigniter.controllers.Controller;
-import haxigniter.libraries.Url;
-import haxigniter.libraries.Debug;
-import haxigniter.libraries.DebugLevel;
-import haxigniter.libraries.Database;
-import haxigniter.libraries.Request;
-
-import haxigniter.application.config.Controllers;
-import haxigniter.application.config.Session;
-import haxigniter.application.config.Database;
-
-import haxigniter.views.ViewEngine;
+import haxigniter.server.Controller;
 
 #if php
 import php.Web;
-typedef SessionLib = php.Session;
 #elseif neko
 import neko.Web;
-typedef SessionLib = haxigniter.neko.Session;
 #end
+
+import haxigniter.libraries.Debug;
+import haxigniter.libraries.Server;
+import haxigniter.libraries.Config;
+import haxigniter.libraries.Url;
+import haxigniter.libraries.Request;
 
 class Application
 {
-	public var config(getConfig, never) : haxigniter.application.config.Config;
-	private function getConfig() : haxigniter.application.config.Config { return haxigniter.application.config.Config.instance(); }
-
-	public var db(getDb, null) : DatabaseConnection;
-	private static var my_db : DatabaseConnection;
-	private function getDb() : DatabaseConnection
+	/**
+	 * Run the application, based on a configuration file and a web request.
+	 * @param	config Configuration file
+	 * @param	?errorHandler If it exists, any exception is sent here.
+	 */
+	public static function run(config : haxigniter.libraries.Config, ?errorHandler : Dynamic -> Void) : Void
 	{
-		// Database is a resource-intensive object, so it's created on demand.
-		if(Application.my_db == null)
+		try
 		{
-			if(this.config.development)
-				Application.my_db = new DevelopmentConnection();
-			else
-				Application.my_db = new OnlineConnection();			
+			var url : Url = new Url(config);
+			var requestUri = Web.getURI();
+
+			// Test url for valid characters.
+			url.testValidUri(requestUri);
+
+			// Handle the current web request.
+			var request : Request = new Request(config);
+			request.execute(requestUri, Web.getMethod(), Web.getParams(), Web.getParamsString(), Web.getPostData());
 		}
-		
-		return Application.my_db;
-	}
-
-	// TODO: Set this to the Application controller, or use a stack that points to the currently executing controller?
-	//private var my_controller : Controller;
-
-	public var view(getView, null) : ViewEngine;
-	private function getView() : ViewEngine { return this.config.view; }
-	
-	public var session(getSession, null) : Session;
-	private static var my_session : Session;
-	private function getSession() : Session
-	{
-		if(Application.my_session == null)
+		catch(e : haxigniter.exceptions.NotFoundException)
 		{
-			if(SessionLib.exists(sessionName))
+			if(errorHandler != null)
 			{
-				Application.my_session = SessionLib.get(sessionName);
+				errorHandler(e);
+			}
+			else if(!config.development)
+			{
+				var server = new Server(config);
+				server.error404();
 			}
 			else
-			{
-				Application.my_session = new haxigniter.application.config.Session();
-				SessionLib.set(sessionName, Application.my_session);
-			}
+				Application.rethrow(e);
 		}
-		
-		return Application.my_session;
-	}
-	
-	public static function trace(data : Dynamic, ?debugLevel : DebugLevel, ?pos : haxe.PosInfos) : Void
-	{
-		Debug.trace(data, debugLevel, pos);
-	}
-	
-	public static function log(message : Dynamic, ?debugLevel : DebugLevel) : Void
-	{
-		Debug.log(message, debugLevel);
-	}
-	
-	///// Static vars ///////////////////////////////////////////////
-
-	private static var my_instance : Application = new Application();
-	public static function instance() : Application { return my_instance; }
-
-	private static var sessionName : String = '__haxigniter_session';
-	
-	///// Application entrypoint ////////////////////////////////////
-
-	public static function main()
-	{
-		// If development mode, run the unit tests.
-		if(Application.instance().config.development)
+		catch(e : Dynamic)
 		{
-			Application.runTests();
-		}
-		
-		Application.instance().run();
-	}
-	
-	public static function runTests(displayOnlyErrors = true)
-	{
-		if(displayOnlyErrors)
-			new haxigniter.application.tests.TestRunner().runAndDisplayOnError();
-		else
-			new haxigniter.application.tests.TestRunner().runAndDisplay();
-	}
-
-	public static function genericError()
-	{
-		// TODO: Multiple languages
-		haxigniter.libraries.Server.error('Page error', 'Page error', 'Something went wrong during the server processing.');
-	}
-	
-	/////////////////////////////////////////////////////////////////
-
-	private function new() {}
-
-	public function run() : Void
-	{
-		// Before calling the controller, start session so no premature output will mess with it.
-		if(config.sessionPath != '')
-			this.startSession();
-
-		// TODO: When php rethrow is fixed (2.05), factorize this and add logging for development mode.
-		if(!config.development)
-		{
-			try
+			if(errorHandler != null)
 			{
-				// Make a request with the current url.
-				Request.fromArray(Url.segments, Web.getMethod(), Web.getParams(), Web.getParamsString());
-
-				// Decided to close session here, not in cleanup, because of session integrity.
-				// It may be in a bad state if exception is thrown.
-				#if neko
-				if(config.sessionPath != '')
-					this.closeNekoSession();
-				#end
+				errorHandler(e);
 			}
-			catch(e : haxigniter.exceptions.NotFoundException)
+			else if(!config.development)
 			{
-				haxigniter.libraries.Server.error404();
+				var server = new Server(config);
+				var debug = new haxigniter.libraries.Debug(config);
+				var error = genericError(e);
+				
+				debug.log(e, haxigniter.libraries.DebugLevel.error);
+				server.error(error.title, error.header, error.message);
 			}
-			catch(e : Dynamic)
-			{
-				// Log the message and display a (relatively) user-friendly error page.
-				Debug.log(e, DebugLevel.error);
-				Application.genericError();
-			}
-		}
-		else
-		{
-			Request.fromArray(Url.segments, Web.getMethod(), Web.getParams(), Web.getParamsString());
-
-			#if neko
-			if(config.sessionPath != '')
-				this.closeNekoSession();
-			#end
-		}
-
-		// Clean up controller after it's done.
-		this.cleanup();
-	}
-	
-	private function startSession()
-	{
-		SessionLib.setSavePath(config.sessionPath);
-		SessionLib.start();
-	}
-	
-	#if neko
-	private function closeNekoSession()
-	{
-		if(Application.my_session != null)
-		{
-			SessionLib.set(sessionName, Application.my_session);
-			SessionLib.close();
+			else
+				Application.rethrow(e);
 		}
 	}
-	#end
 	
-	private function cleanup()
+	public static dynamic function genericError(e : Dynamic) : {title: String, header: String, message: String}
 	{
-		// Close database connection
-		if(this.db != null)
-			this.db.close();
+		return { title: 'Page error', header: 'Page error', message: 'Something went wrong during server processing.' };
+	}
+	
+	/**
+	 * php.Lib.rethrow() is broken in haXe <= 2.04, so here's a fix until next release.
+	 */
+	public inline static function rethrow( e : Dynamic )
+	{
+		#if php
+		untyped __php__("if(isset($»e)) throw $»e");
+		if(Std.is(e, php.Exception)) {
+			var __rtex__ = e;
+			untyped __php__("throw $__rtex__");
+		}
+		else throw e;
+		#elseif neko
+		neko.Lib.rethrow(e);
+		#end
 	}
 }

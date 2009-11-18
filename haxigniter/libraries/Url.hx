@@ -1,6 +1,6 @@
 package haxigniter.libraries;
 
-import haxigniter.Application;
+import haxigniter.session.SessionObject;
 import haxigniter.libraries.ERegTools;
 
 #if php
@@ -13,40 +13,41 @@ import neko.Web;
 
 class Url
 {
-	// Must be above other vars using this variable.
-	private static var config = haxigniter.application.config.Config.instance();
+	private var config : Config;
+	private var session : SessionObject;
+	private var SSLInDevelopmentMode : Bool;
 
-	public static var segments(getSegments, null) : Array<String>;
-	private static var my_segments : Array<String>;
-	private static function getSegments()
+	public function new(config : Config, ?session : SessionObject, ?SSLInDevelopmentMode = false)
 	{
-		if(Url.my_segments == null)
-		{
-			var currentUri : String = Web.getURI();
-			
-			// Segments will be accessed in the controller, so it's safe to do the URI test here.
-			if(config.permittedUriChars != null)
-				Url.testValidUri(currentUri);
-
-			// Trim the index path and file from the uri to get the segments.
-			var segmentString = currentUri.substr(config.indexPath.length + config.indexFile.length);
-			
-			// Trim segments from slashes
-			if(StringTools.startsWith(segmentString, '/'))
-				segmentString = segmentString.substr(1);
-
-			if(StringTools.endsWith(segmentString, '/'))
-				segmentString = segmentString.substr(0, segmentString.length-1);
-
-			Url.my_segments = segmentString.length > 0 ? segmentString.split('/') : [];
-		}
+		this.config = config;
+		this.session = session;
+		this.SSLInDevelopmentMode = SSLInDevelopmentMode;
+	}
+	
+	public function split(uri : String, ?glue = '/') : Array<String>
+	{
+		if(uri == null)
+			uri = Web.getURI();
 		
-		return Url.my_segments;
+		// Trim the index path and file from the uri to get the segments.
+		var indexFile = config.indexPath + config.indexFile;
+		
+		if(StringTools.startsWith(uri, indexFile))
+			uri = uri.substr(indexFile.length);
+		
+		// Trim segments from slashes
+		if(StringTools.startsWith(uri, glue))
+			uri = uri.substr(1);
+
+		if(StringTools.endsWith(uri, glue))
+			uri = uri.substr(0, uri.length-1);
+
+		return uri.length > 0 ? uri.split(glue) : [];
 	}
 
 	/////////////////////////////////////////////////////////////////
 
-	public static function joinUrl(segments : Array<String>) : String
+	public static function join(segments : Array<String>, ?glue = '/') : String
 	{
 		if(segments.length == 0) return '';
 		if(segments.length == 1) return segments[0];
@@ -55,7 +56,7 @@ class Url
 		var output = new List<String>();
 		
 		// Strip ending slash from first segment
-		output.add(StringTools.endsWith(segments[0], '/') ? segments[0].substr(0, segments[0].length - 1) : segments[0]);
+		output.add(StringTools.endsWith(segments[0], glue) ? segments[0].substr(0, segments[0].length - 1) : segments[0]);
 		
 		// Strip first and last slash from all segments except first and last
 		var reg = ~/^\/?(.*)\/?$/;
@@ -65,9 +66,9 @@ class Url
 		}
 		
 		// Strip start slash from last segment
-		output.add(StringTools.startsWith(segments[last], '/') ? segments[last].substr(1) : segments[last]);
+		output.add(StringTools.startsWith(segments[last], glue) ? segments[last].substr(1) : segments[last]);
 		
-		return output.join('/');
+		return output.join(glue);
 	}
 
 	/**
@@ -76,20 +77,20 @@ class Url
 	 * A common usage is to prepend all links in a template page with this value so no 
 	 * internal links has to be rewritten if the application directory changes.
 	 */
-	public static function linkUrl() : String
+	public function linkUrl() : String
 	{
 		return config.indexPath.substr(0, config.indexPath.length - 1);
 	}
 	
-	public static function siteUrl(segments = '') : String
+	public function siteUrl(?segments : String) : String
 	{
-		return Url.joinUrl([config.siteUrl, segments]);
+		return segments == null ? config.siteUrl + '/' : Url.join([config.siteUrl, segments]);
 	}
 	
-	public static function uriString() : String
+	public function uriString() : String
 	{
-		var output : String = Url.segments.join('/');
-		return output.length > 0 ? '/' + output : '';
+		var output : String = Web.getURI();
+		return StringTools.startsWith(output, '/') ? output : '/' + output;
 	}
 
 	/**
@@ -100,46 +101,51 @@ class Url
 	 * @param	?https
 	 * @param	?responseCode
 	 */
-	public static function redirect(?url : String = null, ?flashMessage : String = null, ?https : Bool = null, ?responseCode : Int = null) : Void
+	public function redirect(?url : String = null, ?flashMessage : String = null, ?https : Bool = null, ?responseCode : Int = null) : Void
 	{
-		if(flashMessage != null)
-			Application.instance().session.flashVar = flashMessage;
+		if(flashMessage != null && session != null)
+			session.flashVar = flashMessage;
 
 		if(responseCode != null)
 			Web.setReturnCode(responseCode);
 
 		if(url == null)
-			url = Url.siteUrl(Url.uriString());
+			url = siteUrl(uriString());
 		else if(!StringTools.startsWith(url, '/') && url.indexOf('://') == -1)
-			url = Url.siteUrl(url);
+			url = siteUrl(url);
 		
 		if(https != null)
 			url = (https ? 'https' : 'http') + url.substr(url.indexOf(':'));
 
         // No SSL redirect in development mode.
-        if(config.development)
+        if(config.development && !this.SSLInDevelopmentMode)
             url = StringTools.replace(url, 'https://', 'http://');
 		
 		Web.redirect(url);
 	}
 	
-	public static function forceSsl(ssl = true) : Void
+	public function forceSsl(ssl = true, ?sslActive : Bool) : Void
 	{
 		// No SSL redirect in development mode.
-		if(config.development) return;
-		
-		var sslActive : Bool = Sys.environment().exists('HTTPS') && Sys.environment().get('HTTPS') == 'on';
+		if(config.development && !this.SSLInDevelopmentMode)
+			return;
+
+		// Default test
+		if(sslActive == null)
+			sslActive = Sys.environment().exists('HTTPS') && Sys.environment().get('HTTPS') == 'on';
 		
 		if((sslActive && ssl) || !(sslActive || ssl))
 			return;
 		
-		Url.redirect(null, Application.instance().session.flashVar, ssl);
+		this.redirect(null, session != null ? session.flashVar : null, ssl);
 	}
 	
 	/////////////////////////////////////////////////////////////////
 	
-	private static function testValidUri(uri : String) : Void
+	public function testValidUri(uri : String) : Void
 	{
+		if(config.permittedUriChars == null) return;
+		
 		// Build a regexp from the permitted chars and test it.
 		// Adding slash at the beginning since it's a part of any valid URI.
 		var regexp = '^[/' + ERegTools.quoteMeta(config.permittedUriChars) + ']*$';

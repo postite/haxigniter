@@ -1,16 +1,25 @@
 package haxigniter.tests.unit;
 
+import haxe.rtti.Infos;
 import Type;
 import haxigniter.types.TypeFactory;
 import haxigniter.tests.TestCase;
 
-import haxigniter.controllers.Controller;
+import haxigniter.server.request.RequestHandler;
+import haxigniter.server.Controller;
+import haxigniter.server.request.RestHandler;
+import haxigniter.server.request.BasicHandler;
 
 import haxigniter.libraries.Request;
 
-class Testrest extends haxigniter.controllers.RestController
+class Testrest implements Controller, implements Infos
 {
-	public function new() {}
+	public function new()
+	{
+		requestHandler = new RestHandler(new MockConfig());
+	}
+	
+	public var requestHandler : RequestHandler;
 	
 	public function index() : String
 	{
@@ -48,9 +57,14 @@ class Testrest extends haxigniter.controllers.RestController
 	}
 }
 
-class Teststandard extends Controller
+class Teststandard implements Controller, implements Infos
 {
-	public function new() {}
+	public function new()
+	{
+		requestHandler = new BasicHandler(new MockConfig());
+	}
+	
+	public var requestHandler : RequestHandler;
 	
 	public function index(?arg1 : Bool) : String
 	{
@@ -68,32 +82,21 @@ class Teststandard extends Controller
 	}
 }
 
-class Custom extends Controller
-{
-	public function new() {}
-	
-	public override function handleRequest(uriSegments : Array<String>, method : String, params : Hash<String>, rawQuery : String, ?rawRequestData : String) : Dynamic
-	{
-		return 'I am custom: ' + method + ' ' + params.get('one') + params.get('two') + params.get('three');
-	}
-}
+///// Testing ///////////////////////////////////////////////////////
 
 class When_using_Controllers extends haxigniter.tests.TestCase
 {
-	private var oldNs : String;
 	private var rest : Testrest;
+	private var request : Request;
 	
 	public override function setup()
 	{
 		this.rest = new Testrest();
-		
-		this.oldNs = Request.defaultPackage;
-		Request.defaultPackage = 'haxigniter.tests.unit';
+		this.request = new Request(new MockConfig());
 	}
 	
 	public override function tearDown()
 	{
-		Request.defaultPackage = this.oldNs;
 	}
 	
 	public function test_Then_Rest_actions_should_work_according_to_reference()
@@ -102,42 +105,42 @@ class When_using_Controllers extends haxigniter.tests.TestCase
 		var data = new Hash<String>();
 
 		// index()
-		output = Request.fromString('testrest', 'GET');
+		output = request.execute('testrest', 'GET');
 		this.assertEqual('index', output);
 
 		// make()
 		// Include in this test a prepending slash to test if it will be stripped.
 		// Also test optional argument
-		output = Request.fromString('/testrest/new/123', 'GET');
+		output = request.execute('/testrest/new/123', 'GET');
 		this.assertEqual('make 123', output);
 
-		output = Request.fromString('testrest/new/123/12.45', 'GET');
+		output = request.execute('testrest/new/123/12.45', 'GET');
 		this.assertEqual('make 123 - 12.45', output);
 		
 		// show()
-		output = Request.fromString('testrest/123/useful/1-2-3', 'GET');
+		output = request.execute('testrest/123/useful/1-2-3', 'GET');
 		this.assertEqual('show 123 (useful) 1=2=3', output);
 
 		// edit()
-		output = Request.fromString('testrest/456/edit/true', 'GET');
+		output = request.execute('testrest/456/edit/true', 'GET');
 		this.assertPattern(~/^edit 456 (1|true)$/, output);
 
 		// create()
 		data.set('id', '123');
 		data.set('name', 'Test');
 		
-		output = Request.fromString('testrest', 'POST', data);
+		output = request.execute('testrest', 'POST', data);
 		this.assertEqual('create 123 Test', output);
 
 		// update()
 		data.set('id', 'N/A');
 		data.set('name', 'Test 2');
 
-		output = Request.fromString('testrest/456', 'POST', data);
+		output = request.execute('testrest/456', 'POST', data);
 		this.assertEqual('update 456 N/A Test 2', output);
 
 		// destroy()
-		output = Request.fromString('testrest/789/delete', 'POST', data);
+		output = request.execute('testrest/789/delete', 'POST', data);
 		this.assertEqual('destroy 789', output);
 	}
 
@@ -147,30 +150,16 @@ class When_using_Controllers extends haxigniter.tests.TestCase
 		var data = new Hash<String>();
 
 		// index()
-		output = Request.fromString('teststandard', 'GET');
+		output = request.execute('teststandard', 'GET');
 		this.assertEqual('index', output);
 
-		output = Request.fromString('teststandard/index/true', 'POST');
+		output = request.execute('teststandard/index/true', 'POST');
 		this.assertPattern(~/^index (1|true)$/, output);
 
-		output = Request.fromString('teststandard/first/true/123.987', 'GET');
+		output = request.execute('teststandard/first/true/123.987', 'GET');
 		this.assertEqual('first true - 123.987', output);
 
-		output = Request.fromString('teststandard/second/what-a-nice-format', 'GET');
+		output = request.execute('teststandard/second/what-a-nice-format', 'GET');
 		this.assertEqual('second what/a/nice/format', output);
-	}
-
-	public function test_Then_custom_controller_will_handle_the_request_itself()
-	{
-		var output : String;
-		var data = new Hash<String>();
-		
-		data.set('one', '1');
-		data.set('two', '2');
-		data.set('three', '3');
-		
-		// index()
-		output = Request.fromString('custom', 'PUT', data);
-		this.assertEqual('I am custom: PUT 123', output);
 	}
 }

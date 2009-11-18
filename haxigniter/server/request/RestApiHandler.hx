@@ -1,4 +1,8 @@
-package haxigniter.controllers;
+package haxigniter.server.request;
+
+import haxigniter.libraries.DebugLevel;
+import haxigniter.server.request.RequestHandler;
+import haxigniter.server.Controller;
 
 #if php
 import php.Lib;
@@ -8,7 +12,7 @@ import neko.Lib;
 import neko.Web;
 #end
 
-import haxigniter.libraries.DebugLevel;
+import haxigniter.libraries.Debug;
 
 import haxigniter.restapi.RestApiInterface;
 import haxigniter.restapi.RestApiParser;
@@ -16,10 +20,11 @@ import haxigniter.restapi.RestApiRequest;
 import haxigniter.restapi.RestApiResponse;
 import haxigniter.restapi.RestApiSecurityHandler;
 import haxigniter.restapi.RestApiFormatHandler;
+import haxigniter.restapi.RestApiRequestHandler;
 
 import haxigniter.exceptions.RestApiException;
 
-class RestApiController extends Controller, implements RestApiFormatHandler, implements RestApiInterface
+class RestApiHandler implements RequestHandler, implements RestApiFormatHandler, implements RestApiInterface
 {
 	public static var commonMimeTypes = {
 		haxigniter: 'application/vnd.haxe.serialized', 
@@ -34,16 +39,11 @@ class RestApiController extends Controller, implements RestApiFormatHandler, imp
 	public var apiSecurityHandler : RestApiSecurityHandler;
 
 	public var noOutput : Bool;
-	public var debugMode : DebugLevel;
-	public var logLevel : DebugLevel;
+	public var debug : Debug;
 	
 	public function new(apiSecurityHandler : RestApiSecurityHandler, ?apiRequestHandler : RestApiRequestHandler, ?apiFormatHandler : RestApiFormatHandler)
 	{
-		// If no request handler specified, use a RestApiSqlRequestHandler.
-		if(apiRequestHandler == null)
-			this.apiRequestHandler = new haxigniter.restapi.RestApiSqlRequestHandler(this.db);
-		else
-			this.apiRequestHandler = apiRequestHandler;
+		this.apiRequestHandler = apiRequestHandler;
 
 		// If no format handler specified, use itself, which handles haxigniter format (serialized).
 		if(apiFormatHandler == null)
@@ -58,7 +58,6 @@ class RestApiController extends Controller, implements RestApiFormatHandler, imp
 		this.apiSecurityHandler = apiSecurityHandler;
 		this.apiSecurityHandler.install(this);
 		
-		this.logLevel = DebugLevel.error;
 		this.viewTranslations = new Hash<Hash<String>>();
 		this.noOutput = false;
 	}
@@ -121,7 +120,7 @@ class RestApiController extends Controller, implements RestApiFormatHandler, imp
 	private function parseUrl(url : String) : { api: Int, query: String, parameters: Hash<String>, format: RestApiFormat }
 	{
 		if(!apiRequestPattern.match(url))
-			return null;
+			throw new RestApiException('Invalid request.', RestErrorType.invalidQuery);
 		else
 		{
 			var query = apiRequestPattern.matched(2);
@@ -165,24 +164,7 @@ class RestApiController extends Controller, implements RestApiFormatHandler, imp
 				data
 				);
 			
-			// Debugging
-			var oldTraceQueries = this.db.traceQueries;
-			
-			if(this.debugMode != null)
-			{
-				this.db.traceQueries = this.debugMode;				
-				this.trace(request);
-			}
-			
-			var response = apiRequestHandler.handleApiRequest(request, this.apiSecurityHandler);
-
-			// Debugging
-			if(this.debugMode != null)
-			{
-				this.db.traceQueries = oldTraceQueries;
-			}
-
-			return response;
+			return apiRequestHandler.handleApiRequest(request, this.apiSecurityHandler);
 		}
 		catch(e : RestApiException)
 		{
@@ -190,29 +172,33 @@ class RestApiController extends Controller, implements RestApiFormatHandler, imp
 		}
 		catch(e : Dynamic)
 		{
-			if(!this.config.development)
-			{
-				// Log the error if logLevel is high enough for the controller
-				haxigniter.libraries.Debug.log(e, this.logLevel);
-				return RestApiResponse.failure('An unknown error occured.', RestErrorType.unknown);
-			}
-			else
-				return RestApiResponse.failure(Std.string(e), RestErrorType.unknown);
+			if(debug != null)
+				debug.log(Std.string(e), DebugLevel.error);
+			
+			return RestApiResponse.failure('An unknown error occured.', RestErrorType.unknown);
 		}
 	}
 	
 	/**
-	 * Handle a page request.
-	 * @param	uriSegments Array of request segments (URL splitted with "/")
-	 * @param	method Request method, "GET" or "POST" most likely.
-	 * @param	params Query parameters
-	 * @return  Any value that the controller returns.
+	 * Handle a page request. (RequestHandler implementation)
 	 */
-	public override function handleRequest(uriSegments : Array<String>, method : String, query : Hash<String>, rawQuery : String, ?rawRequestData : String) : Dynamic
+	public function handleRequest(controller : Controller, uriPath : String, method : String, query : Hash<String>, rawQuery : String, rawRequestData : String) : Dynamic
 	{
-		var response : RestApiResponse;		
-		var urlParts : { api: Int, query: String, parameters: Hash<String>, format: RestApiFormat } = this.parseUrl(uriSegments.join('/') + '/?' + rawQuery);
+		// Fix the query formatting.
+		if(!StringTools.endsWith(uriPath, '/'))
+			uriPath += '/';
 
+		if(StringTools.startsWith(rawQuery, '?'))
+		{
+			rawQuery = rawQuery.substr(1);
+			
+			if(!StringTools.startsWith(rawQuery, '/'))
+				rawQuery = '/' + rawQuery;
+		}
+			
+		var response : RestApiResponse;
+		var urlParts = this.parseUrl(uriPath + '?' + rawQuery);
+		
 		// Test if format is supported by the output handler.
 		if(urlParts.format != null && !Lambda.has(apiFormatHandler.restApiFormats, urlParts.format))
 		{
@@ -223,10 +209,6 @@ class RestApiController extends Controller, implements RestApiFormatHandler, imp
 			if(urlParts.format == null)
 				urlParts.format = apiFormatHandler.restApiFormats[0];
 		
-			// If no raw request exists, take it from the web request.
-			if(rawRequestData == null)
-				rawRequestData = Web.getPostData();
-
 			// Convert the raw request data using the RestApiFormatHandler.
 			var requestData : PropertyObject = (rawRequestData != null) ? apiFormatHandler.restApiInput(rawRequestData, urlParts.format) : null;
 
@@ -251,12 +233,8 @@ class RestApiController extends Controller, implements RestApiFormatHandler, imp
 		
 		var finalOutput : RestResponseOutput = apiFormatHandler.restApiOutput(response, urlParts.format);
 
-		// Debugging
-		if(this.debugMode != null)
-		{
-			this.trace(RestApiDebug.responseToString(response));
-			this.trace(finalOutput);
-		}
+		//this.trace(RestApiDebug.responseToString(response));
+		//this.trace(finalOutput);
 		
 		if(!this.noOutput)
 		{
@@ -268,11 +246,10 @@ class RestApiController extends Controller, implements RestApiFormatHandler, imp
 			if(finalOutput.charSet != null)
 				header.push('charset=' + finalOutput.charSet);
 			
-			if(header.length > 0 && this.debugMode == null)
+			if(header.length > 0)
 				Web.setHeader('Content-Type', header.join('; '));
 
-			if(this.debugMode == null)
-				Lib.print(finalOutput.output);
+			Lib.print(finalOutput.output);
 		}
 		
 		return finalOutput;

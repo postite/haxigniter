@@ -44,16 +44,6 @@ enum RestApiRequestType // CRUD
 	delete;
 }
 
-interface RestApiRequestHandler
-{
-	/**
-	 * Handle an incoming request.
-	 * @param	request
-	 * @return
-	 */
-	function handleApiRequest(request : RestApiRequest, security : RestApiSecurityHandler) : RestApiResponse;
-}
-
 /////////////////////////////////////////////////////////////////////
 
 class RestApiRequest

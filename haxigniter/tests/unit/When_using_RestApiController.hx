@@ -4,13 +4,16 @@ import Type;
 import haxigniter.types.TypeFactory;
 import haxigniter.tests.TestCase;
 
-import haxigniter.controllers.RestApiController;
+import haxigniter.server.request.RestApiHandler;
+import haxigniter.server.request.RequestHandler;
+import haxigniter.server.Controller;
 
 import haxigniter.restapi.RestApiInterface;
 import haxigniter.restapi.RestApiSecurityHandler;
 import haxigniter.restapi.RestApiFormatHandler;
 import haxigniter.restapi.RestApiRequest;
 import haxigniter.restapi.RestApiResponse;
+import haxigniter.restapi.RestApiRequestHandler;
 
 import haxigniter.libraries.Request;
 
@@ -39,14 +42,14 @@ class SecurityMock implements RestApiSecurityHandler
 	}
 }
 
-class TestRestApi extends haxigniter.controllers.RestApiController, implements RestApiRequestHandler
+class TestRestApi implements Controller, implements RestApiRequestHandler
 {
 	public var lastRequest : RestApiRequest;
+	public var requestHandler : RequestHandler;
 	
 	public function new()
 	{
-		super(new SecurityMock(), this);
-		this.noOutput = true;
+		
 	}
 	
 	///// Interface implementation //////////////////////////////////
@@ -57,7 +60,7 @@ class TestRestApi extends haxigniter.controllers.RestApiController, implements R
 		return RestApiResponse.success([]);
 	}
 
-	public override function restApiOutput(response : RestApiResponse, outputFormat : RestApiFormat) : RestResponseOutput
+	public function restApiOutput(response : RestApiResponse, outputFormat : RestApiFormat) : RestResponseOutput
 	{
 		switch(response)
 		{
@@ -78,26 +81,31 @@ class TestRestApi extends haxigniter.controllers.RestApiController, implements R
 class When_using_RestApiController extends haxigniter.tests.TestCase
 {
 	private var api : TestRestApi;
-	private var oldNs : String;
+	private var requestHandler : RestApiHandler;
 	
+	private var request : Request;
+
 	private var r : Array<RestApiResource>;
 	
 	public override function setup()
 	{
+		var config = new MockConfig();
+		config.controllerPackage = 'haxigniter.tests.unit';
+
 		this.api = new TestRestApi();
-		this.oldNs = Request.defaultPackage;
-		
-		Request.defaultPackage = 'haxigniter.tests.unit';
+		this.request = new Request(config);		
+
+		this.requestHandler = new RestApiHandler(new SecurityMock(), this.api);
+		this.requestHandler.noOutput = true;
 	}
 	
 	public override function tearDown()
 	{
-		Request.defaultPackage = this.oldNs;
 	}
 	
 	public function test_Then_a_request_should_handle_the_basic_data()
 	{
-		this.api.handleRequest(['api', 'v1'], 'GET', new Hash<String>(), '/bazaars');
+		this.requestHandler.handleRequest(this.api, '/api/v1', 'GET', new Hash<String>(), '/bazaars', null);
 		
 		this.assertEqual(1, api.lastRequest.apiVersion);
 		
@@ -108,7 +116,7 @@ class When_using_RestApiController extends haxigniter.tests.TestCase
 
 	public function test_Then_a_request_should_handle_not_so_basic_data()
 	{
-		this.api.handleRequest(['couldBeAnything', 'v23'], 'DELETE', new Hash<String>(), '/what/3/is/[this^=stuff]/');
+		this.requestHandler.handleRequest(this.api, '/couldBeAnything/v23', 'DELETE', new Hash<String>(), '/what/3/is/[this^=stuff]/', null);
 		
 		this.assertEqual(23, api.lastRequest.apiVersion);
 		
@@ -177,7 +185,7 @@ class When_using_RestApiController extends haxigniter.tests.TestCase
 	private function requestResource(query : String, method = 'GET') : Array<RestApiResource>
 	{
 		this.api.lastRequest = null;
-		var response = this.api.handleRequest(['api', 'v1'], method, new Hash<String>(), query);
+		var response = this.requestHandler.handleRequest(this.api, '/api/v1', method, new Hash<String>(), query, null);
 		
 		if(this.api.lastRequest == null)
 			trace(response);
