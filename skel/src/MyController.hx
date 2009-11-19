@@ -25,7 +25,7 @@ class MyController implements haxigniter.server.Controller
 	///// Now for some more application-specific properties /////////
 
 	// A configuration file is useful.
-	public var config(default, null) : haxigniter.libraries.Config;
+	public var config(default, null) : haxigniter.Config;
 
 	// This application will use a template engine to render the output.
 	public var view(default, null) : ViewEngine;

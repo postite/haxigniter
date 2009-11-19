@@ -6,7 +6,7 @@ import haxigniter.libraries.Debug;
 import haxigniter.libraries.DebugLevel;
 import haxigniter.libraries.Url;
 
-import haxigniter.libraries.Config;
+import haxigniter.Config;
 import haxigniter.views.ViewEngine;
 import haxigniter.libraries.Database;
 import haxigniter.session.SessionObject;

@@ -10,7 +10,6 @@ import neko.Web;
 
 import haxigniter.libraries.Debug;
 import haxigniter.libraries.Server;
-import haxigniter.libraries.Config;
 import haxigniter.libraries.Url;
 import haxigniter.libraries.Request;
 
@@ -21,7 +20,7 @@ class Application
 	 * @param	config Configuration file
 	 * @param	?errorHandler If it exists, any exception is sent here.
 	 */
-	public static function run(config : haxigniter.libraries.Config, ?errorHandler : Dynamic -> Void) : Void
+	public static function run(config : Config, ?errorHandler : Dynamic -> Void) : Void
 	{
 		try
 		{

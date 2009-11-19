@@ -1,6 +1,6 @@
 ﻿package haxigniter.tests;
 
-import haxigniter.libraries.Config;
+import haxigniter.Config;
 
 #if php
 import php.FileSystem;

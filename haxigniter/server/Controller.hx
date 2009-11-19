@@ -1,6 +1,5 @@
 package haxigniter.server;
 
-import haxigniter.libraries.Config;
 import haxigniter.server.request.RequestHandler;
 
 interface Controller

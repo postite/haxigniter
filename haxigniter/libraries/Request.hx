@@ -3,6 +3,7 @@
 import Type;
 import haxigniter.types.TypeFactory;
 import haxigniter.server.Controller;
+import haxigniter.Config;
 
 class Request
 {

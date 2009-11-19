@@ -1,6 +1,7 @@
-package haxigniter.libraries; 
+package haxigniter; 
 
 import haxigniter.libraries.Debug;
+import haxigniter.libraries.DebugLevel;
 import haxigniter.libraries.Server;
 import haxigniter.views.ViewEngine;
 

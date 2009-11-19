@@ -1,6 +1,7 @@
 package haxigniter.libraries;
 
 import haxe.io.Output;
+import haxigniter.Config;
 
 #if php
 import php.Lib;

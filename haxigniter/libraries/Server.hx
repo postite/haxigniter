@@ -12,6 +12,8 @@ import neko.Lib;
 import neko.Web;
 #end
 
+import haxigniter.Config;
+
 class Server
 {
 	private var config : Config;

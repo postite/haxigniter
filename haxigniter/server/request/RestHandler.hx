@@ -2,7 +2,7 @@ package haxigniter.server.request;
 
 import haxigniter.server.Controller;
 
-import haxigniter.libraries.Config;
+import haxigniter.Config;
 import haxigniter.libraries.Request;
 import haxigniter.libraries.Url;
 import haxigniter.rtti.RttiUtil;

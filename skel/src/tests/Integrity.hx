@@ -1,6 +1,6 @@
 ﻿package tests;
 
-import haxigniter.libraries.Config;
+import haxigniter.Config;
 
 /**
  * This is a template for your own integrity tests.

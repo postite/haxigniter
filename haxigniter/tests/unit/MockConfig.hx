@@ -9,7 +9,7 @@ import php.Sys; import php.Web;
 import neko.Sys; import neko.Web;
 #end
 
-class MockConfig extends haxigniter.libraries.Config
+class MockConfig extends haxigniter.Config
 {
 	public function new(?dumpEnv : Dynamic)
 	{
