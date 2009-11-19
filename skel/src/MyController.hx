@@ -10,7 +10,7 @@ import haxigniter.libraries.DebugLevel;
 
 import haxigniter.libraries.Database;
 import haxigniter.session.SessionObject;
-import haxigniter.views.ViewEngine;
+import haxigniter.server.views.ViewEngine;
 
 /**
  * Base controller, parent to all controllers in the application.
@@ -72,17 +72,17 @@ class MyController implements haxigniter.server.Controller
 		|
 		| The engines currently supplied by haXigniter are:
 		|
-		| 	haxigniter.views.Templo() - The Templo 2 engine. (http://haxe.org/com/libs/mtwin/templo)
-		|   haxigniter.views.HaxeTemplate() - haxe.Template (http://haxe.org/doc/cross/template)
-		|   haxigniter.views.Smarty() - Smarty, PHP only (http://smarty.net)
+		|   haxigniter.server.views.Templo() - The Templo 2 engine. (http://haxe.org/com/libs/mtwin/templo)
+		|   haxigniter.server.views.HaxeTemplate() - haxe.Template (http://haxe.org/doc/cross/template)
+		|   haxigniter.server.views.Smarty() - Smarty, PHP only (http://smarty.net)
 		|
 		| If you want to use another template system, make a class extending
-		| haxigniter.views.viewEngine and instantiate it here. Contributions are
-		| always welcome, contact us at haxigniter@gmail.com so we can include
+		| haxigniter.server.views.viewEngine and instantiate it here. Contributions 
+		| are always welcome, contact us at haxigniter@gmail.com so we can include
 		| your class in the distribution.
 		|		
 		*/
-		this.view = new haxigniter.views.HaxeTemplate(this.config.viewPath);
+		this.view = new haxigniter.server.views.HaxeTemplate(this.config.viewPath);
 		
 		// Create a debug object for this.trace() and this.log()
 		this.debug = new Debug(this.config);

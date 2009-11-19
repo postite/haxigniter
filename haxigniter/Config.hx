@@ -3,7 +3,7 @@ package haxigniter;
 import haxigniter.libraries.Debug;
 import haxigniter.libraries.DebugLevel;
 import haxigniter.libraries.Server;
-import haxigniter.views.ViewEngine;
+import haxigniter.server.views.ViewEngine;
 
 #if php
 import php.Web;

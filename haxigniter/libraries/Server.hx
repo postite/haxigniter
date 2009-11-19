@@ -28,9 +28,9 @@ class Server
 	 * Convenience method for external libraries.
 	 * @param	path
 	 */
-	public function requireExternal(path : String) : Void
+	public static function requireExternal(path : String) : Void
 	{
-		untyped __call__('require_once', config.applicationPath + 'external/' + path);
+		untyped __call__('require_once', Web.getCwd() + 'external/' + path);
 	}
 
 	/**

@@ -1,9 +1,9 @@
 ﻿#if php
-package haxigniter.application.external;
+package haxigniter.external;
 
 /**
- * How to use: Put the Smarty files in an application/external/smarty folder.
- * The "libs" folder should reside in application/external/smarty.
+ * How to use: Put the Smarty files in an external/smarty folder.
+ * (The Smarty "libs" folder should reside in the external/smarty folder.)
  * 
  * Then you need to make a small adjustment to the file "internals/core.write_file.php".
  * You need to change this line:
@@ -17,8 +17,8 @@ package haxigniter.application.external;
  * 
  * (For more information: http://tylermac.wordpress.com/2009/09/06/haxe-php-smarty-flashdevelop)
  * 
- * When that is done, you can use haxigniter.views.Smarty as a ViewEngine. 
- * See application/config/Config.hx
+ * When that is done, you can use haxigniter.server.views.Smarty as a ViewEngine.
+ * See Config.hx for more about the ViewEngine.
  * 
  */
 extern class Smarty 

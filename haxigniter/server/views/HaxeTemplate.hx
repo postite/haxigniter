@@ -1,4 +1,4 @@
-﻿package haxigniter.views;
+﻿package haxigniter.server.views;
 
 #if php
 import php.io.File;
@@ -11,7 +11,7 @@ class HaxeTemplateVars
 	public function new() {}
 }
 
-class HaxeTemplate extends haxigniter.views.ViewEngine
+class HaxeTemplate extends ViewEngine
 {
 	private var templateVars : HaxeTemplateVars;
 	

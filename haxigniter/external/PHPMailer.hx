@@ -1,8 +1,8 @@
 ﻿#if php
-package haxigniter.application.external;
+package haxigniter.external;
 
 /**
- * How to use: Put the PHPMailer files in an application/external/phpmailer folder.
+ * How to use: Put the PHPMailer files in an external/phpmailer folder.
  * Then haxigniter.application.external.PHPMailer works just like any other haXe class.
  */
 extern class PHPMailer 

@@ -1,4 +1,4 @@
-﻿package haxigniter.views;
+﻿package haxigniter.server.views;
 
 import haxe.PosInfos;
 

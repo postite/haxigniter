@@ -1,15 +1,8 @@
 package haxigniter.server.request;
 
 import haxigniter.server.Controller;
-
-import haxigniter.libraries.Debug;
-import haxigniter.libraries.DebugLevel;
 import haxigniter.libraries.Url;
-
 import haxigniter.Config;
-import haxigniter.views.ViewEngine;
-import haxigniter.libraries.Database;
-import haxigniter.session.SessionObject;
 
 class BasicHandler implements RequestHandler
 {
