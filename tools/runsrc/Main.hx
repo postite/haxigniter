@@ -21,9 +21,9 @@ class Main
 		];
 		
 	static var validCommandsHelp = [
-		'[buildfile.hxml] Build the project, if no buildfile is specified the first found in the directory will be used.',
+		'Build the project, if no buildfile is specified the one in the directory will be used.',
 		'Display this help text.',
-		'Create a project structure in a specified directory.',
+		'Create a project structure in a directory.',
 		'Run the haXigniter unit test suite.'
 		];
 	
@@ -67,6 +67,7 @@ class Main
 			
 			if(new EReg('not installed', '').match(libPath))
 			{
+				//libPath = '.'; // DEBUG
 				Lib.println('Error: haxigniter is not installed. Use "haxelib install haxigniter" to install it.');
 				Sys.exit(1);
 			}
@@ -145,6 +146,8 @@ class Main
 		else
 			return error('No output directory found in .hxml file!');
 		
+		Lib.println('Building project in ' + FileSystem.fullPath(outputPath));
+			
 		buildStructure(outputPath);
 		
 		// Build the project. Use the original commands as extra arguments.
