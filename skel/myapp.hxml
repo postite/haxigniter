@@ -1,0 +1,4 @@
+-cp src 
+-lib haxigniter
+-php www 
+-main MyController
