@@ -20,6 +20,10 @@ fi
 
 exit
 
+# Clear skel folder from build output
+rm -f skel/www/index.php
+rm -rf skel/www/lib/*
+
 # Build run.n
 cd tools/runsrc
 haxe run.hxml
