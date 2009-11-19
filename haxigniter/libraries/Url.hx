@@ -1,7 +1,7 @@
 package haxigniter.libraries;
 
 import haxigniter.Config;
-import haxigniter.session.SessionObject;
+import haxigniter.server.session.SessionObject;
 import haxigniter.libraries.ERegTools;
 
 #if php

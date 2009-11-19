@@ -1,4 +1,4 @@
-package haxigniter.session;
+package haxigniter.server.session;
 
 interface Session
 {

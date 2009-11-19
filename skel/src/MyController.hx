@@ -1,15 +1,16 @@
 package ;
 
 import config.Database;
+
 import haxigniter.server.request.RequestHandler;
 import haxigniter.server.request.RestHandler;
-import haxigniter.session.FileSession;
+import haxigniter.server.session.FileSession;
+import haxigniter.server.session.SessionObject;
 
 import haxigniter.libraries.Debug;
 import haxigniter.libraries.DebugLevel;
 
 import haxigniter.libraries.Database;
-import haxigniter.session.SessionObject;
 import haxigniter.server.views.ViewEngine;
 
 /**

@@ -1,5 +1,5 @@
 ﻿#if neko
-package haxigniter.neko;
+package haxigniter.server.neko;
 
 import neko.Web;
 import neko.Sys;
