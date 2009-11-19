@@ -51,6 +51,9 @@ class Mirror
 	
 	public function mirror(?deleteNonExisting = false, ?ignorePaths : Array<String>, ?verbose = false) : Void
 	{
+		if(ignorePaths == null)
+			ignorePaths = [];
+		
 		var self = this;
 		if(deleteNonExisting)
 		{
