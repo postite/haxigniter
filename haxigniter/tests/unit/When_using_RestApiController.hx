@@ -8,12 +8,12 @@ import haxigniter.server.request.RestApiHandler;
 import haxigniter.server.request.RequestHandler;
 import haxigniter.server.Controller;
 
-import haxigniter.restapi.RestApiInterface;
-import haxigniter.restapi.RestApiSecurityHandler;
-import haxigniter.restapi.RestApiFormatHandler;
-import haxigniter.restapi.RestApiRequest;
-import haxigniter.restapi.RestApiResponse;
-import haxigniter.restapi.RestApiRequestHandler;
+import haxigniter.common.restapi.RestApiInterface;
+import haxigniter.common.restapi.RestApiResponse;
+import haxigniter.server.restapi.RestApiSecurityHandler;
+import haxigniter.server.restapi.RestApiFormatHandler;
+import haxigniter.server.restapi.RestApiRequest;
+import haxigniter.server.restapi.RestApiRequestHandler;
 
 import haxigniter.libraries.Request;
 

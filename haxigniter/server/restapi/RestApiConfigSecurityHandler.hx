@@ -1,4 +1,4 @@
-﻿package haxigniter.restapi;
+﻿package haxigniter.server.restapi;
 
 #if php
 import php.Lib;
@@ -9,11 +9,11 @@ import neko.Lib;
 import haxe.PosInfos;
 import haxigniter.exceptions.RestApiException;
 
-import haxigniter.restapi.RestApiSecurityHandler;
-import haxigniter.restapi.RestApiInterface;
-import haxigniter.restapi.RestApiRequest;
-import haxigniter.restapi.RestApiResponse;
-import haxigniter.restapi.RestApiFormatHandler;
+import haxigniter.server.restapi.RestApiSecurityHandler;
+import haxigniter.common.restapi.RestApiInterface;
+import haxigniter.common.restapi.RestApiResponse;
+import haxigniter.server.restapi.RestApiRequest;
+import haxigniter.server.restapi.RestApiFormatHandler;
 
 using haxigniter.libraries.IterableTools;
 

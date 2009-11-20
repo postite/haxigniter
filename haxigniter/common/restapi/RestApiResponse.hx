@@ -1,4 +1,4 @@
-﻿package haxigniter.restapi;
+﻿package haxigniter.common.restapi;
 
 enum RestErrorType 
 {

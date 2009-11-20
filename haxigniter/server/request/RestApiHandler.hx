@@ -14,13 +14,13 @@ import neko.Web;
 
 import haxigniter.libraries.Debug;
 
-import haxigniter.restapi.RestApiInterface;
-import haxigniter.restapi.RestApiParser;
-import haxigniter.restapi.RestApiRequest;
-import haxigniter.restapi.RestApiResponse;
-import haxigniter.restapi.RestApiSecurityHandler;
-import haxigniter.restapi.RestApiFormatHandler;
-import haxigniter.restapi.RestApiRequestHandler;
+import haxigniter.common.restapi.RestApiInterface;
+import haxigniter.common.restapi.RestApiResponse;
+import haxigniter.server.restapi.RestApiParser;
+import haxigniter.server.restapi.RestApiRequest;
+import haxigniter.server.restapi.RestApiSecurityHandler;
+import haxigniter.server.restapi.RestApiFormatHandler;
+import haxigniter.server.restapi.RestApiRequestHandler;
 
 import haxigniter.exceptions.RestApiException;
 

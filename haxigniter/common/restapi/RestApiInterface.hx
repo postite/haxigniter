@@ -1,6 +1,6 @@
-﻿package haxigniter.restapi;
+﻿package haxigniter.common.restapi;
 
-import haxigniter.restapi.RestApiResponse;
+import haxigniter.common.restapi.RestApiResponse;
 
 interface RestApiInterface 
 {

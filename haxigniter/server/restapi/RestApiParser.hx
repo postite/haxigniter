@@ -1,7 +1,7 @@
-package haxigniter.restapi;
+package haxigniter.server.restapi;
 
-import haxigniter.restapi.RestApiRequest;
-import haxigniter.restapi.RestApiResponse;
+import haxigniter.server.restapi.RestApiRequest;
+import haxigniter.common.restapi.RestApiResponse;
 import haxigniter.exceptions.RestApiException;
 
 /* 

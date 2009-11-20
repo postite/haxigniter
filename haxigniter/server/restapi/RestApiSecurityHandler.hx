@@ -1,8 +1,8 @@
-﻿package haxigniter.restapi;
+﻿package haxigniter.server.restapi;
 
-import haxigniter.restapi.RestApiInterface;
-import haxigniter.restapi.RestApiResponse;
-import haxigniter.restapi.RestApiFormatHandler;
+import haxigniter.common.restapi.RestApiInterface;
+import haxigniter.common.restapi.RestApiResponse;
+import haxigniter.server.restapi.RestApiFormatHandler;
 
 interface RestApiSecurityHandler
 {

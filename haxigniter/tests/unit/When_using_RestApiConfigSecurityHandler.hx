@@ -1,11 +1,11 @@
 package haxigniter.tests.unit;
 
 import haxigniter.exceptions.RestApiException;
-import haxigniter.restapi.RestApiConfigSecurityHandler;
+import haxigniter.server.restapi.RestApiConfigSecurityHandler;
 
-import haxigniter.restapi.RestApiInterface;
-import haxigniter.restapi.RestApiResponse;
-import haxigniter.restapi.RestApiFormatHandler;
+import haxigniter.common.restapi.RestApiInterface;
+import haxigniter.common.restapi.RestApiResponse;
+import haxigniter.server.restapi.RestApiFormatHandler;
 
 using haxigniter.libraries.IterableTools;
 

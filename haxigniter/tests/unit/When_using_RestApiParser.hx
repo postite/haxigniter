@@ -4,9 +4,9 @@ import Type;
 import haxigniter.common.types.TypeFactory;
 import haxigniter.tests.TestCase;
 
-import haxigniter.restapi.RestApiRequest;
-import haxigniter.restapi.RestApiResponse;
-import haxigniter.restapi.RestApiParser;
+import haxigniter.server.restapi.RestApiRequest;
+import haxigniter.common.restapi.RestApiResponse;
+import haxigniter.server.restapi.RestApiParser;
 
 class When_using_RestApiParser extends haxigniter.tests.TestCase
 {

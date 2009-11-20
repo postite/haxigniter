@@ -1,4 +1,4 @@
-package haxigniter.restapi;
+package haxigniter.server.restapi;
 
 import haxigniter.libraries.Inflection;
 import haxigniter.libraries.Database;
@@ -17,9 +17,9 @@ import neko.db.ResultSet;
 
 import haxigniter.libraries.Database;
 
-import haxigniter.restapi.RestApiRequest;
-import haxigniter.restapi.RestApiResponse;
-import haxigniter.restapi.RestApiSecurityHandler;
+import haxigniter.server.restapi.RestApiRequest;
+import haxigniter.common.restapi.RestApiResponse;
+import haxigniter.server.restapi.RestApiSecurityHandler;
 
 import haxigniter.exceptions.RestApiException;
 
@@ -409,7 +409,7 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		// Test if security allows this request.
 		security.read(tableName, response, request.queryParameters);
 		
-		return haxigniter.restapi.RestApiResponse.successData(response);
+		return haxigniter.common.restapi.RestApiResponse.successData(response);
 	}
 	
 	/////////////////////////////////////////////////////////////////

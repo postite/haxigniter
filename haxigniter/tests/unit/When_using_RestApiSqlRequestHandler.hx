@@ -5,12 +5,12 @@ import haxe.Unserializer;
 import haxigniter.server.Controller;
 import haxigniter.server.request.RequestHandler;
 
-import haxigniter.restapi.RestApiInterface;
-import haxigniter.restapi.RestApiSqlRequestHandler;
-import haxigniter.restapi.RestApiFormatHandler;
-import haxigniter.restapi.RestApiSecurityHandler;
-import haxigniter.restapi.RestApiRequest;
-import haxigniter.restapi.RestApiResponse;
+import haxigniter.common.restapi.RestApiInterface;
+import haxigniter.common.restapi.RestApiResponse;
+import haxigniter.server.restapi.RestApiSqlRequestHandler;
+import haxigniter.server.restapi.RestApiFormatHandler;
+import haxigniter.server.restapi.RestApiSecurityHandler;
+import haxigniter.server.restapi.RestApiRequest;
 
 import haxigniter.server.request.RestApiHandler;
 

@@ -1,6 +1,6 @@
 package haxigniter.exceptions;
 
-import haxigniter.restapi.RestApiResponse;
+import haxigniter.common.restapi.RestApiResponse;
 
 class RestApiException extends haxigniter.exceptions.Exception
 {

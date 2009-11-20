@@ -1,6 +1,6 @@
-﻿package haxigniter.restapi;
+﻿package haxigniter.server.restapi;
 
-import haxigniter.restapi.RestApiResponse;
+import haxigniter.common.restapi.RestApiResponse;
 
 typedef RestApiFormat = String;
 
