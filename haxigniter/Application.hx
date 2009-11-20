@@ -39,7 +39,7 @@ class Application
 			controller = request.createController(segments[0]);
 			controller.requestHandler.handleRequest(controller, requestUri, Web.getMethod(), Web.getParams(), Web.getParamsString(), Web.getPostData());
 		}
-		catch(e : haxigniter.exceptions.NotFoundException)
+		catch(e : haxigniter.server.exceptions.NotFoundException)
 		{
 			if(errorHandler != null)
 			{

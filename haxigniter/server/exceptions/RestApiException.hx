@@ -1,8 +1,8 @@
-package haxigniter.exceptions;
+package haxigniter.server.exceptions;
 
 import haxigniter.common.restapi.RestApiResponse;
 
-class RestApiException extends haxigniter.exceptions.Exception
+class RestApiException extends haxigniter.common.exceptions.Exception
 {
 	public var error(default, null) : RestErrorType;
 	

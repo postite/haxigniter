@@ -1,6 +1,6 @@
 ﻿package haxigniter.server.restapi;
 
-import haxigniter.exceptions.RestApiException;
+import haxigniter.server.exceptions.RestApiException;
 import haxigniter.common.restapi.RestApiResponse;
 import haxigniter.server.restapi.RestApiFormatHandler;
 

@@ -22,7 +22,7 @@ enum DatabaseDriver
 	sqlite;
 }
 
-class DatabaseException extends haxigniter.exceptions.Exception
+class DatabaseException extends haxigniter.common.exceptions.Exception
 {
 	public var connection : DatabaseConnection;
 	

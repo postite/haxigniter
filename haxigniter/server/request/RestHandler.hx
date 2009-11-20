@@ -95,7 +95,7 @@ class RestHandler implements RequestHandler
 
 			callMethod = Reflect.field(controller, action);
 			if(callMethod == null)
-				throw new haxigniter.exceptions.NotFoundException(controllerType + ' REST-action "' + action + '" not found.');
+				throw new haxigniter.server.exceptions.NotFoundException(controllerType + ' REST-action "' + action + '" not found.');
 
 			// Add extra arguments if the action allows.
 			if(extraArgsPos != null)
@@ -140,11 +140,11 @@ class RestHandler implements RequestHandler
 
 			callMethod = Reflect.field(controller, action);
 			if(callMethod == null)
-				throw new haxigniter.exceptions.NotFoundException(controllerType + ' REST-action "' + action + '" not found.');
+				throw new haxigniter.server.exceptions.NotFoundException(controllerType + ' REST-action "' + action + '" not found.');
 		}
 		else
 		{
-			throw new haxigniter.exceptions.RequestException('Unsupported HTTP method: ' + method);
+			throw new haxigniter.common.exceptions.Exception('Unsupported HTTP method: ' + method);
 		}
 		
 		if(typecastId)

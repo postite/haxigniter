@@ -21,7 +21,7 @@ import haxigniter.server.restapi.RestApiRequest;
 import haxigniter.common.restapi.RestApiResponse;
 import haxigniter.server.restapi.RestApiSecurityHandler;
 
-import haxigniter.exceptions.RestApiException;
+import haxigniter.server.exceptions.RestApiException;
 
 typedef SqlTable = {
 	var name: String;

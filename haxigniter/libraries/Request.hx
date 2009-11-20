@@ -22,7 +22,7 @@ class Request
 		// Instantiate a controller with the above class name.
 		var classType : Class<Dynamic> = Type.resolveClass(controllerClass);
 		if(classType == null)
-			throw new haxigniter.exceptions.NotFoundException(controllerClass + ' not found. (Is it defined in Config.hx?)');
+			throw new haxigniter.server.exceptions.NotFoundException(controllerClass + ' not found. (Is it defined in Config.hx?)');
 
 		return cast(Type.createInstance(classType, controllerArgs == null ? [] : controllerArgs), Controller);
 	}

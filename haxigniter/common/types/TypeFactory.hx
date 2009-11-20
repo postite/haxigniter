@@ -117,7 +117,7 @@ class TypeFactory
 				// It's up to those classes to determine if the value is legal or not.
 				var classType = Type.resolveClass(typeString);
 				if(classType == null)
-					throw new haxigniter.exceptions.Exception('[WebTypeFactory] Type not found: ' + typeString);
+					throw new haxigniter.common.exceptions.Exception('[WebTypeFactory] Type not found: ' + typeString);
 				
 				output = Type.createInstance(classType, [value]);
 		}
@@ -146,7 +146,7 @@ class TypeFactory
 	}
 }
 
-class TypeException extends haxigniter.exceptions.Exception
+class TypeException extends haxigniter.common.exceptions.Exception
 {
 	public var className(getClassName, null) : String;
 	private var my_className : String;

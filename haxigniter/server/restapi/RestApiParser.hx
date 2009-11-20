@@ -2,7 +2,7 @@ package haxigniter.server.restapi;
 
 import haxigniter.server.restapi.RestApiRequest;
 import haxigniter.common.restapi.RestApiResponse;
-import haxigniter.exceptions.RestApiException;
+import haxigniter.server.exceptions.RestApiException;
 
 /* 
    Css-selector parser written and kindly donated by John A. De Goes.

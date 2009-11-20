@@ -1,6 +1,6 @@
 package haxigniter.tests.unit;
 
-import haxigniter.exceptions.RestApiException;
+import haxigniter.server.exceptions.RestApiException;
 import haxigniter.server.restapi.RestApiConfigSecurityHandler;
 
 import haxigniter.common.restapi.RestApiInterface;

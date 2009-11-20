@@ -7,7 +7,7 @@ import neko.Lib;
 #end
 
 import haxe.PosInfos;
-import haxigniter.exceptions.RestApiException;
+import haxigniter.server.exceptions.RestApiException;
 
 import haxigniter.server.restapi.RestApiSecurityHandler;
 import haxigniter.common.restapi.RestApiInterface;

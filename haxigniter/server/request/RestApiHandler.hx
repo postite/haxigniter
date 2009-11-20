@@ -22,7 +22,7 @@ import haxigniter.server.restapi.RestApiSecurityHandler;
 import haxigniter.server.restapi.RestApiFormatHandler;
 import haxigniter.server.restapi.RestApiRequestHandler;
 
-import haxigniter.exceptions.RestApiException;
+import haxigniter.server.exceptions.RestApiException;
 
 class RestApiHandler implements RequestHandler, implements RestApiFormatHandler, implements RestApiInterface
 {

@@ -101,7 +101,7 @@ class Url
 		if(!validUrl.match(uri))
 		{
 			// TODO: Multiple languages
-			throw new haxigniter.exceptions.Exception('The URI you submitted has disallowed characters.');
+			throw new haxigniter.common.exceptions.Exception('The URI you submitted has disallowed characters.');
 		}
 	}
 }

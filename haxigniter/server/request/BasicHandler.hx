@@ -31,7 +31,7 @@ class BasicHandler implements RequestHandler
 
 		var callMethod : Dynamic = Reflect.field(controller, controllerMethod);
 		if(callMethod == null)
-			throw new haxigniter.exceptions.NotFoundException(controllerType + ' method "' + controllerMethod + '" not found.');
+			throw new haxigniter.server.exceptions.NotFoundException(controllerType + ' method "' + controllerMethod + '" not found.');
 
 		// Typecast the arguments.
 		var arguments : Array<Dynamic> = TypeFactory.typecastArguments(controllerType, controllerMethod, uriSegments.slice(2));

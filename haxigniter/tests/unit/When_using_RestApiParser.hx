@@ -241,7 +241,7 @@ class When_using_RestApiParser extends haxigniter.tests.TestCase
 			parse(input);
 			this.assertEqual('', 'Parse data "' + input + '" should\'ve failed.');
 		}
-		catch(e : haxigniter.exceptions.RestApiException)
+		catch(e : haxigniter.server.exceptions.RestApiException)
 		{
 			this.assertPattern(expectedError, e.message);
 			this.assertEqual(expectedErrorType, e.error);
