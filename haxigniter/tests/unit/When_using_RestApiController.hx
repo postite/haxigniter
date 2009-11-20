@@ -15,7 +15,7 @@ import haxigniter.server.restapi.RestApiFormatHandler;
 import haxigniter.server.restapi.RestApiRequest;
 import haxigniter.server.restapi.RestApiRequestHandler;
 
-import haxigniter.libraries.Request;
+import haxigniter.server.libraries.Request;
 
 class SecurityMock implements RestApiSecurityHandler
 {

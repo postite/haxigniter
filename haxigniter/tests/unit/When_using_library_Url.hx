@@ -1,6 +1,6 @@
 package haxigniter.tests.unit;
 
-import haxigniter.libraries.Url;
+import haxigniter.server.libraries.Url;
 
 class When_using_library_Url extends haxigniter.tests.TestCase
 {

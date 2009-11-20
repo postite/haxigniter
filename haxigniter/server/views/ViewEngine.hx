@@ -9,7 +9,7 @@ import neko.Lib;
 #end
 
 import haxigniter.Application;
-import haxigniter.libraries.Server;
+import haxigniter.server.libraries.Server;
 
 /**
  * This is an abstract class which is the base of the views of haXigniter.

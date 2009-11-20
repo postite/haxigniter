@@ -1,6 +1,6 @@
 package haxigniter.server.request;
 
-import haxigniter.libraries.DebugLevel;
+import haxigniter.server.libraries.DebugLevel;
 import haxigniter.server.request.RequestHandler;
 import haxigniter.server.Controller;
 
@@ -12,7 +12,7 @@ import neko.Lib;
 import neko.Web;
 #end
 
-import haxigniter.libraries.Debug;
+import haxigniter.server.libraries.Debug;
 
 import haxigniter.common.restapi.RestApiInterface;
 import haxigniter.common.restapi.RestApiResponse;
@@ -134,7 +134,7 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 				//throw new RestApiException('Multiple output formats specified: "' + outputFormat + '" and "' + resourceData[1] + '".', RestErrorType.invalidOutputFormat);
 			}
 			
-			var parameters = haxigniter.libraries.Input.parseQuery(apiRequestPattern.matched(3));
+			var parameters = haxigniter.server.libraries.Input.parseQuery(apiRequestPattern.matched(3));
 			
 			if(StringTools.endsWith(query, '/'))
 				query = query.substr(0, query.length - 1);			

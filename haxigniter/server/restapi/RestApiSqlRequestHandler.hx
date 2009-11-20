@@ -1,7 +1,7 @@
 package haxigniter.server.restapi;
 
-import haxigniter.libraries.Inflection;
-import haxigniter.libraries.Database;
+import haxigniter.common.libraries.Inflection;
+import haxigniter.server.libraries.Database;
 
 import Type;
 
@@ -15,7 +15,7 @@ import neko.Web;
 import neko.db.ResultSet;
 #end
 
-import haxigniter.libraries.Database;
+import haxigniter.server.libraries.Database;
 
 import haxigniter.server.restapi.RestApiRequest;
 import haxigniter.common.restapi.RestApiResponse;

@@ -1,6 +1,6 @@
 package haxigniter.tests.unit;
 
-import haxigniter.libraries.Inflection;
+import haxigniter.common.libraries.Inflection;
 
 class When_using_library_Inflection extends haxigniter.tests.TestCase
 {

@@ -1,8 +1,8 @@
 package haxigniter; 
 
-import haxigniter.libraries.Debug;
-import haxigniter.libraries.DebugLevel;
-import haxigniter.libraries.Server;
+import haxigniter.server.libraries.Debug;
+import haxigniter.server.libraries.DebugLevel;
+import haxigniter.server.libraries.Server;
 import haxigniter.server.views.ViewEngine;
 
 #if php

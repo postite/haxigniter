@@ -25,7 +25,7 @@ extern class Smarty
 {
 	public static function __init__() : Void
 	{
-		haxigniter.libraries.Server.requireExternal('smarty/libs/Smarty.class.php');
+		haxigniter.server.libraries.Server.requireExternal('smarty/libs/Smarty.class.php');
 	}
 	
 	public function new() : Void;

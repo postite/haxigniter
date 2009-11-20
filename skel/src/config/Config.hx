@@ -1,6 +1,6 @@
 package config; 
 
-import haxigniter.libraries.Debug; import haxigniter.libraries.DebugLevel;
+import haxigniter.server.libraries.Debug; import haxigniter.server.libraries.DebugLevel;
 #if php
 import php.Sys; import php.Web;
 #elseif neko
@@ -279,7 +279,7 @@ class Config extends haxigniter.Config
 		| Error page
 		|--------------------------------------------------------------------------
 		|
-		| haxigniter.libraries.Server.error() can be used to display an error page
+		| haxigniter.server.libraries.Server.error() can be used to display an error page
 		| when things go wrong.
 		|
 		| If you want to call a controller as an error page, set it here. For 
@@ -296,7 +296,7 @@ class Config extends haxigniter.Config
 		| Error 404 page
 		|--------------------------------------------------------------------------
 		|
-		| haxigniter.libraries.Server.error404() can be used to display the 404
+		| haxigniter.server.libraries.Server.error404() can be used to display the 404
 		| error page (not found error). Correct headers are sent automatically.
 		|
 		| If you want to call a controller as an error page, set it here. For 

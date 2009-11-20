@@ -8,10 +8,10 @@ import neko.Web;
 
 import haxigniter.server.Controller;
 
-import haxigniter.libraries.Debug;
-import haxigniter.libraries.Server;
-import haxigniter.libraries.Url;
-import haxigniter.libraries.Request;
+import haxigniter.server.libraries.Debug;
+import haxigniter.server.libraries.Server;
+import haxigniter.server.libraries.Url;
+import haxigniter.server.libraries.Request;
 
 class Application
 {
@@ -62,10 +62,10 @@ class Application
 			else if(!config.development)
 			{
 				var server = new Server(config);
-				var debug = new haxigniter.libraries.Debug(config);
+				var debug = new haxigniter.server.libraries.Debug(config);
 				var error = genericError(e);
 				
-				debug.log(e, haxigniter.libraries.DebugLevel.error);
+				debug.log(e, haxigniter.server.libraries.DebugLevel.error);
 				server.error(error.title, error.header, error.message);
 			}
 			else

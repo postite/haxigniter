@@ -7,10 +7,10 @@ import haxigniter.server.request.RestHandler;
 import haxigniter.server.session.FileSession;
 import haxigniter.server.session.SessionObject;
 
-import haxigniter.libraries.Debug;
-import haxigniter.libraries.DebugLevel;
+import haxigniter.server.libraries.Debug;
+import haxigniter.server.libraries.DebugLevel;
 
-import haxigniter.libraries.Database;
+import haxigniter.server.libraries.Database;
 import haxigniter.server.views.ViewEngine;
 
 /**

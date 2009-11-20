@@ -1,7 +1,7 @@
 package haxigniter.tests.unit;
 
-import haxigniter.libraries.Debug; 
-import haxigniter.libraries.DebugLevel;
+import haxigniter.server.libraries.Debug; 
+import haxigniter.server.libraries.DebugLevel;
 
 #if php
 import php.Sys; import php.Web;

@@ -1,4 +1,4 @@
-﻿package haxigniter.libraries;
+﻿package haxigniter.common.libraries;
 
 class IterableTools
 {

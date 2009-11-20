@@ -1,4 +1,4 @@
-package haxigniter.libraries;
+package haxigniter.common.libraries;
 
 /**
  * Many thanks to http://kuwamoto.org/2007/12/17/improved-pluralizing-in-php-actionscript-and-ror/

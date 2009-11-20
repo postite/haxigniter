@@ -1,6 +1,6 @@
 package haxigniter.tests.unit;
 
-import haxigniter.libraries.Database;
+import haxigniter.server.libraries.Database;
 
 #if php
 import php.db.Connection;

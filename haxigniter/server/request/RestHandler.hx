@@ -3,8 +3,8 @@ package haxigniter.server.request;
 import haxigniter.server.Controller;
 
 import haxigniter.Config;
-import haxigniter.libraries.Request;
-import haxigniter.libraries.Url;
+import haxigniter.server.libraries.Request;
+import haxigniter.server.libraries.Url;
 import haxigniter.common.rtti.RttiUtil;
 import haxigniter.server.request.RequestHandler;
 import haxigniter.common.types.TypeFactory;

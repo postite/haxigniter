@@ -1,4 +1,4 @@
-﻿package haxigniter.libraries;
+﻿package haxigniter.server.libraries;
 
 import haxigniter.server.session.SessionObject;
 

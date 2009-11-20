@@ -1,5 +1,5 @@
 ﻿package config; 
-import haxigniter.libraries.Database;
+import haxigniter.server.libraries.Database;
 
 /* =============================================================== */
 /* ===== Database configuration file ============================= */

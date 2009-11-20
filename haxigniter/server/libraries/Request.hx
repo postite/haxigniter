@@ -1,4 +1,4 @@
-﻿package haxigniter.libraries;
+﻿package haxigniter.server.libraries;
 
 import Type;
 import haxigniter.common.types.TypeFactory;

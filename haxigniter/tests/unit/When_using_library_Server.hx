@@ -1,6 +1,6 @@
 package haxigniter.tests.unit;
 
-import haxigniter.libraries.Server;
+import haxigniter.server.libraries.Server;
 
 class When_using_library_Server extends haxigniter.tests.TestCase
 {

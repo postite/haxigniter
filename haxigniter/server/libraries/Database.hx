@@ -1,8 +1,8 @@
-﻿package haxigniter.libraries;
+﻿package haxigniter.server.libraries;
 
 import Type;
 import haxe.PosInfos;
-import haxigniter.libraries.Debug;
+import haxigniter.server.libraries.Debug;
 
 #if php
 import php.db.Connection;

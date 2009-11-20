@@ -1,6 +1,6 @@
 package haxigniter.tests.unit;
 
-import haxigniter.libraries.Input;
+import haxigniter.server.libraries.Input;
 
 class TestInputClass
 {

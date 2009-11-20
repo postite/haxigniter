@@ -15,7 +15,7 @@ import haxigniter.common.restapi.RestApiResponse;
 import haxigniter.server.restapi.RestApiRequest;
 import haxigniter.server.restapi.RestApiFormatHandler;
 
-using haxigniter.libraries.IterableTools;
+using haxigniter.common.libraries.IterableTools;
 
 /////////////////////////////////////////////////////////////////////
 
@@ -218,7 +218,7 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 	
 	private function setDataOwnership(data : PropertyObject, resource : String, id : Int) : Void
 	{
-		var keyField = (resource == 'id') ? 'id' : haxigniter.libraries.Inflection.singularize(resource) + 'Id';
+		var keyField = (resource == 'id') ? 'id' : haxigniter.common.libraries.Inflection.singularize(resource) + 'Id';
 		Reflect.setField(data, keyField, id);
 	}
 	

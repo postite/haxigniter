@@ -1,7 +1,7 @@
 ﻿package config;
 
 /**
- * By inheriting from haxigniter.libraries.SessionObject, 
+ * By inheriting from haxigniter.server.libraries.SessionObject, 
  * this class is automatically retained by PHP or Neko session.
  *
  * Just add and set the variables you like. Very useful for shopping carts, user data, etc.

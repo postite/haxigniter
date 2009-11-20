@@ -276,7 +276,7 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
 	public function test_Then_update_requests_should_create_proper_sql()
 	{
 		// Also testing serialized Hash here.
-		var hash = haxigniter.libraries.Input.parseQuery('firstname=Boris&lastname=Doris');
+		var hash = haxigniter.server.libraries.Input.parseQuery('firstname=Boris&lastname=Doris');
 		
 		this.db.setMockResults([9,8,7]);
 		

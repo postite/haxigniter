@@ -1,6 +1,6 @@
 package controllers;
 
-import haxigniter.libraries.Server;
+import haxigniter.server.libraries.Server;
 import haxigniter.server.request.BasicHandler;
 import tests.Integrity;
 

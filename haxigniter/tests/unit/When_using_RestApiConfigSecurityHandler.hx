@@ -7,7 +7,7 @@ import haxigniter.common.restapi.RestApiInterface;
 import haxigniter.common.restapi.RestApiResponse;
 import haxigniter.server.restapi.RestApiFormatHandler;
 
-using haxigniter.libraries.IterableTools;
+using haxigniter.common.libraries.IterableTools;
 
 class MockApiInterface implements RestApiInterface
 {

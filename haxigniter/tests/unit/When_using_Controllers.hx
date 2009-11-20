@@ -10,7 +10,7 @@ import haxigniter.server.Controller;
 import haxigniter.server.request.RestHandler;
 import haxigniter.server.request.BasicHandler;
 
-import haxigniter.libraries.Request;
+import haxigniter.server.libraries.Request;
 
 class Testrest implements Controller, implements Infos
 {

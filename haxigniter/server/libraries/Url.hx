@@ -1,8 +1,8 @@
-package haxigniter.libraries;
+package haxigniter.server.libraries;
 
 import haxigniter.Config;
 import haxigniter.server.session.SessionObject;
-import haxigniter.libraries.ERegTools;
+import haxigniter.common.libraries.ERegTools;
 
 #if php
 import php.Web;
