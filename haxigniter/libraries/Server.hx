@@ -1,15 +1,19 @@
 ﻿package haxigniter.libraries;
 
+import haxigniter.server.session.SessionObject;
+
 #if php
 import php.io.Path;
 import php.io.File;
 import php.Lib;
 import php.Web;
+import php.Sys;
 #elseif neko
 import neko.io.Path;
 import neko.io.File;
 import neko.Lib;
 import neko.Web;
+import neko.Sys;
 #end
 
 import haxigniter.Config;
@@ -17,10 +21,14 @@ import haxigniter.Config;
 class Server
 {
 	private var config : Config;
+	private var session : SessionObject;
+	private var SSLInDevelopmentMode : Bool;
 	
-	public function new(config : Config)
+	public function new(config : Config, ?session : SessionObject, ?SSLInDevelopmentMode = false)
 	{
 		this.config = config;
+		this.session = session;
+		this.SSLInDevelopmentMode = SSLInDevelopmentMode;
 	}
 	
 	#if php
@@ -93,6 +101,58 @@ class Server
 		}
 	}
 
+	///// Redirection ///////////////////////////////////////////////
+	
+	/**
+	 * Redirect to another page. If url is absolute or starting with a slash, a normal redirect is made. Otherwise, siteUrl() is used to create a local redirect.
+	 * Note: In order for this function to work it must be used before anything is outputted to the browser, since it utilizes server headers.
+	 * @param	?url
+	 * @param	?flashMessage
+	 * @param	?https
+	 * @param	?responseCode
+	 */
+	public function redirect(?url : String = null, ?flashMessage : String = null, ?https : Bool = null, ?responseCode : Int = null) : Void
+	{
+		if(flashMessage != null && session != null)
+			session.flashVar = flashMessage;
+
+		if(responseCode != null)
+			Web.setReturnCode(responseCode);
+
+		var urlLib = new Url(this.config);
+			
+		if(url == null)
+			url = urlLib.siteUrl(urlLib.uriString());
+		else if(!StringTools.startsWith(url, '/') && url.indexOf('://') == -1)
+			url = urlLib.siteUrl(url);
+		
+		if(https != null)
+			url = (https ? 'https' : 'http') + url.substr(url.indexOf(':'));
+
+        // No SSL redirect in development mode.
+        if(config.development && !this.SSLInDevelopmentMode)
+            url = StringTools.replace(url, 'https://', 'http://');
+		
+		Web.redirect(url);
+	}
+	
+	public function forceSsl(ssl = true, ?sslActive : Bool) : Void
+	{
+		// No SSL redirect in development mode.
+		if(config.development && !this.SSLInDevelopmentMode)
+			return;
+
+		// Default test
+		if(sslActive == null)
+			sslActive = Sys.environment().exists('HTTPS') && Sys.environment().get('HTTPS') == 'on';
+		
+		if((sslActive && ssl) || !(sslActive || ssl))
+			return;
+		
+		this.redirect(null, session != null ? session.flashVar : null, ssl);
+	}
+	
+	/////////////////////////////////////////////////////////////////
 	
 	/**
 	 * Implementation of the php function dirname(). Return value is without appending slash.

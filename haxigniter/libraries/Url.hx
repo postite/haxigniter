@@ -5,24 +5,19 @@ import haxigniter.server.session.SessionObject;
 import haxigniter.libraries.ERegTools;
 
 #if php
-import php.Sys;
 import php.Web;
 #elseif neko
-import neko.Sys;
 import neko.Web;
 #end
 
 class Url
 {
 	private var config : Config;
-	private var session : SessionObject;
 	private var SSLInDevelopmentMode : Bool;
 
-	public function new(config : Config, ?session : SessionObject, ?SSLInDevelopmentMode = false)
+	public function new(config : Config)
 	{
 		this.config = config;
-		this.session = session;
-		this.SSLInDevelopmentMode = SSLInDevelopmentMode;
 	}
 	
 	public function split(uri : String, ?glue = '/') : Array<String>
@@ -93,55 +88,6 @@ class Url
 		var output : String = Web.getURI();
 		return StringTools.startsWith(output, '/') ? output : '/' + output;
 	}
-
-	/**
-	 * Redirect to another page. If url is absolute or starting with a slash, a normal redirect is made. Otherwise, siteUrl() is used to create a local redirect.
-	 * Note: In order for this function to work it must be used before anything is outputted to the browser, since it utilizes server headers.
-	 * @param	?url
-	 * @param	?flashMessage
-	 * @param	?https
-	 * @param	?responseCode
-	 */
-	public function redirect(?url : String = null, ?flashMessage : String = null, ?https : Bool = null, ?responseCode : Int = null) : Void
-	{
-		if(flashMessage != null && session != null)
-			session.flashVar = flashMessage;
-
-		if(responseCode != null)
-			Web.setReturnCode(responseCode);
-
-		if(url == null)
-			url = siteUrl(uriString());
-		else if(!StringTools.startsWith(url, '/') && url.indexOf('://') == -1)
-			url = siteUrl(url);
-		
-		if(https != null)
-			url = (https ? 'https' : 'http') + url.substr(url.indexOf(':'));
-
-        // No SSL redirect in development mode.
-        if(config.development && !this.SSLInDevelopmentMode)
-            url = StringTools.replace(url, 'https://', 'http://');
-		
-		Web.redirect(url);
-	}
-	
-	public function forceSsl(ssl = true, ?sslActive : Bool) : Void
-	{
-		// No SSL redirect in development mode.
-		if(config.development && !this.SSLInDevelopmentMode)
-			return;
-
-		// Default test
-		if(sslActive == null)
-			sslActive = Sys.environment().exists('HTTPS') && Sys.environment().get('HTTPS') == 'on';
-		
-		if((sslActive && ssl) || !(sslActive || ssl))
-			return;
-		
-		this.redirect(null, session != null ? session.flashVar : null, ssl);
-	}
-	
-	/////////////////////////////////////////////////////////////////
 	
 	public function testValidUri(uri : String) : Void
 	{
