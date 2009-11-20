@@ -2,7 +2,7 @@ package haxigniter.tests.unit;
 
 import haxe.rtti.Infos;
 import Type;
-import haxigniter.types.TypeFactory;
+import haxigniter.common.types.TypeFactory;
 import haxigniter.tests.TestCase;
 
 import haxigniter.server.request.RequestHandler;

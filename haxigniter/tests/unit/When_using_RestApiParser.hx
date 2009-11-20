@@ -1,7 +1,7 @@
 package haxigniter.tests.unit;
 
 import Type;
-import haxigniter.types.TypeFactory;
+import haxigniter.common.types.TypeFactory;
 import haxigniter.tests.TestCase;
 
 import haxigniter.restapi.RestApiRequest;

@@ -1,7 +1,7 @@
 package haxigniter.tests.unit;
 
 import Type;
-import haxigniter.types.TypeFactory;
+import haxigniter.common.types.TypeFactory;
 import haxigniter.tests.TestCase;
 
 /**
@@ -35,16 +35,16 @@ class When_using_a_TypeFactory extends haxigniter.tests.TestCase
 		this.assertEqual(4, d[3]);
 		
 		// Test the DbID class, which only accepts integers > 0
-		var db : DbID = untyped TypeFactory.createType('haxigniter.types.DbID', '123');		
-		this.assertIsA(db, haxigniter.types.DbID);
+		var db : DbID = untyped TypeFactory.createType('haxigniter.common.types.DbID', '123');		
+		this.assertIsA(db, haxigniter.common.types.DbID);
 		
 		try
 		{
-			var db2 : DbID = untyped TypeFactory.createType('haxigniter.types.DbID', '0');
+			var db2 : DbID = untyped TypeFactory.createType('haxigniter.common.types.DbID', '0');
 		}
-		catch (e : haxigniter.types.TypeException)
+		catch (e : haxigniter.common.types.TypeException)
 		{
-			this.assertPattern(~/Invalid value for haxigniter.types.DbID: "0"/, e.message);
+			this.assertPattern(~/Invalid value for haxigniter.common.types.DbID: "0"/, e.message);
 		}
 	}
 }
