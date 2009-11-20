@@ -9,7 +9,7 @@
  */
 class Session extends haxigniter.server.session.SessionObject
 {
-	//public var name : String;
+	public var name : String;
 
 	public function new()
 	{	

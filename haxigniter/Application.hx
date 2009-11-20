@@ -1,12 +1,12 @@
 package haxigniter;
 
-import haxigniter.server.Controller;
-
 #if php
 import php.Web;
 #elseif neko
 import neko.Web;
 #end
+
+import haxigniter.server.Controller;
 
 import haxigniter.libraries.Debug;
 import haxigniter.libraries.Server;
@@ -20,19 +20,24 @@ class Application
 	 * @param	config Configuration file
 	 * @param	?errorHandler If it exists, any exception is sent here.
 	 */
-	public static function run(config : Config, ?errorHandler : Dynamic -> Void) : Void
+	public static function run(config : Config, ?errorHandler : Dynamic -> Void) : Controller
 	{
+		var controller : Controller = null;
+		
 		try
 		{
 			var url : Url = new Url(config);
-			var requestUri = Web.getURI();
+			var request : Request = new Request(config);
 
 			// Test url for valid characters.
+			var requestUri = Web.getURI();
 			url.testValidUri(requestUri);
-
+			
+			var segments = url.split(requestUri);
+			
 			// Handle the current web request.
-			var request : Request = new Request(config);
-			request.execute(requestUri, Web.getMethod(), Web.getParams(), Web.getParamsString(), Web.getPostData());
+			controller = request.createController(segments[0]);
+			controller.requestHandler.handleRequest(controller, requestUri, Web.getMethod(), Web.getParams(), Web.getParamsString(), Web.getPostData());
 		}
 		catch(e : haxigniter.exceptions.NotFoundException)
 		{
@@ -66,8 +71,10 @@ class Application
 			else
 				Application.rethrow(e);
 		}
+		
+		return controller;
 	}
-	
+
 	public static dynamic function genericError(e : Dynamic) : {title: String, header: String, message: String}
 	{
 		return { title: 'Page error', header: 'Page error', message: 'Something went wrong during server processing.' };

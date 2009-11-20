@@ -23,7 +23,17 @@ class SessionObject
 			session.set(object, Type.createInstance(classType, classArgs == null ? [] : classArgs));
 		}
 		
-		return cast session.get(sessionName);
+		var output = cast session.get(object);
+		
+		if(Reflect.hasField(output, 'flashVar'))
+		{
+			Reflect.setField(output, 'flashVar', getObjFlash(classType));
+			
+			// Set flashvar to null, so it's gone on the next request.
+			setObjFlash(classType, null);
+		}
+		
+		return output;
 	}
 	
 	private static function objectName(classType : Class<Dynamic>) : String
@@ -31,18 +41,25 @@ class SessionObject
 		return sessionName + Type.getClassName(classType);
 	}
 
-	/////////////////////////////////////////////////////////////////
-	
-	public var flashVar(getFlash, setFlash) : Dynamic;
-	private function getFlash()
+	private static function setObjFlash(classType : Class<Dynamic>, value : Dynamic) : Void
 	{
-		var object = objectName(Type.getClass(this));
+		var object = objectName(classType);
+		session.set(object + flashName, value);
+	}
+	
+	private static function getObjFlash(classType : Class<Dynamic>) : Dynamic
+	{
+		var object = objectName(classType);
 		return session.exists(object + flashName) ? session.get(object + flashName) : null;
 	}
+	
+	/////////////////////////////////////////////////////////////////
+	
+	public var flashVar(default, setFlash) : Dynamic;
 	private function setFlash(value : Dynamic)
 	{
-		var object = objectName(Type.getClass(this));		
-		return session.set(object + flashName, value);
+		setObjFlash(Type.getClass(this), value);
+		this.flashVar = value;
 	}
 	
 	/**

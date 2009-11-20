@@ -3,6 +3,7 @@ package haxigniter.server.request;
 import haxigniter.server.Controller;
 import haxigniter.libraries.Url;
 import haxigniter.Config;
+import haxigniter.common.types.TypeFactory;
 
 class BasicHandler implements RequestHandler
 {
@@ -33,7 +34,7 @@ class BasicHandler implements RequestHandler
 			throw new haxigniter.exceptions.NotFoundException(controllerType + ' method "' + controllerMethod + '" not found.');
 
 		// Typecast the arguments.
-		var arguments : Array<Dynamic> = haxigniter.types.TypeFactory.typecastArguments(controllerType, controllerMethod, uriSegments.slice(2));
+		var arguments : Array<Dynamic> = TypeFactory.typecastArguments(controllerType, controllerMethod, uriSegments.slice(2));
 		
 		return Reflect.callMethod(controller, callMethod, arguments);
 	}

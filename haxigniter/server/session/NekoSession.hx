@@ -1,13 +1,11 @@
 ﻿#if neko
-package haxigniter.server.neko;
+package haxigniter.server.session;
 
+import neko.FileSystem;
 import neko.Web;
 import neko.Sys;
 
-/**
-* TODO: TEST IT!
-*/
-class Session
+class NekoSession
 {
 	private static var SID : String = 'NEKOSESSIONID';
 	
@@ -141,8 +139,18 @@ class Session
 	{
 		if(started) return;
 		needCommit = false;
-		if( sessionName == null ) sessionName = Session.SID;
-		if( savePath == null ) savePath = neko.Sys.getCwd();
+		if( sessionName == null ) sessionName = SID;
+		
+		if( savePath == null )
+			savePath = neko.Sys.getCwd();
+		else
+		{
+			// Test if savepath exists. Need to remove last slash in path, otherwise FileSystem.exists() throws an exception.
+			var testPath = (StringTools.endsWith(savePath, '/') || StringTools.endsWith(savePath, '\\')) ? savePath.substr(0, savePath.length - 1) : savePath;
+			
+			if(!FileSystem.exists(testPath))
+				throw 'Neko session savepath not found: ' + testPath;
+		}
 
 		if( id==null )
 		{
@@ -205,7 +213,7 @@ class Session
 			} while( neko.FileSystem.exists(file) );
 			
 			// TODO: Set cookie path to application path, right now it's global.
-			Web.setCookie(Session.SID, id, null, null, '/');
+			Web.setCookie(SID, id, null, null, '/');
 			
 			started = true;
 			commit();

@@ -8,7 +8,7 @@ import haxigniter.libraries.Debug;
 import php.db.Connection;
 import php.db.ResultSet;
 import php.db.Mysql;
-import haxigniter.server.php.db.Sqlite;
+import haxigniter.server.db.Sqlite;
 #elseif neko
 import neko.db.Connection;
 import neko.db.ResultSet;

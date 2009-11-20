@@ -5,9 +5,9 @@ import haxigniter.server.Controller;
 import haxigniter.Config;
 import haxigniter.libraries.Request;
 import haxigniter.libraries.Url;
-import haxigniter.rtti.RttiUtil;
+import haxigniter.common.rtti.RttiUtil;
 import haxigniter.server.request.RequestHandler;
-import haxigniter.types.TypeFactory;
+import haxigniter.common.types.TypeFactory;
 
 /**
  * Use this class instead of Controller to get a Ruby on Rails-inspired RESTful approach.
@@ -104,7 +104,7 @@ class RestHandler implements RequestHandler
 				//haxigniter.Application.trace('Extra args: ' + uriSegments.slice(extraArgsPos));
 				
 				// Typecast the extra arguments and add them to the action.
-				var extraArguments : Array<Dynamic> = haxigniter.types.TypeFactory.typecastArguments(Type.getClass(controller), action, uriSegments.slice(extraArgsPos), argOffset);
+				var extraArguments : Array<Dynamic> = TypeFactory.typecastArguments(Type.getClass(controller), action, uriSegments.slice(extraArgsPos), argOffset);
 
 				args = args.concat(extraArguments);
 				

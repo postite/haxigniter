@@ -1,4 +1,4 @@
-package haxigniter.rtti;
+package haxigniter.common.rtti;
 
 import haxe.rtti.CType;
 

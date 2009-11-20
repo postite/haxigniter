@@ -21,11 +21,11 @@ class Start extends MyController, implements haxe.rtti.Infos
 	{
 		super();
 
-		var url = new haxigniter.libraries.Url(this.config, this.session);
+		var url = new haxigniter.libraries.Url(this.config);
 		
 		// Some default view assignments for every page
 		this.view.assign('application', 'haXigniter');
-		this.view.assign('link', url.siteUrl());
+		this.view.assign('link', url.siteUrl());		
 	}
 	
 	public function index()

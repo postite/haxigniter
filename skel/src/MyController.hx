@@ -44,13 +44,34 @@ class MyController implements haxigniter.server.Controller
 	
 	// The configuration file is static, since it used in main()
 	private static var configuration = new config.Config();
+	
+	// The application session is filebased, could be switched to other implementations.
+	private static var appSession = new FileSession(configuration.sessionPath);
 
 	/*
 	 * Application entrypoint
 	 */
-	static function main()
+	public static function main()
 	{
-		haxigniter.Application.run(configuration);
+		var controller = haxigniter.Application.run(configuration);
+		
+		// Need to do some cleanup, but test controller type since others may have been called. 
+		// This test can be removed if all controllers are inherited from MyController.
+		if(Std.is(controller, MyController))
+			applicationEnd(cast controller);
+	}
+
+	/**
+	 * Cleanup after application is run.
+	 * @param	controller
+	 */
+	private static function applicationEnd(controller : MyController)
+	{
+		if(controller.db != null)
+			controller.db.close();
+		
+		if(appSession != null)
+			appSession.close();
 	}
 
 	/**
@@ -97,8 +118,8 @@ class MyController implements haxigniter.server.Controller
 		}
 		else
 			this.db = new OnlineConnection();
-			
-		this.session = SessionObject.restore(new FileSession(config.sessionPath), config.Session);
+		
+		this.session = SessionObject.restore(appSession, config.Session);
 	}
 	
 	///// Some useful trace/log methods /////////////////////////////

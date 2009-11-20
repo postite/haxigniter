@@ -3,7 +3,7 @@ package haxigniter.server.session;
 #if php
 typedef InternalSession = php.Session;
 #elseif neko
-typedef InternalSession = haxigniter.neko.Session;
+typedef InternalSession = haxigniter.server.session.NekoSession;
 #end
 
 class FileSession implements Session

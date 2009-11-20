@@ -1,3 +1,4 @@
+#if php
 /*
  * Copyright (c) 2005, The haXe Project Contributors
  * All rights reserved.
@@ -22,7 +23,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
  * DAMAGE.
  */
-package haxigniter.server.php.db;
+package haxigniter.server.db;
 
 import php.db.Connection;
 import php.Lib;
@@ -224,6 +225,9 @@ private class SqliteResultSet implements php.db.ResultSet {
 	}
 }
 
+/**
+ * Sqlite version 3 for PHP.
+ */
 class Sqlite {
 
 	public static function open( file : String ) : Connection {
@@ -231,3 +235,4 @@ class Sqlite {
 	}
 
 }
+#end
