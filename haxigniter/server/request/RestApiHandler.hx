@@ -1,5 +1,6 @@
 package haxigniter.server.request;
 
+import haxe.Serializer;
 import haxigniter.server.libraries.DebugLevel;
 import haxigniter.server.request.RequestHandler;
 import haxigniter.server.Controller;
@@ -7,9 +8,11 @@ import haxigniter.server.Controller;
 #if php
 import php.Lib;
 import php.Web;
+import php.Utf8;
 #elseif neko
 import neko.Lib;
 import neko.Web;
+import neko.Utf8;
 #end
 
 import haxigniter.server.libraries.Debug;
@@ -41,7 +44,7 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 	public var noOutput : Bool;
 	public var debug : Debug;
 	
-	public function new(apiSecurityHandler : RestApiSecurityHandler, ?apiRequestHandler : RestApiRequestHandler, ?apiFormatHandler : RestApiFormatHandler)
+	public function new(apiSecurityHandler : RestApiSecurityHandler, apiRequestHandler : RestApiRequestHandler, ?apiFormatHandler : RestApiFormatHandler)
 	{
 		this.apiRequestHandler = apiRequestHandler;
 
@@ -107,8 +110,8 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 	{
 		return {
 			contentType: commonMimeTypes.haxigniter,
-			charSet: null,
-			output: haxe.Serializer.run(response)
+			charSet: 'utf-8',
+			output: Utf8.encode(haxe.Serializer.run(response))
 		};
 	}
 	
@@ -234,7 +237,7 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 		var finalOutput : RestResponseOutput = apiFormatHandler.restApiOutput(response, urlParts.format);
 
 		//this.trace(RestApiDebug.responseToString(response));
-		//this.trace(finalOutput);
+		//trace(finalOutput);
 		
 		if(!this.noOutput)
 		{
