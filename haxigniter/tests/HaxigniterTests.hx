@@ -25,7 +25,7 @@ import neko.Lib;
  * haXigniter framework tests.
  * Run by executing "tools/unittest.bat -all"
  */
-class HaxigniterTests extends haxigniter.tests.TestRunner
+class HaxigniterTests extends haxigniter.common.unit.TestRunner
 {
 	//new haxigniter.tests.HaxigniterTests().runAndDisplay();
 	

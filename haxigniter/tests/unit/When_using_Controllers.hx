@@ -3,7 +3,7 @@ package haxigniter.tests.unit;
 import haxe.rtti.Infos;
 import Type;
 import haxigniter.common.types.TypeFactory;
-import haxigniter.tests.TestCase;
+import haxigniter.common.unit.TestCase;
 
 import haxigniter.server.request.RequestHandler;
 import haxigniter.server.Controller;
@@ -84,7 +84,7 @@ class Teststandard implements Controller, implements Infos
 
 ///// Testing ///////////////////////////////////////////////////////
 
-class When_using_Controllers extends haxigniter.tests.TestCase
+class When_using_Controllers extends haxigniter.common.unit.TestCase
 {
 	private var rest : Testrest;
 	private var request : Request;

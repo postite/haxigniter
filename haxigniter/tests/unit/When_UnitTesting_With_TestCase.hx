@@ -1,7 +1,7 @@
 package haxigniter.tests.unit;
 
 import Type;
-import haxigniter.tests.TestCase;
+import haxigniter.common.unit.TestCase;
 
 /**
 * This is fun, unit testing a unit test class.

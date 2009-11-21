@@ -1,4 +1,4 @@
-package haxigniter;
+package haxigniter.server;
 
 #if php
 import php.Web;

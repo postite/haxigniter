@@ -1,6 +1,7 @@
 ﻿package tests;
 
-import haxigniter.Config;
+import haxigniter.server.Config;
+import haxigniter.tests.ServerIntegrity;
 
 /**
  * This is a template for your own integrity tests.
@@ -10,7 +11,7 @@ import haxigniter.Config;
  * the class, but for neko they will be executed in alphabetical order!
  * 
  */
-class Integrity extends haxigniter.tests.Integrity
+class Integrity extends ServerIntegrity
 {
 	/**
 	 * Integrity test template method.

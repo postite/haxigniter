@@ -2,7 +2,7 @@ package haxigniter.server.request;
 
 import haxigniter.server.Controller;
 
-import haxigniter.Config;
+import haxigniter.server.Config;
 import haxigniter.server.libraries.Request;
 import haxigniter.server.libraries.Url;
 import haxigniter.common.rtti.RttiUtil;
@@ -100,16 +100,16 @@ class RestHandler implements RequestHandler
 			// Add extra arguments if the action allows.
 			if(extraArgsPos != null)
 			{
-				//haxigniter.Application.trace('--- Request: ' + uriSegments);
-				//haxigniter.Application.trace('Extra args: ' + uriSegments.slice(extraArgsPos));
+				//haxigniter.server.Application.trace('--- Request: ' + uriSegments);
+				//haxigniter.server.Application.trace('Extra args: ' + uriSegments.slice(extraArgsPos));
 				
 				// Typecast the extra arguments and add them to the action.
 				var extraArguments : Array<Dynamic> = TypeFactory.typecastArguments(Type.getClass(controller), action, uriSegments.slice(extraArgsPos), argOffset);
 
 				args = args.concat(extraArguments);
 				
-				//haxigniter.Application.trace('Typed: ' + extraArguments);
-				//haxigniter.Application.trace('Output: ' + args);
+				//haxigniter.server.Application.trace('Typed: ' + extraArguments);
+				//haxigniter.server.Application.trace('Output: ' + args);
 			}
 		}
 		else if(method == 'POST')

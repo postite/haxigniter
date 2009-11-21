@@ -1,4 +1,4 @@
-package haxigniter; 
+package haxigniter.server; 
 
 import haxigniter.server.libraries.Debug;
 import haxigniter.server.libraries.DebugLevel;

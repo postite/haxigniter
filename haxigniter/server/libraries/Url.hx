@@ -1,6 +1,6 @@
 package haxigniter.server.libraries;
 
-import haxigniter.Config;
+import haxigniter.server.Config;
 import haxigniter.server.session.SessionObject;
 import haxigniter.common.libraries.ERegTools;
 

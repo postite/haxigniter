@@ -2,7 +2,7 @@ package haxigniter.tests.unit;
 
 import haxigniter.server.libraries.Url;
 
-class When_using_library_Url extends haxigniter.tests.TestCase
+class When_using_library_Url extends haxigniter.common.unit.TestCase
 {
 	private var config : MockConfig;
 	private var url : Url;

@@ -83,7 +83,7 @@ class TestSecurity implements RestApiSecurityHandler
 	}
 }
 
-class When_using_RestApiSqlRequestHandler extends haxigniter.tests.TestCase
+class When_using_RestApiSqlRequestHandler extends haxigniter.common.unit.TestCase
 {
 	var requestHandler : TestHandler;
 	var handler : RestApiSqlRequestHandler;

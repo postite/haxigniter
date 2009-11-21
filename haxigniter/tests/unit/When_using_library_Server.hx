@@ -2,7 +2,7 @@ package haxigniter.tests.unit;
 
 import haxigniter.server.libraries.Server;
 
-class When_using_library_Server extends haxigniter.tests.TestCase
+class When_using_library_Server extends haxigniter.common.unit.TestCase
 {
 	public function test_Then_basename_should_work_as_in_php()
 	{

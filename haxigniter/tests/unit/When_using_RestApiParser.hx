@@ -2,13 +2,13 @@ package haxigniter.tests.unit;
 
 import Type;
 import haxigniter.common.types.TypeFactory;
-import haxigniter.tests.TestCase;
+import haxigniter.common.unit.TestCase;
 
 import haxigniter.server.restapi.RestApiRequest;
 import haxigniter.common.restapi.RestApiResponse;
 import haxigniter.server.restapi.RestApiParser;
 
-class When_using_RestApiParser extends haxigniter.tests.TestCase
+class When_using_RestApiParser extends haxigniter.common.unit.TestCase
 {
 	var output : Array<RestApiParsedSegment>;
 	

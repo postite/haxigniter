@@ -2,7 +2,7 @@ package haxigniter.tests.unit;
 
 import haxigniter.tests.unit.MockDatabaseConnection;
 
-class When_using_library_Database extends haxigniter.tests.TestCase
+class When_using_library_Database extends haxigniter.common.unit.TestCase
 {
 	private var db : MockDatabaseConnection;
 	

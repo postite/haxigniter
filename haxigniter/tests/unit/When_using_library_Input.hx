@@ -27,7 +27,7 @@ class TestInputClass
 	}
 }
 
-class When_using_library_Input extends haxigniter.tests.TestCase
+class When_using_library_Input extends haxigniter.common.unit.TestCase
 {
 	private function uselessEscape(input : String) : String
 	{

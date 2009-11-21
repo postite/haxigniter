@@ -2,12 +2,12 @@ package haxigniter.tests.unit;
 
 import Type;
 import haxigniter.common.types.TypeFactory;
-import haxigniter.tests.TestCase;
+import haxigniter.common.unit.TestCase;
 
 /**
 * This is fun, unit testing a unit test class.
 */
-class When_using_a_TypeFactory extends haxigniter.tests.TestCase
+class When_using_a_TypeFactory extends haxigniter.common.unit.TestCase
 {
 	public function test_Then_CreateType_should_return_valid_types_based_on_string_value()
 	{

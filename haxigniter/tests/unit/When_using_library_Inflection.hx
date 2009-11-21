@@ -2,7 +2,7 @@ package haxigniter.tests.unit;
 
 import haxigniter.common.libraries.Inflection;
 
-class When_using_library_Inflection extends haxigniter.tests.TestCase
+class When_using_library_Inflection extends haxigniter.common.unit.TestCase
 {
 	public function test_Then_pluralize_should_follow_normal_english()
 	{

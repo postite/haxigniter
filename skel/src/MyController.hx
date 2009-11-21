@@ -26,7 +26,7 @@ class MyController implements haxigniter.server.Controller
 	///// Now for some more application-specific properties /////////
 
 	// A configuration file is useful.
-	public var config(default, null) : haxigniter.Config;
+	public var config(default, null) : haxigniter.server.Config;
 
 	// This application will use a template engine to render the output.
 	public var view(default, null) : ViewEngine;
@@ -42,7 +42,7 @@ class MyController implements haxigniter.server.Controller
 	
 	/////////////////////////////////////////////////////////////////
 	
-	// The configuration file is static, since it used in main()
+	// The application configuration file is static, since it used in main().
 	private static var configuration = new config.Config();
 	
 	// The application session is filebased, could be switched to other implementations.
@@ -53,7 +53,7 @@ class MyController implements haxigniter.server.Controller
 	 */
 	public static function main()
 	{
-		var controller = haxigniter.Application.run(configuration);
+		var controller = haxigniter.server.Application.run(configuration);
 		
 		// Need to do some cleanup, but test controller type since others may have been called. 
 		// This test can be removed if all controllers are inherited from MyController.
@@ -63,7 +63,7 @@ class MyController implements haxigniter.server.Controller
 
 	/**
 	 * Cleanup after application is run.
-	 * @param	controller
+	 * @param	controller Controller that is executed in Application.run().
 	 */
 	private static function applicationEnd(controller : MyController)
 	{
@@ -75,7 +75,7 @@ class MyController implements haxigniter.server.Controller
 	}
 
 	/**
-	 * The controllers are automatically created by haxigniter.Application.
+	 * The controllers are automatically created by haxigniter.server.Application.
 	 */
 	public function new()
 	{

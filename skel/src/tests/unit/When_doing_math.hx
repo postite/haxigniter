@@ -1,6 +1,6 @@
 package haxigniter.application.tests.unit;
 
-import haxigniter.tests.TestCase;
+import haxigniter.common.unit.TestCase;
 
 /**
 * This can be a template of your own unit test classes.

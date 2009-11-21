@@ -28,7 +28,7 @@ import controllers.Start;
 import controllers.Dev;
 
 
-class Config extends haxigniter.Config
+class Config extends haxigniter.server.Config
 {
 	/*
 	|--------------------------------------------------------------------------

@@ -8,7 +8,7 @@ import php.Lib;
 import neko.Lib;
 #end
 
-import haxigniter.Application;
+import haxigniter.server.Application;
 import haxigniter.server.libraries.Server;
 
 /**

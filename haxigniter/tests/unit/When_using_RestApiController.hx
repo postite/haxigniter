@@ -2,7 +2,7 @@ package haxigniter.tests.unit;
 
 import Type;
 import haxigniter.common.types.TypeFactory;
-import haxigniter.tests.TestCase;
+import haxigniter.common.unit.TestCase;
 
 import haxigniter.server.request.RestApiHandler;
 import haxigniter.server.request.RequestHandler;
@@ -78,7 +78,7 @@ class TestRestApi implements Controller, implements RestApiRequestHandler
 	}
 }
 
-class When_using_RestApiController extends haxigniter.tests.TestCase
+class When_using_RestApiController extends haxigniter.common.unit.TestCase
 {
 	private var api : TestRestApi;
 	private var requestHandler : RestApiHandler;

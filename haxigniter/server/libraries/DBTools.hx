@@ -12,7 +12,7 @@ class DbTools
 {
 	public static function save(data : Hash<Dynamic>, table : String, ?primaryKey = 'id', ?addPrimaryKeyToData = true) : Int
 	{
-		var db : DatabaseConnection = haxigniter.Application.instance().db;
+		var db : DatabaseConnection = haxigniter.server.Application.instance().db;
 		var id : Int;
 		
 		db.testAlphaNumeric(table);
@@ -43,7 +43,7 @@ class DbTools
 	
 	public static function paginate(query : String, offset : Int, limit : Int, ?meta : { total: Int }, ?params : Iterable<Dynamic>, ?noCalcRows = false) : ResultSet
 	{
-		var db : DatabaseConnection = haxigniter.Application.instance().db;
+		var db : DatabaseConnection = haxigniter.server.Application.instance().db;
 		var result : ResultSet;
 		
 		if(db.driver == DatabaseDriver.mysql && !noCalcRows && meta != null)

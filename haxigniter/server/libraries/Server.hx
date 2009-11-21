@@ -16,7 +16,7 @@ import neko.Web;
 import neko.Sys;
 #end
 
-import haxigniter.Config;
+import haxigniter.server.Config;
 
 class Server
 {

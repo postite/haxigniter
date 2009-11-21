@@ -47,7 +47,7 @@ class MockApiInterface implements RestApiInterface
 /**
 * This is fun, unit testing a unit test class.
 */
-class When_using_RestApiConfigSecurityHandler extends haxigniter.tests.TestCase
+class When_using_RestApiConfigSecurityHandler extends haxigniter.common.unit.TestCase
 {
 	private var api : MockApiInterface;
 	private var parameters : Hash<String>;

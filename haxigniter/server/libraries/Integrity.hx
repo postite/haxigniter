@@ -1,15 +1,9 @@
-﻿package haxigniter.tests;
-
-import haxigniter.Config;
+﻿package haxigniter.server.libraries;
 
 #if php
-import php.FileSystem;
-import php.io.File;
 import php.Lib;
 import php.Web;
 #elseif neko
-import neko.FileSystem;
-import neko.io.File;
 import neko.Lib;
 import neko.Web;
 #end
@@ -17,19 +11,20 @@ import neko.Web;
 class Integrity
 {
 	public var testMethodPrefix : String;
-	private var config : Config;
+	private var testMethods : Dynamic;
 	
-	public function new(config : Config)
+	public function new(testMethods : Dynamic, ?testMethodPrefix : String = 'test')
 	{
-		this.config = config;		
-		this.testMethodPrefix = 'test';
+		this.testMethodPrefix = testMethodPrefix;
+		this.testMethods = testMethods;
 	}
 	
 	public function run() : Void
 	{
-		this.printHeader('Development mode: ' + (this.config.development ? 'True' : 'False') + '<br><br>');
+		var classType = Type.getClass(testMethods);
+		var fields = (classType == null) ? Reflect.fields(testMethods) : Type.getInstanceFields(classType);
 		
-		for(field in Type.getInstanceFields(Type.getClass(this)))
+		for(field in fields)
 		{
 			if(StringTools.startsWith(field, this.testMethodPrefix) && Reflect.isFunction(Reflect.field(this, field)))
 				runTest(field);
@@ -39,7 +34,7 @@ class Integrity
 	private function runTest(methodName : String) : Void
 	{
 		var title = {value: methodName};
-		var result : Bool = Reflect.callMethod(this, Reflect.field(this, methodName), [title]);
+		var result : Bool = Reflect.callMethod(testMethods, Reflect.field(testMethods, methodName), [title]);
 		
 		if(result != null)
 		{
@@ -109,53 +104,4 @@ class Integrity
 		}
 		#end
 	}
-	
-	/////////////////////////////////////////////////////////////////
-	
-	public function test1(title : { value : String }) : Bool
-	{
-		printHeader('[haXigniter] Directory access');
-		
-		title.value = 'Cache path <b>"' + config.cachePath + '"</b> exists and is writable';
-		return this.isWritable(config.cachePath);
-	}
-
-	public function test2(title : { value : String }) : Bool
-	{
-		title.value = 'Log path <b>"' + config.logPath + '"</b> exists and is writable';
-		return this.isWritable(config.logPath);
-	}
-
-	public function test3(title : { value : String }) : Bool
-	{
-		title.value = 'Session path <b>"' + config.sessionPath + '"</b> exists and is writable';
-		return this.isWritable(config.sessionPath);
-	}
-
-	public function test4(title : { value : String }) : Bool
-	{
-		printHeader('[haXigniter] File integrity');
-
-		var htaccess = FileSystem.fullPath(config.applicationPath + '../../.htaccess');
-
-		title.value = '<b>"' + config.applicationPath + '.htaccess"</b> exists to prevent access to haXigniter files';
-		
-		return FileSystem.exists(htaccess);
-	}
-
-	#if php
-	public function test5(title : { value : String }) : Bool
-	{
-		var smarty = FileSystem.fullPath(config.applicationPath + 'external/smarty/libs/internals/core.write_file.php');
-
-		if(!FileSystem.exists(smarty))
-			return null;
-
-		title.value = 'Smarty file <b>"' + smarty + '"</b> is patched according to haxigniter/views/Smarty.hx';
-		
-		var patch : EReg = ~/file_exists\s*\([^\)]*\$params\[['"]filename['"]\]/;
-		
-		return patch.match(File.getContent(smarty));
-	}
-	#end
 }

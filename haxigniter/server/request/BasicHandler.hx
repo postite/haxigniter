@@ -2,7 +2,7 @@ package haxigniter.server.request;
 
 import haxigniter.server.Controller;
 import haxigniter.server.libraries.Url;
-import haxigniter.Config;
+import haxigniter.server.Config;
 import haxigniter.common.types.TypeFactory;
 
 class BasicHandler implements RequestHandler
