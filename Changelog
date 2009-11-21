@@ -1,7 +1,20 @@
 Changelog for haXigniter
 
-Current
-=======
+v0.8 (2009-11-21)
+=================
+Changed
+ - Lots and lots. HaXigniter is now a haxelib, which makes this version quite incompatible with the older.
+   Packages have moved around, it now adheres to better OO-principles, and the build tools are written in
+   Neko to make them platform-independent.
+   
+   Updating projects written for v0.57 (last official release) and earlier is recommended, and the
+   recommended way of doing that is to execute "haxelib install haxigniter" and then 
+   "haxelib run haxigniter init" in an empty directory. From there you can copy your controllers to 
+   "src/controllers" in the new directory, and start working from there. More information is available on 
+   the web.
+
+v0.69 (2009-11-12)
+==================
 Changed
  - Neko session library moved to haxigniter.neko.Session.
 

@@ -1,5 +1,5 @@
-haXigniter v0.68
-================
+haXigniter v0.8
+===============
 
 Welcome to haXigniter! The easy-to-use web framework for haXe.
 
@@ -15,33 +15,33 @@ http://wiki.github.com/ciscoheat/haxigniter/quick-start
 
 Really quick start
 ==================
-If you're an experienced programmer and know web server configuration, here's 
-a really quick start. All paths and file references will be relative to this
-directory (where the README file is).
+If you're an experienced programmer, have haXe installed and know web server 
+configuration, here's a really quick start.
 
-1. "src/haxigniter/application" is where your application is, and where you will 
-deploy most of your code. The first thing you should do is to look through the 
-file "src/haxigniter/application/config/Config.hx" to see what you can 
-configure, especially the "development" setting. Everything is set up to just 
-work for most systems, so hopefully you don't have to change anything.
+1. Start a prompt and install haXigniter with "haxelib install haxigniter".
 
-2. Goto the "tools" dir and if you're on Windows, run "build.bat". Linux users 
-executes "./build.sh" of course. If you're targeting neko, use "build.bat -neko".
+2. Create an empty directory somewhere and execute "haxelib run haxigniter init"
+there. This will create a project with skeleton files.
+
+3. In the project directory, you can now use "ignite" as a command instead of
+"haxelib run ...". Enter "ignite build" to build the default project for PHP.
 See http://wiki.github.com/ciscoheat/haxigniter/deployment for more build info.
 
-3. If no errors, you now have a haXigniter-app in the "bin/www" directory. Copy 
-the contents of "bin/www" to the root of a web server directory. (index.php and 
-the lib dir)
+4. If no errors, you now have a haXigniter-app in the "www" directory. Copy 
+the contents of "www" to the root of a web server directory.
 
-4. Browse to the web server. If everything worked, you will see the start page.
-
-5. The next thing to do is to look at the files in 
-"src/haxigniter/application/controllers" for an explanation how to call the 
-controllers. Or you can go on a guided tour here: 
+5. Browse to the web server. If everything worked, you will see the start page.
+Now you're ready to take the guided tour:
 http://wiki.github.com/ciscoheat/haxigniter/guided-tour
 
+6. If you can't take the tour, the first thing you should do is to check out the 
+file "src/config/Config.hx" to see what you can configure, especially the 
+"development" setting. Everything is set up to just work for most systems, so 
+hopefully you don't have to change anything. The next thing to do is to look at 
+the files in "src/controllers" for an explanation how to call the controllers.
+
 Good luck, and thanks for your interest! If you're using FlashDevelop, there is
-a project file for your convenience: "src/haxigniter.hxproj".
+a project file included for your convenience: "myapp.hxproj".
 
 
 Contact
