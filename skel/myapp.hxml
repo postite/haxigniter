@@ -1,4 +1,5 @@
 -cp src 
 -lib haxigniter
--php www 
+# If you are targeting neko, change the following line to "-neko www/index.n"
+-php www
 -main MyController

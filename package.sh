@@ -13,12 +13,10 @@ fi
 
 rm -f rununittests.n
 
-if [ $1 == "test" ]
+if [ "$1" == "test" ]
 then
 	exit
 fi
-
-exit
 
 # Clear skel folder from build output
 rm -f skel/www/index.php
