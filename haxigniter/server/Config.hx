@@ -23,8 +23,11 @@ class Config
 	public var indexFile : String;
 	public var indexPath : String;
 	public var siteUrl : String;
+	
 	public var applicationPath : String;
 	public var viewPath : String;
+	
+	public var runtimePath : String;
 	public var logPath : String;
 	public var cachePath : String;
 	public var sessionPath : String;
@@ -44,8 +47,6 @@ class Config
 		
 	public var view : ViewEngine;
 	
-	private var runtimePath : String;
-
 	/**
 	 * Setting non-initialized constants.
 	 */
@@ -53,11 +54,9 @@ class Config
 	{
 		var env = Sys.environment();
 		
-		// applicationPath and siteUrl always goes on top, since other vars will use them.
-		
 		if(this.applicationPath == null)
 		{
-			applicationPath = Web.getCwd() + 'lib/';
+			applicationPath = Web.getCwd();
 		}
 
 		if(this.indexFile == null)
@@ -103,7 +102,10 @@ class Config
 		}
 		
 		// Set runtime path based on application path.
-		this.runtimePath = this.applicationPath + 'runtime/';
+		if(this.runtimePath == null)
+		{
+			this.runtimePath = this.applicationPath + 'runtime/';
+		}
 
 		// Other paths that can be specified in config.
 		if(this.viewPath == null)

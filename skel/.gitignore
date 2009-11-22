@@ -1,6 +1,7 @@
 # If you're not using git as a version control system, this file can be deleted.
 www/index.php
 www/lib
+www/runtime
 
 # In case apache log files are put in a logs directory:
 logs/*

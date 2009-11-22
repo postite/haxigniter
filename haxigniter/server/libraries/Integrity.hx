@@ -3,9 +3,13 @@
 #if php
 import php.Lib;
 import php.Web;
+import php.FileSystem;
+import php.io.File;
 #elseif neko
 import neko.Lib;
 import neko.Web;
+import neko.FileSystem;
+import neko.io.File;
 #end
 
 class Integrity
