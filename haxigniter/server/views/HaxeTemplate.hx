@@ -1,5 +1,7 @@
 ﻿package haxigniter.server.views;
 
+import haxigniter.server.Config;
+
 #if php
 import php.io.File;
 #elseif neko
@@ -15,11 +17,11 @@ class HaxeTemplate extends ViewEngine
 {
 	private var templateVars : HaxeTemplateVars;
 	
-	public function new(templatePath : String)
+	public function new(config : Config)
 	{
+		super(config);
 		this.templateExtension = 'mtt';
 		
-		super(templatePath, null);
 		this.templateVars = new HaxeTemplateVars();
 	}
 	

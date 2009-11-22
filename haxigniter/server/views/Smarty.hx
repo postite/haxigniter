@@ -30,19 +30,15 @@ class Smarty extends ViewEngine
 	private var cachePath : String;
 	private var cacheId : String;
 	
-	public function new(config : Config, ?useCache = false, ?cacheId : String)
+	public function new(config : Config, ?cacheId : String)
 	{
-		super(config.viewPath, config.cachePath);
-
+		super(config);
 		this.templateExtension = 'tpl';
 		
 		// Include the smarty engine class.
 		untyped __call__('require_once', config.externalPath + 'smarty/libs/Smarty.class.php');
 		this.smartyEngine = new haxigniter.server.external.Smarty();
 
-		if(useCache)
-			this.cachePath = config.cachePath;
-			
 		this.cacheId = cacheId;
 	}
 

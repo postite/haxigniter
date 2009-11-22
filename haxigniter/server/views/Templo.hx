@@ -1,4 +1,5 @@
 ﻿package haxigniter.server.views;
+import haxigniter.server.Config;
 
 class TemploVars
 {
@@ -11,13 +12,11 @@ class Templo extends ViewEngine
 	private var macros : String;
 	private var optimized : Bool;
 	
-	public function new(?macros : String = null, ?optimized : Bool = false, templatePath : String = null, compiledPath : String = null)
+	public function new(config : Config, ?macros : String = null, ?optimized : Bool = false)
 	{
+		super(config);
 		this.templateExtension = 'mtt';
-		
-		// super() will set correct variables for TemplatePath and CompiledPath
-		super(templatePath, compiledPath);
-		
+				
 		this.macros = macros;
 		this.optimized = optimized;
 

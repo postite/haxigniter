@@ -1,6 +1,7 @@
 ﻿package haxigniter.server.views;
 
 import haxe.PosInfos;
+import haxigniter.server.Config;
 
 #if php
 import php.Lib;
@@ -27,7 +28,6 @@ import haxigniter.server.libraries.Server;
 class ViewEngine
 {
 	// TODO: Caching system for ViewEngine
-	// TODO: Auto-assigning of variables for each request
 	public var templatePath : String;
 	public var compiledPath : String;
 	
@@ -36,10 +36,10 @@ class ViewEngine
 	 */
 	public var templateExtension : String;
 	
-	private function new(templatePath : String, compiledPath : String)
+	private function new(config : Config)
 	{
-		this.templatePath = templatePath;			
-		this.compiledPath = compiledPath;
+		this.templatePath = config.viewPath;			
+		this.compiledPath = config.cachePath;
 	}
 	
 	public function assign(name : String, value : Dynamic) : Void
