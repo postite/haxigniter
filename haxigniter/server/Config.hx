@@ -26,6 +26,7 @@ class Config
 	
 	public var applicationPath : String;
 	public var viewPath : String;
+	public var externalPath : String;
 	
 	public var runtimePath : String;
 	public var logPath : String;
@@ -101,18 +102,23 @@ class Config
 			}
 		}
 		
+		// Other paths that can be specified in config.
+		if(this.viewPath == null)
+		{
+			this.viewPath = this.applicationPath + 'views/';
+		}
+		
+		if(this.externalPath == null)
+		{
+			this.externalPath = this.applicationPath + 'external/';
+		}
+
 		// Set runtime path based on application path.
 		if(this.runtimePath == null)
 		{
 			this.runtimePath = this.applicationPath + 'runtime/';
 		}
 
-		// Other paths that can be specified in config.
-		if(this.viewPath == null)
-		{
-			this.viewPath = this.applicationPath + 'views/';
-		}
-			
 		if(this.cachePath == null)
 		{
 			this.cachePath = this.runtimePath + 'cache/';
@@ -127,6 +133,8 @@ class Config
 		{
 			this.sessionPath = this.runtimePath + 'session/';
 		}
+		
+		/////////////////////////////////////////////////////////////
 		
 		if(this.defaultController == null)
 		{

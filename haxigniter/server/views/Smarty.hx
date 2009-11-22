@@ -1,7 +1,15 @@
 ﻿#if php
 package haxigniter.server.views;
 
+import haxigniter.server.Config;
+
 /**
+ * The Smarty template engine can be used by putting the "smarty" folder in config.externalPath. See your Config.hx for more
+ * details about that directory.
+ * 
+ * Because of haXes error handling overriding Smarty, you must ensure a template var is set before using it, or test if it 
+ * exists explicitly using isset($var).
+ * 
  * IMPORTANT NOTE: For smarty to work in haXe, you need to make a small adjustment to the file "internals/core.write_file.php".
  * You need to change this line:
  * 
@@ -17,21 +25,24 @@ package haxigniter.server.views;
  */
 class Smarty extends ViewEngine
 {
-	private var smartyEngine : haxigniter.application.external.Smarty;
-	
-	private var cacheId : String;
+	private var smartyEngine : haxigniter.server.external.Smarty;
+
 	private var cachePath : String;
+	private var cacheId : String;
 	
-	public function new(?cachePath : String, ?cacheId : String, templatePath : String = null, compiledPath : String = null)
+	public function new(config : Config, ?useCache = false, ?cacheId : String)
 	{
+		super(config.viewPath, config.cachePath);
+
 		this.templateExtension = 'tpl';
 		
-		this.smartyEngine = new haxigniter.application.external.Smarty();
+		// Include the smarty engine class.
+		untyped __call__('require_once', config.externalPath + 'smarty/libs/Smarty.class.php');
+		this.smartyEngine = new haxigniter.server.external.Smarty();
 
-		// super() will set correct variables for templatePath and compiledPath
-		super(templatePath, compiledPath);
-
-		this.cachePath = cachePath;
+		if(useCache)
+			this.cachePath = config.cachePath;
+			
 		this.cacheId = cacheId;
 	}
 
@@ -43,7 +54,7 @@ class Smarty extends ViewEngine
 			return php.Lib.associativeArrayOfHash(value);
 		else
 		*/
-			return value;
+		return value;
 	}
 
 	public override function assign(name : String, value : Dynamic) : Void

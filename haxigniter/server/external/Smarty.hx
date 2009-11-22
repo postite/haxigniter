@@ -1,9 +1,9 @@
 ﻿#if php
-package haxigniter.external;
+package haxigniter.server.external;
 
 /**
- * How to use: Put the Smarty files in an external/smarty folder.
- * (The Smarty "libs" folder should reside in the external/smarty folder.)
+ * How to use: Put the Smarty files in an externalPath/smarty folder.
+ * (The Smarty "libs" folder should reside in the externalPath/smarty folder.)
  * 
  * Then you need to make a small adjustment to the file "internals/core.write_file.php".
  * You need to change this line:
@@ -23,11 +23,6 @@ package haxigniter.external;
  */
 extern class Smarty 
 {
-	public static function __init__() : Void
-	{
-		haxigniter.server.libraries.Server.requireExternal('smarty/libs/Smarty.class.php');
-	}
-	
 	public function new() : Void;
 
 	public function assign(name : String, value : Dynamic) : Void;

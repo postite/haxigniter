@@ -56,35 +56,41 @@ class ServerIntegrity extends Integrity
 	public function test4(title : { value : String }) : Bool
 	{
 		printHeader('[haXigniter] File integrity');
-
-		// Don't test if runtime path is outside the public web directory.
-		if(config.runtimePath.indexOf(Web.getCwd()) != 0)
-			return null;
 		
-		var htaccess = FileSystem.fullPath(config.runtimePath + '.htaccess');
-
-		title.value = '<b>"' + config.runtimePath + '.htaccess"</b> exists to prevent access to haXigniter runtime files';
-		
-		return FileSystem.exists(htaccess);
+		return fileExistsTest(title, config.runtimePath);
 	}
 
 	public function test5(title : { value : String }) : Bool
 	{
-		// Don't test if runtime path is outside the public web directory.
-		if(config.viewPath.indexOf(Web.getCwd()) != 0)
-			return null;
-		
-		var htaccess = FileSystem.fullPath(config.viewPath + '.htaccess');
-
-		title.value = '<b>"' + config.viewPath + '.htaccess"</b> exists to prevent access to haXigniter view files';
-		
-		return FileSystem.exists(htaccess);
+		return fileExistsTest(title, config.viewPath);
 	}
 
-	#if php
 	public function test6(title : { value : String }) : Bool
 	{
-		var smarty = FileSystem.fullPath(Web.getCwd() + 'external/smarty/libs/internals/core.write_file.php');
+		return fileExistsTest(title, config.externalPath);
+	}
+	
+	private function fileExistsTest(title : { value : String }, path : String, file = '.htaccess') : Bool
+	{
+		// Neko cannot handle paths that ends with slash in FileSystem.exists().
+		if(StringTools.endsWith(path, '/'))
+			path = path.substr(0, path.length - 1);
+		
+		// Don't test if external path is outside the public web directory.
+		if(!FileSystem.exists(path) || path.indexOf(Web.getCwd()) != 0)
+			return null;
+		
+		var htaccess = FileSystem.fullPath(path + '/' + file);
+
+		title.value = '<b>"' + path + '/.htaccess"</b> exists to prevent web access';
+		
+		return FileSystem.exists(htaccess);		
+	}
+	
+	#if php
+	public function test7(title : { value : String }) : Bool
+	{
+		var smarty = FileSystem.fullPath(config.externalPath + 'smarty/libs/internals/core.write_file.php');
 
 		if(!FileSystem.exists(smarty))
 			return null;

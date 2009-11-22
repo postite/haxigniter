@@ -185,7 +185,19 @@ class Config extends haxigniter.server.Config
 		|
 		*/
 		viewPath = null;
-		
+
+		/*
+		|--------------------------------------------------------------------------
+		| External Resources Path
+		|--------------------------------------------------------------------------
+		|
+		| Some files like PHP libraries needs to be located by haXigniter. This path
+		| can be used for these non-compiled resources. If null, it's default value 
+		| is applicationPath/external/. Use a full server path with trailing slash.
+		|
+		*/
+		externalPath = null;
+
 		/* === Runtime path =====================================================*/
 
 		/*
