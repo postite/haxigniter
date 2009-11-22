@@ -9,7 +9,6 @@ import getpot.GetPot;
 using StringTools;
 class Main 
 {
-	static var options : GetPot;
 	static var commands : Array<String>;
 	static var libPath : String;
 	
@@ -21,7 +20,7 @@ class Main
 		];
 		
 	static var validCommandsHelp = [
-		'Build the project, if no buildfile is specified the one in the directory will be used.',
+		'Build the project.',
 		'Display this help text.',
 		'Create a project structure in a directory.',
 		'Run the haXigniter unit test suite.'
@@ -44,21 +43,18 @@ class Main
 		var command = args[0];
 		if(command == null || Lambda.has(['--help', '-help', '-?', '/?'], command))
 		{
-			help();
-			Sys.exit(1);
+			Sys.exit(helpCommands());
 		}
 		else if(!Lambda.has(validCommands, command))
 		{
 			Lib.println('Command not found: ' + command);
 			Lib.println('');
 			
-			help();
-			Sys.exit(1);
+			Sys.exit(helpCommands());
 		}
 		else
 		{
 			commands = args.slice(1);
-			options = new GetPot(commands);
 			
 			// Get path to the haxigniter library.
 			var process = new neko.io.Process('haxelib', ['path', 'haxigniter']);
@@ -67,12 +63,10 @@ class Main
 			
 			if(new EReg('not installed', '').match(libPath))
 			{
-				//libPath = '.'; // DEBUG
-				Lib.println('Error: haxigniter is not installed. Use "haxelib install haxigniter" to install it.');
-				Sys.exit(1);
+				libPath = './'; // If set to this, treat as debugging mode.
 			}
 			
-			Sys.exit(Reflect.field(Main, command)());
+			Sys.exit(Reflect.field(Main, command)(new GetPot(commands)));
 		}
 	}
 	
@@ -93,10 +87,10 @@ class Main
 	
 	///// Commands //////////////////////////////////////////////////
 
-	static function help() : Int
+	private static function helpCommands() : Int
 	{
-		var tabLength = Lambda.fold(validCommands, function(command : String, length : Int) {
-			return cast(Math.max(length, command.length), Int);
+		var tabLength = Lambda.fold(validCommands, function(cmd : String, length : Int) {
+			return cast(Math.max(length, cmd.length), Int);
 		}, 0);
 		
 		Lib.println('Valid commands are:');
@@ -106,79 +100,208 @@ class Main
 			Lib.println('  ' + validCommands[i] + stringRepeat(' ', tabLength - validCommands[i].length + 5) + validCommandsHelp[i]);
 		}
 		
-		//Lib.println('');
-		//Lib.println('Use "help COMMAND" for help about a specific command.');		
+		Lib.println('');
+		Lib.println('Use "help COMMAND" for help about a specific command.');
+		
 		return 1;
 	}
 	
-	static function build() : Int
+	static function help(options : GetPot) : Int
 	{
-		var buildFile = options.unknown();
-		if(buildFile == null)
+		var command = options.unprocessed();
+		var help : String = null;
+
+		switch(command)
 		{
-			for(file in FileSystem.readDirectory('.'))
-			{
-				if(file.endsWith('.hxml'))
-				{
-					buildFile = file;
-					break;
-				}
-			}
-			
+			case null:
+				return helpCommands();
+				
+			case 'build':
+				help = 'build [buildfile.hxml] [compiler options ...]
+
+  This command compiles the project, after running the "prebuild" command. If a .hxml file isn\'t specified, the first
+  one found in the directory will be used. All arguments after the buildfile will be passed on to the haxe compiler.';
+
+			case 'init':
+				help = 'init [path] [-neko]
+				
+  Creates a project structure for a haXigniter project in a directory. If no dir is specified, it will be prompted for.
+  The -neko switch can be used to create the project .hxml file for Neko instead of the default PHP.';
+
+			case 'help':
+				help = '  "He has a right to criticize, who has a heart to help."
+  -- Abraham Lincoln';
+
+  			case 'unittest':
+				help = 'unittest
+				
+  Executes the haXigniter unit tests. For developers only, or if you want to make sure your changes didn\'t break
+  anything in the library.';
+
+			default:
+				help = 'No help is available on this command, sorry.';
+		}
+		
+		Lib.println("\n" + help);
+		return 1;
+	}
+	
+	static function build(options : GetPot) : Int
+	{
+		var buildFile = options.unprocessed();
+		if(buildFile == null || !StringTools.endsWith(buildFile, '.hxml'))
+		{
+			buildFile = firstBuildFile('.');
 			if(buildFile == null)
 				return error('No .hxml file found in current directory!');
+			
+			// Append the buildfile to commands so haxe can use it.
+			commands.unshift(buildFile);
 		}
 		else if(!FileSystem.exists(buildFile))
 		{
 			return error(buildFile + ' not found!');
 		}
 		
-		var outputPath : String;
+		var outputPath : String = buildPathFromHxml(buildFile);
+		if(outputPath == null)
+			return error('No output directory found in .hxml file!');
+		
+		Lib.println('Building project in ' + FileSystem.fullPath(outputPath));
+		
+		return Sys.command('haxe', commands);
+	}
+
+	static function init(options : GetPot) : Int
+	{
+		var nekoMode = options.got(['-neko']);
+		
+		var path = options.unprocessed();
+		if(path == null)
+		{
+			Lib.print('Select directory to create haXigniter project in (blank = current dir, Ctrl+C to exit): ');
+
+			try
+			{
+				path = File.stdin().readUntil(10);
+			}
+			catch(e : Dynamic)
+			{
+				return 1;
+			}
+		}
+		
+		path = FileSystem.fullPath(path.length == 0 ? '.' : path);
+		
+		if(!FileSystem.exists(path))
+		{
+			FileSystem.createDirectory(path);
+		}
+		else if(!FileSystem.isDirectory(path))
+		{
+			return error(path + '" is not a directory.');
+		}
+		
+		Lib.println('Copying project structure to ' + path);
+
+		var dirs = new Mirror(libPath + 'skel', path);
+		dirs.mirror();
+		
+		// Rewrite the hxml file if -neko was passed.
+		if(nekoMode)
+		{
+			var hxmlFile = path + '/myapp.hxml';
+			var hxml = File.getContent(path + '/myapp.hxml').replace("\n-php www", "\n-neko www/index.n");
+			
+			putContent(hxmlFile, hxml);
+		}
+		
+		/*
+		// Purge all empty .gitignore files.
+		mirror.Mirror.loopDir(path, function(filename : String) {
+			if(filename.endsWith('.gitignore') && FileSystem.stat(filename).size == 0)
+			{
+				FileSystem.deleteFile(filename);
+				return false;
+			}
+			else
+				return true;
+		});
+		*/
+
+		Lib.println('Finished. To build the project, goto ' + path + ' and enter "ignite build".');
+		return 0;
+	}
+
+	static function unittest(options : GetPot) : Int
+	{
+		var path = libPath + 'tools/runsrc';			
+		Sys.setCwd(path);
+		
+		var args = ['-main', 'RunUnitTests', '-x', 'rununittests'];
+		
+		// If debugging, don't use -lib.
+		if(libPath != './')
+		{
+			args = ['-lib', 'haxigniter'].concat(args);
+		}
+		else
+			args = ['-cp', '../..'].concat(args);
+		
+		var status = Sys.command('haxe', args);
+		
+		if(FileSystem.exists('rununittests.n'))
+			FileSystem.deleteFile('rununittests.n');
+		
+		return status;
+	}
+	
+	/////////////////////////////////////////////////////////////////
+	
+	private static function firstBuildFile(buildDir : String) : String
+	{
+		for(file in FileSystem.readDirectory(buildDir))
+		{
+			if(file.endsWith('.hxml'))
+				return FileSystem.fullPath(buildDir + '/' + file);
+		}
+		
+		return null;
+	}
+	
+	private static function buildPathFromHxml(buildFile : String) : String
+	{
 		var content = File.getContent(buildFile);
 		
 		var phpTest = ~/-php\s+(.+)\b/;
 		var nekoTest = ~/-neko\s+(.+)[\/]\b/;
 		
 		if(phpTest.match(content))
-			outputPath = parseArgument(phpTest.matched(1));
+			return parseArgument(phpTest.matched(1));
 		else if(nekoTest.match(content))
-			outputPath = parseArgument(nekoTest.matched(1));
+			return parseArgument(nekoTest.matched(1));
 		else
-			return error('No output directory found in .hxml file!');
-		
-		Lib.println('Building project in ' + FileSystem.fullPath(outputPath));
-			
-		buildStructure(outputPath);
-		
-		// Build the project. Use the original commands as extra arguments.
-		commands.unshift(buildFile);
-		
-		return Sys.command('haxe', commands);
-	}
-
-	static function buildStructure(path : String) : Int
-	{
-		// Create dir structure
-		createIfNotExists(path + '/lib');
-		createIfNotExists(path + '/lib/runtime');
-		createIfNotExists(path + '/lib/runtime/logs');
-		createIfNotExists(path + '/lib/runtime/cache');
-		createIfNotExists(path + '/lib/runtime/session');
-		
-		// Create .htaccess
-		var htaccess = path + '/lib/.htaccess';
-		
-		if(!FileSystem.exists(htaccess))
-		{
-			var file = File.write(htaccess, false);
-			file.writeString("order deny,allow\ndeny from all\nallow from none\n");
-			file.close();
-		}
-		
-		return 0;		
+			return null;
 	}
 	
-	static function createIfNotExists(path : String) : Void
+	private static function createHtaccess(path : String, force = false) : Void
+	{
+		var htaccess = path + '/.htaccess';
+		
+		if(force || !FileSystem.exists(htaccess))
+		{
+			putContent(htaccess, "order deny,allow\ndeny from all\nallow from none\n");
+		}		
+	}
+	
+	private static function putContent(filename : String, content : String) : Void
+	{
+		var file = File.write(filename, true);
+		file.writeString(content);
+		file.close();
+	}
+	
+	private static function createIfNotExists(path : String) : Void
 	{
 		if(!FileSystem.exists(path))
 			FileSystem.createDirectory(path);
@@ -190,7 +313,7 @@ class Main
 	 * @param	input
 	 * @return
 	 */
-	static function parseArgument(input : String) : String
+	private static function parseArgument(input : String) : String
 	{
 		if(!input.startsWith('"') && !input.startsWith("'"))
 		{
@@ -212,47 +335,5 @@ class Main
 		}
 		
 		return output;
-	}
-	
-	static function init() : Int
-	{
-		var path = options.unknown();
-		if(path == null)
-		{
-			Lib.print('Select directory to create haXigniter project in (blank = current dir, Ctrl+C to exit): ');
-			path = File.stdin().readUntil(10);
-		}
-		
-		path = FileSystem.fullPath(path.length == 0 ? '.' : path);
-		
-		if(!FileSystem.exists(path))
-		{
-			FileSystem.createDirectory(path);
-		}
-		else if(!FileSystem.isDirectory(path))
-		{
-			return error(path + '" is not a directory.');
-		}
-		
-		Lib.println('Copying project structure to ' + path);
-
-		var mirror = new Mirror(libPath + 'skel', path);
-		mirror.mirror();
-
-		Lib.println('Finished. To build the project, goto ' + path + ' and enter "ignite build".');
-		return 0;
-	}
-
-	static function unittest() : Int
-	{
-		var path = libPath + 'tools/runsrc';			
-		Sys.setCwd(path);
-				
-		var status = Sys.command('haxe', ['-lib', 'haxigniter', '-main', 'RunUnitTests', '-x', 'rununittests']);
-		
-		if(FileSystem.exists('rununittests.n'))
-			FileSystem.deleteFile('rununittests.n');
-		
-		return status;
-	}
+	}	
 }

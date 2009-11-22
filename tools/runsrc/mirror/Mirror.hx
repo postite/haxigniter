@@ -92,13 +92,19 @@ class Mirror
 		});
 	}
 
-	private static function loopDir(dir : String, callBack : String -> Bool) : Void
+	/**
+	 * Recursively loop through all files in a dir with a callback function.
+	 * @param	dir Directory to loop through
+	 * @param	callBack Each file and directory will be passed here (full path). If function returns false on a directory, it won't be looped through.
+	 * @param	?recursive = true If false, no recursion will be done.
+	 */
+	public static function loopDir(dir : String, callBack : String -> Bool, ?recursive = true) : Void
 	{
 		Lambda.iter(FileSystem.readDirectory(dir), function(file : String) {
 			file = dir + '/' + file;
 			
-			if(callBack(file) && FileSystem.isDirectory(file))
-				loopDir(file, callBack);
+			if(callBack(file) && recursive && FileSystem.isDirectory(file))
+				loopDir(file, callBack, recursive);
 		});
 	}
 	
