@@ -1,17 +1,17 @@
 ﻿#if php
-package haxigniter.external;
+package haxigniter.server.external;
 
 /**
- * How to use: Put the PHPMailer files in an external/phpmailer folder.
- * Then haxigniter.application.external.PHPMailer works just like any other haXe class.
+ * How to use: 
+ * 
+ *   1. Put the PHPMailer directory in config.externalPath.
+ *   2. Use Server.requireExternal('phpmailer/class.phpmailer.php') to include it.
+ * 
+ * Then it works just like any other haXe class.
+ * 
  */
 extern class PHPMailer 
 {
-	public static function __init__() : Void
-	{
-		haxigniter.server.libraries.Server.requireExternal('phpmailer/class.phpmailer.php');
-	}
-	
 	public function new(mode : Bool) : Void;
 
 	public function SetFrom(email : String, name : String = '') : Void;
