@@ -58,14 +58,14 @@ class MyController implements haxigniter.server.Controller
 		// Need to do some cleanup, but test controller type since others may have been called. 
 		// This test can be removed if all controllers are inherited from MyController.
 		if(Std.is(controller, MyController))
-			applicationEnd(cast controller);
+			terminateApp(cast controller);
 	}
 
 	/**
 	 * Cleanup after application is run.
 	 * @param	controller Controller that is executed in Application.run().
 	 */
-	private static function applicationEnd(controller : MyController)
+	private static function terminateApp(controller : MyController)
 	{
 		if(controller.db != null)
 			controller.db.close();
@@ -104,7 +104,7 @@ class MyController implements haxigniter.server.Controller
 		| your class in the distribution.
 		|		
 		*/
-		this.view = new haxigniter.server.views.HaxeTemplate(this.config.viewPath);
+		this.view = new haxigniter.server.views.HaxeTemplate(this.config);
 		
 		// Create a debug object for this.trace() and this.log()
 		this.debug = new Debug(this.config);

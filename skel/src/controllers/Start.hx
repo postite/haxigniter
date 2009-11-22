@@ -25,7 +25,8 @@ class Start extends MyController, implements haxe.rtti.Infos
 		
 		// Some default view assignments for every page
 		this.view.assign('application', 'haXigniter');
-		this.view.assign('link', url.siteUrl());		
+		this.view.assign('link', url.siteUrl());
+		this.view.assign('id', null);
 	}
 	
 	public function index()
