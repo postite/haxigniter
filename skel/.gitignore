@@ -1,5 +1,8 @@
 # If you're not using git as a version control system, this file can be deleted.
+# So can all other .gitignore files found in the subdirectories.
+
 www/index.php
+www/index.n
 www/lib
 www/runtime
 
