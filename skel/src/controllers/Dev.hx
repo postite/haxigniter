@@ -8,9 +8,9 @@ import tests.Integrity;
  * The Dev controller
  * Contains some useful actions for development. http://yourhostname/dev/ will go here.
  * 
- * This controller is a standard Controller, so it will follow the "className/method" convention.
- * A request like http://yourhostname/dev/integrity/test/123 will map to the integrity() method 
- * with "test" as first argument and "123" as second.
+ * This controller uses a BasicHandler as you'll see in new(), so it will follow the 
+ * "className/method" convention. A request like http://yourhostname/dev/integrity/test/123 
+ * will map to the integrity() method with "test" as first argument and "123" as second.
  * 
  * The arguments will be automatically casted to the type you specify in the methods.
  * 
