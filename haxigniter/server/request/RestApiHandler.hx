@@ -42,7 +42,8 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 	public var apiSecurityHandler : RestApiSecurityHandler;
 
 	public var noOutput : Bool;
-	public var debug : Debug;
+	public var logger : Debug;
+	public var development : Bool;
 	
 	public function new(apiSecurityHandler : RestApiSecurityHandler, apiRequestHandler : RestApiRequestHandler, ?apiFormatHandler : RestApiFormatHandler)
 	{
@@ -63,6 +64,7 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 		
 		this.viewTranslations = new Hash<Hash<String>>();
 		this.noOutput = false;
+		this.development = false;
 	}
 	
 	///// RestApiInterface implementation ///////////////////////////
@@ -175,10 +177,12 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 		}
 		catch(e : Dynamic)
 		{
-			if(debug != null)
-				debug.log(Std.string(e), DebugLevel.error);
+			if(logger != null)
+				logger.log(Std.string(e), DebugLevel.error);
 			
-			return RestApiResponse.failure('An unknown error occured.', RestErrorType.unknown);
+			var message : String = this.development ? Std.string(e) : 'An unknown error occured.';
+				
+			return RestApiResponse.failure(message, RestErrorType.unknown);
 		}
 	}
 	

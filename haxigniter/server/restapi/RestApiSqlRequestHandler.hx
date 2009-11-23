@@ -81,8 +81,11 @@ class SelectQuery
 		}
 		catch(e : Dynamic)
 		{
+			if(joins.length == 0)
+				throw new RestApiException('Invalid request.', RestErrorType.invalidQuery);
+			
 			// Database error, switch the joins one step. (Detecting reversed joins)
-			joinCount = switchJoins(joins, joinCount);			
+			joinCount = switchJoins(joins, joinCount);
 			return this.query(prefix, joins, useLimit, joinCount);
 		}
 	}
@@ -133,13 +136,8 @@ class SelectQuery
 
 	public function count() : Int
 	{
-		var output = 0;		
-		for(id in this.query('SELECT COUNT(*) FROM ' + tables[0].name, null, false))
-		{
-			output = cast(id, Int);
-		}
-		
-		return output;
+		var result = this.query('SELECT COUNT(*) FROM ' + tables[0].name, null, false);
+		return result.getIntResult(0);
 	}
 
 	private function generateQuery(joins : Array<SqlJoinDir>, ?useLimit = true)
@@ -396,6 +394,8 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		var results = query.select();
 		var response : RestDataCollection;
 		
+		//trace(results);
+		
 		if(query.limit == 0 && query.offset == 0)
 		{
 			response = new RestDataCollection(0, cast(Math.max(0, results.length-1), Int), results.length, Lambda.array(results));
@@ -403,7 +403,8 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		else
 		{
 			var count = query.count();
-			response = new RestDataCollection(query.offset, query.offset + results.length - 1, count, Lambda.array(results));
+			
+			response = new RestDataCollection(query.offset, query.offset + results.length, count, Lambda.array(results));
 		}
 		
 		// Test if security allows this request.
@@ -579,7 +580,7 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 
 				query.limit = end - start;
 				query.offset = start;
-		
+				
 			case 'order':
 				if(query.order != null)
 					throw new RestApiException('Order can only be set once in a selector.', RestErrorType.invalidQuery);

@@ -6,9 +6,16 @@ Current
 Features
  - "ignite init -neko" now rewrites the hxproj file to build for Neko.
  - "ignite nekoserver" added, for convenient web testing of a project.
- 
+ - RestApi queries now handles "*" as an "all" resource.
+ - RestApiHandler now has a development property for debugging requests.
+
+Changed
+ - RestDataCollection endIndex is now set to data rows + 1.
+
 Bug fixes
  - ignite hxml parser found the build path in comments.
+ - RestApi queries weren't counted properly.
+ - haxigniter wasn't included as a lib in skel/myapp.hxproj
 
 v0.8 (2009-11-21)
 =================

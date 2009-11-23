@@ -217,6 +217,7 @@ class Selector
 class RestApiParser
 {
 	private static var validResourceName : EReg = ~/^(\w+)(\.\w+)?$/;
+	private static var allResource : EReg = ~/^\*?$/;
 	private static var oneResource : EReg = ~/^[1-9]\d*$/;
 	private static var viewResource : EReg = ~/^\w+$/;
 
@@ -326,7 +327,7 @@ class RestApiParser
 	public static function parseSelector(resource : String, data : String) : RestApiParsedSegment
 	{
 		// Detect resource type.
-		if(data == null || data == '')
+		if(data == null || allResource.match(data))
 			return RestApiParsedSegment.all(resource);
 		
 		if(oneResource.match(data))
