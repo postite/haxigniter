@@ -16,6 +16,7 @@ class Main
 		'build',
 		'help', 
 		'init',
+		'nekoserver',
 		'unittest'
 		];
 		
@@ -23,6 +24,7 @@ class Main
 		'Build the project.',
 		'Display this help text.',
 		'Create a project structure in a directory.',
+		'Start the Neko web server for testing.',
 		'Run the haXigniter unit test suite.'
 		];
 	
@@ -131,6 +133,13 @@ class Main
 			case 'help':
 				help = '  "He has a right to criticize, who has a heart to help."
   -- Abraham Lincoln';
+  
+			case 'nekoserver':
+				help = 'nekoserver [-p port] [-h host] [-d documentroot]
+
+  Starts a neko web server for immediate testing of the project (if it\'s built for Neko).
+  If no port and/or host is specified, the default is port 2001 and localhost.
+  If no documentroot is specified, it will be read from the project .hxml file.';
 
   			case 'unittest':
 				help = 'unittest
@@ -170,6 +179,41 @@ class Main
 		Lib.println('Building project in ' + FileSystem.fullPath(outputPath));
 		
 		return Sys.command('haxe', commands);
+	}
+	
+	static function nekoserver(options : GetPot) : Int
+	{
+		//nekoserver [-p port] [-h host] [-d documentroot]
+		var args : Array<String> = ['server'];
+		
+		args.push('-p');
+		args.push(options.follow('2001', ['-p']));
+		
+		args.push('-h');
+		args.push(options.follow('localhost', ['-h']));
+		
+		args.push('-d');
+		if(options.got(['-d']))
+			args.push(options.next());
+		else
+		{
+			var buildFile = firstBuildFile('.');
+			if(buildFile == null)
+				return error('No .hxml file found in current directory!');
+			
+			var outputPath : String = buildPathFromHxml(buildFile);
+			if(outputPath == null)
+				return error('No output directory found in .hxml file!');
+			
+			args.push(outputPath);
+		}
+		
+		args.push('-rewrite');
+		
+		Lib.println('Browse to http://' + args[4] + ':' + args[2] + '/ for testing.');
+		Lib.println('Press Ctrl+C to stop server.');
+		
+		return Sys.command('nekotools', args);
 	}
 
 	static function init(options : GetPot) : Int
