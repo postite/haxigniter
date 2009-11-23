@@ -207,13 +207,22 @@ class Main
 		var dirs = new Mirror(libPath + 'skel', path);
 		dirs.mirror();
 		
-		// Rewrite the hxml file if -neko was passed.
+		
 		if(nekoMode)
 		{
+			// Rewrite the hxml file if -neko was passed.
 			var hxmlFile = path + '/myapp.hxml';
-			var hxml = File.getContent(path + '/myapp.hxml').replace("\n-php www", "\n-neko www/index.n");
-			
+			var hxml = File.getContent(hxmlFile).replace("\n-php www", "\n-neko www/index.n");
 			putContent(hxmlFile, hxml);
+			
+			// Rewrite the hxproj file too.
+			var hxprojFile = path + '/myapp.hxproj';
+			var hxproj = File.getContent(hxprojFile);
+			
+			hxproj = hxproj.replace('<movie path="www" />', '<movie path="www\\index.n" />');
+			hxproj = hxproj.replace('<movie version="13" />', '<movie version="12" />');
+			
+			putContent(hxprojFile, hxproj);
 		}
 		
 		/*
