@@ -282,6 +282,10 @@ class Main
 	{
 		var content = File.getContent(buildFile);
 		
+		// Filter out comments so they don't get caught in the regexp.
+		var commentFilter = ~/#.*/g;
+		content = commentFilter.replace(content, '');
+		
 		var phpTest = ~/-php\s+(.+)\b/;
 		var nekoTest = ~/-neko\s+(.+)[\/]\b/;
 		

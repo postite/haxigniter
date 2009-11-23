@@ -5,6 +5,9 @@ Current
 =======
 Features
  - "ignite init -neko" now rewrites the hxproj file to build for Neko.
+ 
+Bug fixes
+ - ignite hxml parser found the build path in comments.
 
 v0.8 (2009-11-21)
 =================
