@@ -3,6 +3,7 @@
 
 # When targeting neko: -neko www/index.n
 # When targeting php: -php www
+# "www" is the output folder. It can be replaced by any path.
 -php www
 
 -main MyController
