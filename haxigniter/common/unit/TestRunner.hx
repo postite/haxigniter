@@ -8,15 +8,20 @@ import neko.Lib;
 
 class TestRunner extends haxe.unit.TestRunner
 {
+	static var errorTest : EReg = ~/\b[1-9]\d* failed\b/;
+	
+	public var htmlOutput : Bool;
+	private var output : String;
+	
 	/**
-	 * Override this class and add your own test classes.
+	 * Override this class and add your own test classes in this method.
 	 */
 	private function addTestClasses() {}
 	
-	private var output : String;
-
-	public function new(runHaxigniterTests = false)
+	public function new(?htmlOutput = true)
 	{
+		this.htmlOutput = htmlOutput;
+		
 		// Rebind the print method to capture output.
 		var self = this;
 		haxe.unit.TestRunner.print = function(v : Dynamic)
@@ -25,7 +30,7 @@ class TestRunner extends haxe.unit.TestRunner
 		}
 
 		super();
-		this.addTestClasses();		
+		this.addTestClasses();
 	}
 	
 	public function runTests() : String
@@ -33,23 +38,27 @@ class TestRunner extends haxe.unit.TestRunner
 		this.output = '';
 		this.run();
 
-		return this.output;
+		if(htmlOutput)
+		{
+			var color = errorTest.match(this.output) ? 'red' : 'green';
+			return '<pre style="border:1px dashed ' + color + '; padding:5px; background-color:#F2F0EE;">' + this.output + '</pre>';
+		}
+		else
+			return this.output;
 	}
 
-	#if php,neko
+	#if (php || neko)
 	public function runAndDisplay() : Void
 	{
-		var output : String = this.runTests();
-		Lib.print('<pre style="border:1px dashed blue; padding:5px; background-color:#F2F0EE;">' + output + '</pre>');
+		Lib.print(this.runTests());
 	}
 	
 	public function runAndDisplayOnError() : Void
 	{
-		var output : String = this.runTests();
-		var errorTest : EReg = ~/\b[1-9]\d* failed\b/;
+		var output = this.runTests();
+		if(!errorTest.match(output)) return;
 		
-		if(errorTest.match(output))
-			Lib.print('<pre style="border:1px dashed red; padding:5px; background-color:#F2F0EE;">' + output + '</pre>');
+		Lib.print(output);
 	}
 	#end
 }

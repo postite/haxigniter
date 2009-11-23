@@ -29,9 +29,9 @@ class HaxigniterTests extends haxigniter.common.unit.TestRunner
 {
 	//new haxigniter.tests.HaxigniterTests().runAndDisplay();
 	
-	public function new()
+	public function new(?htmlOutput = true)
 	{
-		super();
+		super(htmlOutput);
 
 		this.add(new When_UnitTesting_With_TestCase());
 		this.add(new When_using_a_TypeFactory());

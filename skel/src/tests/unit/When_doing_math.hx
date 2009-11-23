@@ -1,4 +1,4 @@
-package haxigniter.application.tests.unit;
+package tests.unit;
 
 import haxigniter.common.unit.TestCase;
 

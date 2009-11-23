@@ -3,7 +3,7 @@ class RunUnitTests
     static function main()
     {
 		neko.Lib.println('Running haXigniter tests...');
-		var output = new haxigniter.tests.HaxigniterTests().runTests();
+		var output = new haxigniter.tests.HaxigniterTests(false).runTests();
 		
 		neko.Lib.println(output);
 

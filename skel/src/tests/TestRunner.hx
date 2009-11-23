@@ -1,13 +1,15 @@
-package haxigniter.application.tests;
+package tests;
 
-class TestRunner extends haxigniter.tests.TestRunner
+class TestRunner extends haxigniter.common.unit.TestRunner
 {
 	/**
-	 * Add test classes here to auto-execute them, for example:
-	 * this.add(new haxigniter.application.tests.unit.MyTestCase());
+	 * Add test classes here. Then you can execute them with
+	 * new tests.TestRunner().runAndDisplay() or runAndDisplayOnError()
 	 */
 	private override function addTestClasses()
 	{
-		this.add(new haxigniter.application.tests.unit.When_doing_math());
-	}	
+		this.add(new tests.unit.When_doing_math());
+	}
+	
+	public function new() { super(); }
 }
