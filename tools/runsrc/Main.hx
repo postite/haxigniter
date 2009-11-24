@@ -11,6 +11,7 @@ class Main
 {
 	static var commands : Array<String>;
 	static var libPath : String;
+	static var debugMode : Bool;
 	
 	static var validCommands = [
 		'build',
@@ -31,15 +32,20 @@ class Main
 	static function main() 
 	{
 		var args = Sys.args();
-		
-		// haxelib appends cwd automatically, so if running from command line,
-		// next-last argument should be set to "--" for detecting.
-		if(args.length >= 1)
+		libPath = libraryPath();
+
+		// haxelib sets the current directory to the library path and puts the
+		// real current directory in the args, so if they are the same, it's
+		// not using a local version of run.n.
+		if(Sys.getCwd().replace('\\', '/') == libPath.replace('\\', '/'))
 		{
-			if(args[args.length-1] != '--')
-				Sys.setCwd(args.pop());
-			else
-				args.pop();
+			Sys.setCwd(args.pop());
+			debugMode = false;
+		}
+		else
+		{
+			libPath = neko.FileSystem.fullPath(neko.io.Path.directory(neko.vm.Module.local().name)) + '/';
+			debugMode = true;
 		}
 
 		var command = args[0];
@@ -56,18 +62,7 @@ class Main
 		}
 		else
 		{
-			commands = args.slice(1);
-			
-			// Get path to the haxigniter library.
-			var process = new neko.io.Process('haxelib', ['path', 'haxigniter']);
-			libPath = process.stdout.readUntil(10).trim();
-			process.close();
-			
-			if(new EReg('not installed', '').match(libPath))
-			{
-				libPath = './'; // If set to this, treat as debugging mode.
-			}
-			
+			commands = args.slice(1);			
 			Sys.exit(Reflect.field(Main, command)(new GetPot(commands)));
 		}
 	}
@@ -288,24 +283,32 @@ class Main
 
 	static function unittest(options : GetPot) : Int
 	{
-		var path = libPath + 'tools/runsrc';			
-		Sys.setCwd(path);
+		var oldPath = Sys.getCwd();
+		var path = libPath + 'tools/runsrc';
 		
 		var args = ['-main', 'RunUnitTests', '-x', 'rununittests'];
-		
-		// If debugging, don't use -lib.
-		if(libPath != './')
+
+		if(!debugMode)
 		{
 			args = ['-lib', 'haxigniter'].concat(args);
 		}
 		else
-			args = ['-cp', '../..'].concat(args);
+		{
+			// If debugging, use the local libPath as source.
+			args = ['-cp', libPath].concat(args);
+		}
+		
+		Lib.println('Executing haXigniter tests...');
+
+		Sys.setCwd(path);
 		
 		var status = Sys.command('haxe', args);
 		
 		if(FileSystem.exists('rununittests.n'))
 			FileSystem.deleteFile('rununittests.n');
 		
+		Sys.setCwd(oldPath);
+			
 		return status;
 	}
 	
@@ -393,4 +396,17 @@ class Main
 		
 		return output;
 	}	
+	
+	private static function libraryPath() : String
+	{
+		// Get path to the haxigniter library.
+		var process = new neko.io.Process('haxelib', ['path', 'haxigniter']);
+		var libPath = process.stdout.readUntil(10).trim();
+		process.close();
+		
+		if(new EReg('not installed', '').match(libPath))
+			libPath = null;
+		
+		return libPath;
+	}
 }
