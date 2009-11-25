@@ -128,7 +128,7 @@ class SelectQuery
 		var output = new List<Int>();
 		for(id in this.query('SELECT ' + tables[0].name + '.id FROM ' + tables[0].name, null))
 		{
-			output.add(cast id);
+			output.add(cast(id.id, Int));
 		}
 		
 		return output;
