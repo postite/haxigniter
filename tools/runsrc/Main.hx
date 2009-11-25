@@ -228,9 +228,10 @@ class Main
 			{
 				return 1;
 			}
+			
+			if(path.length == 0)
+				path = '.';
 		}
-		
-		path = FileSystem.fullPath(path.length == 0 ? '.' : path);
 		
 		if(!FileSystem.exists(path))
 		{
@@ -240,6 +241,8 @@ class Main
 		{
 			return error(path + '" is not a directory.');
 		}
+		
+		path = FileSystem.fullPath(path);
 		
 		Lib.println('Copying project structure to ' + path);
 

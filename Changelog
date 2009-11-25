@@ -7,6 +7,9 @@ Changed
  - For developers: run.n now detects if it's running in haxelib or not. If not, the current run.n path
    is set as library path.
 
+Bug fixes
+ - ignite init failed on Linux if target directory didn't exist.
+
 v0.81 (2009-11-23)
 ==================
 Features
