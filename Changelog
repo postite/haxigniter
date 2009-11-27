@@ -1,8 +1,8 @@
 Changelog for haXigniter
 
 
-Current
-=======
+v0.82 (2009-11-27)
+==================
 Features
  - Added haxigniter.common.validation.FieldValidator, for validation of user input.
  - Added IterableTools.intersection() and IterableTools.difference()

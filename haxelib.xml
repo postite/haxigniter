@@ -6,5 +6,5 @@
     <tag v="php"/>
     <tag v="restful"/>
     <description>An easy-to-use web framework for haXe.</description>
-    <version name="0.81">Build tool improvements, RestApi and unit test fixes. See Changelog.</version>
+    <version name="0.82">Added input validation library, fixed some bugs in RestApi, better development mode for run.n. See Changelog for more details.</version>
 </project>
