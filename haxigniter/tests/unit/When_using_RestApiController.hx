@@ -45,7 +45,7 @@ class SecurityMock implements RestApiSecurityHandler
 class TestRestApi implements Controller, implements RestApiRequestHandler
 {
 	public var lastRequest : RestApiRequest;
-	public var requestHandler : RequestHandler;
+	public var requestHandler(default, null) : RequestHandler;
 	
 	public function new()
 	{

@@ -16,6 +16,7 @@ Bug fixes
  - RestApiSqlRequestHandler didn't generate the id list properly for write requests.
  - MockDatabaseConnection can now handle an Array of mocked database results.
  - Fixed some unit tests that required the new behavior of MockDatabaseConnection.
+ - Fixed some unit tests for clean Haxe 2.04.
 
 v0.81 (2009-11-23)
 ==================

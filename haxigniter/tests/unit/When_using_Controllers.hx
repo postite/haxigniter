@@ -19,7 +19,7 @@ class Testrest implements Controller, implements Infos
 		requestHandler = new RestHandler(new MockConfig());
 	}
 	
-	public var requestHandler : RequestHandler;
+	public var requestHandler(default, null) : RequestHandler;
 	
 	public function index() : String
 	{
@@ -64,7 +64,7 @@ class Teststandard implements Controller, implements Infos
 		requestHandler = new BasicHandler(new MockConfig());
 	}
 	
-	public var requestHandler : RequestHandler;
+	public var requestHandler(default, null) : RequestHandler;
 	
 	public function index(?arg1 : Bool) : String
 	{
