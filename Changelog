@@ -10,6 +10,8 @@ Changed
 Bug fixes
  - ignite init failed on Linux if target directory didn't exist.
  - RestApiSqlRequestHandler didn't generate the id list properly for write requests.
+ - MockDatabaseConnection can now handle an Array of mocked database results.
+ - Fixed some unit tests that required the new behavior of MockDatabaseConnection.
 
 v0.81 (2009-11-23)
 ==================

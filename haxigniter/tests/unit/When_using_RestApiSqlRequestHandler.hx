@@ -99,6 +99,9 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.common.unit.TestCas
 		
 		this.requestHandler = new TestHandler(this.security, this.handler);
 		this.requestHandler.noOutput = true;
+		
+		// To get testable failures
+		this.requestHandler.development = true;
 	}
 	
 	public override function tearDown()
@@ -110,7 +113,7 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.common.unit.TestCas
 	{
 		// Set mock result to avoid request failures
 		// Needs to be an int for COUNT(*)
-		this.db.setMockResults([1]);
+		this.db.addMockResult([{count:1}]);
 		
 		this.request('/bazaars');
 		this.assertQueries(['SELECT bazaars.* FROM bazaars']);
@@ -160,7 +163,7 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.common.unit.TestCas
 	{
 		// Set mock result to avoid request failures
 		// Needs to be an int for COUNT(*)
-		this.db.setMockResults([1]);
+		this.db.addMockResult([{count:1}]);
 
 		this.request('/bazaars/4/libraries');
 		this.assertQueries(['SELECT libraries.* FROM libraries INNER JOIN bazaars ON (bazaars.id = libraries.bazaarId AND bazaars.id = Q*4*Q)']);
@@ -187,7 +190,7 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.common.unit.TestCas
 	{
 		// Set mock result to avoid request failures
 		// Needs to be an int for COUNT(*)
-		this.db.setMockResults([1]);
+		this.db.addMockResult([{count:1}]);
 		this.requestHandler.acceptFailure = 'No valid relations found for query.';
 		
 		this.db.simulateError('No join found.');
@@ -220,7 +223,7 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.common.unit.TestCas
 		var anon = { firstname: 'Boris', lastname: 'Doris' };		
 		
 		// Database should return the id of the bazaar.
-		this.db.setMockResults([4]);
+		this.db.addMockResult([{id:4}]);
 		
 		this.request('/bazaars/4/libraries', 'POST', haxe.Serializer.run(anon));
 		this.assertQueries([
@@ -240,7 +243,7 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.common.unit.TestCas
 	{
 		var object = new TestRestCreate('Boris', 'Doris');
 		
-		this.db.setMockResults([1,2,3]);
+		this.db.addMockResult([{id:1}, {id:2}, {id:3}]);
 		
 		this.request('/bazaars/4/libraries/[id<4]/news', 'POST', haxe.Serializer.run(object));
 		this.assertQueries([
@@ -278,7 +281,7 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.common.unit.TestCas
 		// Also testing serialized Hash here.
 		var hash = haxigniter.server.libraries.Input.parseQuery('firstname=Boris&lastname=Doris');
 		
-		this.db.setMockResults([9,8,7]);
+		this.db.addMockResult([{id:9}, {id:8}, {id:7}]);
 		
 		this.request('/bazaars/10/libraries', 'PUT', haxe.Serializer.run(hash));
 		this.assertQueries([
@@ -296,7 +299,7 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.common.unit.TestCas
 
 	public function test_Then_delete_requests_should_create_proper_sql()
 	{
-		this.db.setMockResults([123,456]);
+		this.db.addMockResult([{id:123}, {id:456}]);
 		
 		this.request('/bazaars/15/libraries/[anything=goes]', 'DELETE');
 		this.assertQueries([

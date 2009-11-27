@@ -13,11 +13,12 @@ import neko.db.ResultSet;
 class MockConnection implements Connection
 {
 	public var queries : Array<String>;
-	public var mockResults : Array<Dynamic>;
+	public var mockResults : Array<Array<Dynamic>>;
 	public var mockError : String;
 	
 	public function new()
 	{
+		mockResults = new Array<Array<Dynamic>>();
 		queries = new Array<String>();
 	}
 	
@@ -35,7 +36,7 @@ class MockConnection implements Connection
 		if(mockError != null)
 			throw mockError;
 		else
-			return new MockResultSet(mockResults);
+			return new MockResultSet(mockResults[queries.length-1]);
 	}
 	
 	public function rollback() : Void {}
@@ -51,9 +52,9 @@ class MockDatabaseConnection extends DatabaseConnection
 		this.mockConnection.mockError = error;
 	}
 	
-	public function setMockResults(results : Array<Dynamic>) : Void
+	public function addMockResult(result : Array<Dynamic>) : Void
 	{
-		this.mockConnection.mockResults = results;
+		this.mockConnection.mockResults.push(result);
 	}
 	
 	public var queries(getQueries, null) : Array<String>;
