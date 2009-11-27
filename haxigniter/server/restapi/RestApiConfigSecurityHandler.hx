@@ -8,6 +8,8 @@ import neko.Lib;
 
 import haxe.PosInfos;
 import haxigniter.server.exceptions.RestApiException;
+import haxigniter.server.exceptions.RestApiValidationException;
+import haxigniter.common.validation.FieldValidator;
 
 import haxigniter.server.restapi.RestApiSecurityHandler;
 import haxigniter.common.restapi.RestApiInterface;
@@ -28,6 +30,12 @@ typedef UserRights = {
 typedef Ownerships = Array<Array<String>>;
 typedef SecurityRights = Hash<UserRights>;
 typedef AnonymousObject = Dynamic;
+
+private enum AccessRights {
+	all;
+	fields(fields : Array<String>);
+	validation(validation : FieldValidator);
+}
 
 /////////////////////////////////////////////////////////////////////
 
@@ -99,60 +107,83 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 	 */
 	private function testWriteAccess(access : Dynamic, data : PropertyObject) : Void
 	{
-		// If accessArray is null, all fields are valid.
-		var accessArray : Array<String> = this.accessArray(access);
+		var rights : AccessRights = this.accessRights(access);
 		
-		if(accessArray == null)
+		switch(rights)
 		{
-			// Access to all fields is allowed, but cannot write to the "id" field unless stated in the access array.
-			if(Reflect.hasField(data, 'id'))
-				throw new RestApiException('Field "id" cannot be modified.', RestErrorType.invalidData);
-		}
-		else
-		{
-			// If user is writing this data, only allow a subset of the specified rules.
-			var errorFields = new List<Dynamic>();
+			case all:
+				// Access to all fields is allowed, but cannot write to the "id" field unless stated in the access array.
+				if(Reflect.hasField(data, 'id'))
+					throw new RestApiException('Field "id" cannot be modified.', RestErrorType.invalidData);
+					
+			case fields(accessArray):
+				// If user is writing this data, only allow a subset of the specified rules.
+				var errorFields = new List<Dynamic>();
+				
+				for(dataField in Reflect.fields(data))
+				{
+					if(!Lambda.has(accessArray, dataField))
+						errorFields.push(dataField);
+				}
+				
+				if(errorFields.length > 0)
+					throw new RestApiException('Unauthorized access to fields "' + errorFields.join(',') + '".', RestErrorType.unauthorizedRequest);
 			
-			for(dataField in Reflect.fields(data))
-			{
-				if(!Lambda.has(accessArray, dataField))
-					errorFields.push(dataField);
-			}
-			
-			if(errorFields.length > 0)
-				throw new RestApiException('Unauthorized access to fields "' + errorFields.join(',') + '".', RestErrorType.unauthorizedRequest);
+			case validation(validation):
+				switch(validation.validate(data))
+				{
+					case tooMany(extraFields):
+						throw new RestApiException('Unauthorized access to fields "' + extraFields.join(',') + '".', RestErrorType.unauthorizedRequest);
+						
+					case tooFew(missingFields):
+						throw new RestApiValidationException(missingFields);
+						
+					case failure(fields):
+						throw new RestApiValidationException(fields);
+					
+					case success:
+						// All ok, pass through.
+				}
 		}
 	}
 
 	private function filterReadAccess(access : Dynamic, data : Array<PropertyObject>) : Void
 	{
-		// If accessArray is null, all fields are valid.
-		var accessArray : Array<String> = this.accessArray(access);
+		var rights : AccessRights = this.accessRights(access);
 		
-		if(accessArray == null)
-			return;
-
-		for(i in 0 ... data.length)
+		switch(rights)
 		{
-			var filtered = {};
-			for(field in accessArray)
-			{
-				if(Reflect.hasField(data[i], field))
-					Reflect.setField(filtered, field, Reflect.field(data[i], field));
-			}
-			
-			data[i] = filtered;
-		}		
+			case all:
+				return;
+				
+			case fields(accessArray):
+				for(i in 0 ... data.length)
+				{
+					var filtered = {};
+					for(field in accessArray)
+					{
+						if(Reflect.hasField(data[i], field))
+							Reflect.setField(filtered, field, Reflect.field(data[i], field));
+					}
+					
+					data[i] = filtered;
+				}
+
+			case validation(validation):
+				throw new RestApiException('Cannot have a FieldValidator in read access rights.', RestErrorType.configurationError);
+		}
 	}
 
-	private function accessArray(access : Dynamic) : Array<String>
+	private function accessRights(access : Dynamic) : AccessRights
 	{
 		if(Std.is(access, String) && cast access == 'ALL')
-			return null;
+			return AccessRights.all;
 		else if(Std.is(access, Array))
-			return cast access;
+			return AccessRights.fields(cast access);
+		else if(Std.is(access, FieldValidator))
+			return AccessRights.validation(cast access);
 		else
-			throw new RestApiException('Invalid data access type: ' + Type.typeof(access), RestErrorType.configurationError);		
+			throw new RestApiException('Invalid data access type: ' + Type.typeof(access), RestErrorType.configurationError);
 	}
 
 	/////////////////////////////////////////////////////////////////

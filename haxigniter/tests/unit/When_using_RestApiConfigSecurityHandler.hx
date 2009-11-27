@@ -1,6 +1,8 @@
 package haxigniter.tests.unit;
 
+import haxigniter.common.validation.FieldValidator;
 import haxigniter.server.exceptions.RestApiException;
+import haxigniter.server.exceptions.RestApiValidationException;
 import haxigniter.server.restapi.RestApiConfigSecurityHandler;
 
 import haxigniter.common.restapi.RestApiInterface;
@@ -709,6 +711,74 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.common.unit.Tes
 		}
 
 		security.create('news', { name: 'ABC', count: 456 }, 'libraries', 3, parameters);
+	}
+	
+	public function test_Then_FieldValidator_can_be_integrated_in_rights()
+	{
+		var fields = { id: ~/^[1-9]\d*$/ }
+		
+		var callbacks : Dynamic<String -> Bool> = cast { };
+		callbacks.name = function(name : String) { return name == 'Boris'; }
+		
+		var validation = new FieldValidator(fields, callbacks);
+		
+		rights.set('news', { guest: {read: validation, create: validation}, owner: null, admin: null } );
+
+		// Validation ok.
+		security.create('news', { id: 123, name: 'Boris' } );
+
+		// Regexp incorrect
+		try
+		{
+			security.create('news', { id: 0, name: 'Boris' });
+		}
+		catch(e : RestApiValidationException)
+		{
+			this.assertEqual(1, e.errorFields.length);
+			this.assertEqual('id', e.errorFields.pop());
+		}
+		
+		// Callback incorrect
+		try
+		{
+			security.create('news', { id: 123, name: 'Doris' });
+		}
+		catch(e : RestApiValidationException)
+		{
+			this.assertEqual(1, e.errorFields.length);
+			this.assertEqual('name', e.errorFields.pop());
+		}
+		
+		// Missing fields
+		try
+		{
+			security.create('news', { id: 123 });
+		}
+		catch(e : RestApiValidationException)
+		{
+			this.assertEqual(1, e.errorFields.length);
+			this.assertEqual('name', e.errorFields.pop());
+		}
+		
+		// Extra fields
+		try
+		{
+			security.create('news', { name: 'ABC', count: 123 });
+		}
+		catch(e : RestApiException)
+		{
+			this.assertEqual('Unauthorized access to fields "count".', e.message);
+		}
+		
+		// Read with validation is not allowed.
+		try
+		{
+			security.read('news', new RestDataCollection(0, 0, 0, []));
+		}
+		catch(e : RestApiException)
+		{
+			this.assertEqual('Cannot have a FieldValidator in read access rights.', e.message);
+		}		
 	}
 	
 	/////////////////////////////////////////////////////////////////

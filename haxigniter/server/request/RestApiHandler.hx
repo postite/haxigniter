@@ -1,6 +1,7 @@
 package haxigniter.server.request;
 
 import haxe.Serializer;
+import haxigniter.server.exceptions.RestApiValidationException;
 import haxigniter.server.libraries.DebugLevel;
 import haxigniter.server.request.RequestHandler;
 import haxigniter.server.Controller;
@@ -170,6 +171,10 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 				);
 			
 			return apiRequestHandler.handleApiRequest(request, this.apiSecurityHandler);
+		}
+		catch(e : RestApiValidationException)
+		{
+			return RestApiResponse.validationFailure(e.errorFields);
 		}
 		catch(e : RestApiException)
 		{

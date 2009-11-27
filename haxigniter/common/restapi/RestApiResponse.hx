@@ -59,6 +59,9 @@ class RestApiDebug
 			
 			case failure(message, errorType):
 				return 'RestApiResponse.failure("' + message + '", RestErrorType.' + errorType + ')';
+			
+			case validationFailure(fields):
+				return 'RestApiResponse.validationFailure([' + fields.join(', ') + '])';
 		}
 	}	
 }
@@ -70,4 +73,5 @@ enum RestApiResponse
 	success(affectedIds : Array<Int>);
 	successData(collection : RestDataCollection);
 	failure(message : String, errorType : RestErrorType);
+	validationFailure(fields : List<String>);
 }
