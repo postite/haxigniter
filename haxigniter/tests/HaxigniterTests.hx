@@ -2,6 +2,7 @@ package haxigniter.tests;
 
 import haxigniter.tests.unit.When_UnitTesting_With_TestCase;
 import haxigniter.tests.unit.When_using_a_TypeFactory;
+import haxigniter.tests.unit.When_using_a_FieldValidator;
 import haxigniter.tests.unit.When_using_Controllers;
 
 import haxigniter.tests.unit.When_using_library_Url;
@@ -47,5 +48,7 @@ class HaxigniterTests extends haxigniter.common.unit.TestRunner
 		this.add(new When_using_RestApiController());
 		this.add(new When_using_RestApiSqlRequestHandler());
 		this.add(new When_using_RestApiConfigSecurityHandler());
+		
+		this.add(new When_using_a_FieldValidator());
 	}
 }

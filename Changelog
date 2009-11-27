@@ -3,6 +3,10 @@ Changelog for haXigniter
 
 Current
 =======
+Features
+ - Added haxigniter.common.validation.FieldValidator, for validation of user input.
+ - Added IterableTools.intersection() and IterableTools.difference()
+
 Changed
  - For developers: run.n now detects if it's running in haxelib or not. If not, the current run.n path
    is set as library path.

@@ -13,6 +13,30 @@ class IterableTools
 		return true;
 	}
 
+	public static function difference<T>(compare : Iterable<T>, against : Iterable<T>) : List<T>
+	{
+		var output = new List<T>();
+		for(v in compare)
+		{
+			if(!Lambda.has(against, v))
+				output.push(v);
+		}
+		
+		return output;
+	}
+
+	public static function intersection<T>(compare : Iterable<T>, against : Iterable<T>) : List<T>
+	{
+		var output = new List<T>();
+		for(v in compare)
+		{
+			if(Lambda.has(against, v))
+				output.push(v);
+		}
+		
+		return output;
+	}
+
 	public static function arraySearch<T>(array : Array<T>, searchFor : T) : Null<Int>
 	{
 		for(i in 0 ... array.length)
@@ -22,5 +46,5 @@ class IterableTools
 		}
 		
 		return null;
-	}	
+	}
 }
