@@ -15,10 +15,12 @@ enum ValidationType
 	allowTooFew;
 }
 
+typedef ValidationCallback = Dynamic -> Dynamic;
+
 class FieldValidator 
 {
 	private var fields : Hash<EReg>;
-	private var callbacks : Hash<String -> Bool>;
+	private var callbacks : Hash<ValidationCallback>;
 	private var validationType : ValidationType;
 	
 	private var allFields : Hash<Bool>;
@@ -28,7 +30,7 @@ class FieldValidator
 	 * @param	fields An anonymous object of EReg objects.
 	 * @param	callbacks For more advanced behaviour, a Hash of callbacks that takes a string and returns whether the validation succeeded or not.
 	 */
-	public function new(fields : Dynamic, ?callbacks : Dynamic<String -> Bool>, ?validationType : ValidationType)
+	public function new(fields : Dynamic, ?callbacks : Dynamic<ValidationCallback>, ?validationType : ValidationType)
 	{
 		this.allFields = new Hash<Bool>();
 		
@@ -37,10 +39,10 @@ class FieldValidator
 		this.validationType = validationType == null ? ValidationType.exactMatch : validationType;
 	}
 	
-	public function validateField(field : String, value : Dynamic) : Bool
+	public function validateField(field : String, value : Dynamic) : Dynamic
 	{
 		var test : EReg = null;
-		var method : String -> Bool = null;
+		var method : ValidationCallback = null;
 		
 		if(fields.exists(field))
 			test = fields.get(field);
@@ -60,12 +62,11 @@ class FieldValidator
 		}
 
 		if(test != null && !test.match(cast value))
-			return false;
-			
-		if(method != null && !method(cast value))
-			return false;
-			
-		return true;
+			return null;
+		else if(method != null)
+			return method(value);
+		else
+			return value;
 	}
 	
 	public function validate(input : Dynamic, ?failOnFirst = false) : ValidationResult
@@ -89,9 +90,12 @@ class FieldValidator
 		for(field in inputFields)
 		{
 			var value = Reflect.field(input, field);
+			var newValue = validateField(field, value);
 			
-			if(!validateField(field, value))
+			if(newValue == null)
 				failures.push(field);
+			else if(value != newValue)
+				Reflect.setField(input, field, newValue);
 		}
 		
 		return failures.length == 0 ? ValidationResult.success : ValidationResult.failure(failures);

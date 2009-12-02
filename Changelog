@@ -7,6 +7,9 @@ Features
  - RestApiConfigSecurityHandler can now use a FieldValidator for access rights validation.
  - Added RestApiValidationException, to be used when data validation fails.
 
+Changed
+ - FieldValidator callbacks (ValidationCallback) should return the new value or null for failed validation.
+
 v0.82 (2009-11-27)
 ==================
 Features

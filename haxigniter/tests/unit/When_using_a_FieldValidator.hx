@@ -7,7 +7,7 @@ class When_using_a_FieldValidator extends haxigniter.common.unit.TestCase
 	private var v : FieldValidator;
 	private var data : Dynamic;
 	private var input : Dynamic;
-	private var callbacks : Dynamic<String -> Bool>;
+	private var callbacks : Dynamic<ValidationCallback>;
 	
 	public override function setup()
 	{
@@ -21,11 +21,11 @@ class When_using_a_FieldValidator extends haxigniter.common.unit.TestCase
 		callbacks = cast {};
 		
 		callbacks.id = function(input : String) {
-			return input == "123";
+			return input == "123" ? input : null;
 		}
 		
 		callbacks.name = function(input : String) {
-			return input == 'Boris';
+			return input == 'Boris' ? input : null;
 		}
 	}
 	
@@ -143,7 +143,7 @@ class When_using_a_FieldValidator extends haxigniter.common.unit.TestCase
 		
 		callbacks = cast {};		
 		callbacks.name = function(input : String) {
-			return input == 'Boris';
+			return input;
 		}
 
 		v = new FieldValidator(data, callbacks);
@@ -160,7 +160,7 @@ class When_using_a_FieldValidator extends haxigniter.common.unit.TestCase
 		
 		callbacks = cast {};		
 		callbacks.name = function(input : String) {
-			return input == 'Boris';
+			return input;
 		}
 
 		v = new FieldValidator(data, callbacks);
@@ -177,7 +177,36 @@ class When_using_a_FieldValidator extends haxigniter.common.unit.TestCase
 		result = v.validate({ id: 123, name: 'Boris' });
 		this.assertEqual(ValidationResult.success, result);
 	}
-	
+
+	public function test_Then_callbacks_will_fail_the_test_when_returning_null()
+	{
+		callbacks = cast {};
+		callbacks.name = function(input : String) {
+			return null;
+		}
+
+		var data = { name: 'Boris' };
+		
+		v = new FieldValidator(null, callbacks);
+		
+		this.assertEqual(Std.string(ValidationResult.failure(Lambda.list(['name']))), Std.string(v.validate(data)));
+	}
+
+	public function test_Then_callbacks_can_alter_the_input_by_returning_the_new_value()
+	{
+		callbacks = cast {};
+		callbacks.name = function(input : String) {
+			return 'Doris';
+		}
+
+		var data = { name: 'Boris' };
+		
+		v = new FieldValidator(null, callbacks);
+		
+		this.assertEqual(ValidationResult.success, v.validate(data));
+		this.assertEqual('Doris', data.name);
+	}
+
 	/////////////////////////////////////////////////////////////////
 	
 	public function test_Then_fieldValidation_should_succeed_on_correct_value()
