@@ -8,6 +8,7 @@ Features
  - Added RestApiValidationException, to be used when data validation fails.
 
 Changed
+ - Better error logging for exceptions derived from haxigniter.common.exceptions.Exception
  - FieldValidator callbacks (ValidationCallback) should return the new value or null for failed validation.
 
 v0.82 (2009-11-27)

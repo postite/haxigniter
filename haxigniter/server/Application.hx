@@ -6,6 +6,7 @@ import php.Web;
 import neko.Web;
 #end
 
+import haxigniter.common.exceptions.Exception;
 import haxigniter.server.Controller;
 
 import haxigniter.server.libraries.Debug;
@@ -53,6 +54,26 @@ class Application
 			else
 				Application.rethrow(e);
 		}
+		catch(e : Exception)
+		{
+			if(errorHandler != null)
+			{
+				errorHandler(e);
+			}
+			else if(!config.development)
+			{
+				var server = new Server(config);
+				var debug = new haxigniter.server.libraries.Debug(config);
+				var error = genericError(e);
+				
+				var fullClass = Type.getClassName(Type.getClass(e));
+				
+				debug.log('[' + fullClass.substr(fullClass.lastIndexOf('.') + 1) + '] ' + e.message, haxigniter.server.libraries.DebugLevel.error);
+				server.error(error.title, error.header, error.message);
+			}
+			else
+				Application.rethrow(e);
+		}
 		catch(e : Dynamic)
 		{
 			if(errorHandler != null)
@@ -74,7 +95,7 @@ class Application
 		
 		return controller;
 	}
-
+	
 	public static dynamic function genericError(e : Dynamic) : {title: String, header: String, message: String}
 	{
 		return { title: 'Page error', header: 'Page error', message: 'Something went wrong during server processing.' };
