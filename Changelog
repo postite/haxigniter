@@ -6,8 +6,11 @@ Current
 Features
  - RestApiConfigSecurityHandler can now use a FieldValidator for access rights validation.
  - Added RestApiValidationException, to be used when data validation fails.
+ - Added standard regexps in haxigniter.common.validation.Field.
 
 Changed
+ - RestApiConfigSecurityHandler now uses a password encoder function in the "userPasswordEncoder" property,
+   that will be applied on the password before checking the database. Default is MD5.
  - Better error logging for exceptions derived from haxigniter.common.exceptions.Exception
  - FieldValidator callbacks (ValidationCallback) should return the new value or null for failed validation.
 

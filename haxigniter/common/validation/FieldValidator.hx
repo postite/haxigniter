@@ -17,6 +17,49 @@ enum ValidationType
 
 typedef ValidationCallback = Dynamic -> Dynamic;
 
+class Field
+{
+	// {0,0} is the limit macro.
+	
+	public static function alphaNumeric(?min = 1, ?max : Int)
+	{
+		return create('^\\w{0,0}$', min, max);
+	}
+
+	public static function alphaNumericDash(?min = 1, ?max : Int)
+	{
+		return create('^[\\w-]{0,0}$', min, max);
+	}
+
+	public static function anythingOneline(?min = 0, ?max : Int)
+	{
+		return create('^.{0,0}$', min, max);
+	}
+
+	public static function anything() {	return ~/.*/; }
+
+	public static function databaseId() { return ~/^[1-9]\d*$/; }
+	
+	public static function email() { return ~/^[\w-\.]{2,}@[ÅÄÖåäö\w-\.]{2,}\.[a-z]{2,6}$/i; }
+	
+	/////////////////////////////////////////////////////////////////
+	
+	private static function create(base : String, min : Int, max : Int, ?opt = '') : EReg
+	{
+		return new EReg(StringTools.replace(base, '{0,0}', limit(min, max)), opt);
+	}
+	
+	private static function limit(min : Int, max : Int) : String
+	{
+		if(min == 0 && max == 1) return '?';
+		if(min == 1 && max == null) return '+';
+		if(min == 0 && max == null) return '*';
+		if(min == null && max != null) return '{,' + max + '}';
+		if(min != null && max == null) return '{' + min + ',}';
+		return '{' + min + ',' + max + '}';
+	}
+}
+
 class FieldValidator 
 {
 	private var fields : Hash<EReg>;
@@ -30,11 +73,13 @@ class FieldValidator
 	 * @param	fields An anonymous object of EReg objects.
 	 * @param	callbacks For more advanced behaviour, a Hash of callbacks that takes a string and returns whether the validation succeeded or not.
 	 */
-	public function new(fields : Dynamic, ?callbacks : Dynamic<ValidationCallback>, ?validationType : ValidationType)
+	public function new(fields : Dynamic, ?callbacks : Dynamic, ?validationType : ValidationType)
 	{
 		this.allFields = new Hash<Bool>();
 		
 		this.fields = objectToHash(fields);
+		
+		// TODO: Make callbacks Dynamic<ValidationCallback> when quick notation is implemented.
 		this.callbacks = objectToHash(callbacks);
 		this.validationType = validationType == null ? ValidationType.exactMatch : validationType;
 	}

@@ -86,6 +86,9 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.common.unit.Tes
 		security.userIsAdminField = 'isAdmin';
 		security.userIsAdminValue = 1;
 		
+		// Set encoder to null so it doesn't scramble the passwords.
+		security.userPasswordEncoder = null;
+		
 		security.install(this.api);
 	}
 	
@@ -498,16 +501,19 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.common.unit.Tes
 		
 		rights.set('users', {guest: null, owner: null, admin: {update: 'ALL'} });
 
+		// Set encoder method so the password is scrambled.
+		security.userPasswordEncoder = haxe.Md5.encode;
+
 		// The call without parameters won't make a rest api request, so this is for the second request:
 		this.api.requests[0] = function(url : String) : RestApiResponse
 		{
-			self.assertEqual('/?/USERS/[USER="Admin"][PASS="nimdA"]', url);
+			self.assertEqual('/?/USERS/[USER="Admin"][PASS="'+ haxe.Md5.encode('Admin123') +'"]', url);
 			return RestApiResponse.successData(new RestDataCollection(0, 0, 1, [{id: 10, isAdmin: 1}]));
 		}
 		
 		var params = new Hash<String>();
 		params.set('username', 'Admin');
-		params.set('password', 'nimdA');
+		params.set('password', 'Admin123');
 
 		try
 		{

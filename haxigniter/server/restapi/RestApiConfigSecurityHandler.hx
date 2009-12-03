@@ -44,9 +44,11 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 	public var userResource : String;
 	public var userNameField : String;
 	public var userPasswordField : String;
+	public var userPasswordEncoder : String -> String;
 
 	public var userIsAdminField : String;
 	public var userIsAdminValue : Dynamic;
+	
 	
 	private static var validCallback = ~/^(admin|owner|guest)(Create|Read|Update|Delete)\w+$/;
 	
@@ -61,6 +63,7 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 	public function new(rights : SecurityRights, ?ownerships : Ownerships, ?callbacks: AnonymousObject)
 	{
 		this.isAdmin = false;
+		this.userPasswordEncoder = haxe.Md5.encode;
 		
 		if(ownerships == null)
 			ownerships = [];
@@ -283,10 +286,16 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 		if(!parameters.exists('username') || !parameters.exists('password'))
 			throw new RestApiException('Missing parameters "username" or "password" when authorizing user.', RestErrorType.unauthorizedRequest);
 		
+		// Encode password if a special function for that exists.
+		var password = parameters.get('password');
+		
+		if(userPasswordEncoder != null)
+			password = userPasswordEncoder(password);
+			
 		var self = this;
 		var authorizeString = '/?/' + this.userResource + '/' +
 			'[' + this.userNameField + '="' + StringTools.replace(parameters.get('username'), '"', '\\"') + '"]' +
-			'[' + this.userPasswordField + '="' + StringTools.replace(parameters.get('password'), '"', '\\"') + '"]';
+			'[' + this.userPasswordField + '="' + StringTools.replace(password, '"', '\\"') + '"]';
 		
 		this.restApi.read(authorizeString, function(response : RestApiResponse) {
 			switch(response)
