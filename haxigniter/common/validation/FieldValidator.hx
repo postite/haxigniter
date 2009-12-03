@@ -88,6 +88,7 @@ class FieldValidator
 	{
 		var test : EReg = null;
 		var method : ValidationCallback = null;
+		var testValue : String;
 		
 		if(fields.exists(field))
 			test = fields.get(field);
@@ -103,10 +104,12 @@ class FieldValidator
 			if(Reflect.isObject(value) || Reflect.isFunction(value))
 				throw 'Field "' + field + '" is not a scalar value.';
 			else
-				value = Std.string(value);
+				testValue = Std.string(value);
 		}
+		else
+			testValue = cast value;
 
-		if(test != null && !test.match(cast value))
+		if(test != null && !test.match(testValue))
 			return null;
 		else if(method != null)
 			return method(value);

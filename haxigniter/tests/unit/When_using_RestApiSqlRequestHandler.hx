@@ -220,7 +220,7 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.common.unit.TestCas
 	public function test_Then_create_requests_should_create_proper_sql_for_anonymous_objects()
 	{
 		// Also testing serialized objects and anonymous object here.
-		var anon = { firstname: 'Boris', lastname: 'Doris' };		
+		var anon = { firstname: 'Boris', lastname: 'Doris' };
 		
 		// Database should return the id of the bazaar.
 		this.db.addMockResult([{id:4}]);
@@ -229,9 +229,31 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.common.unit.TestCas
 		this.assertQueries([
 			'SELECT bazaars.id FROM bazaars WHERE bazaars.id = Q*4*Q',
 			#if neko
-			'INSERT INTO libraries (lastname, firstname, bazaarId) VALUES (Q*Doris*Q, Q*Boris*Q, Q*4*Q)'
+			'INSERT INTO libraries (lastname, bazaarId, firstname) VALUES (Q*Doris*Q, Q*4*Q, Q*Boris*Q)'
 			#elseif php
-			'INSERT INTO libraries (firstname, lastname, bazaarId) VALUES (Q*Boris*Q, Q*Doris*Q, Q*4*Q)'
+			'INSERT INTO libraries (firstname, bazaarId, lastname) VALUES (Q*Doris*Q, Q*4*Q, Q*Boris*Q)'
+			#end
+			]);
+		
+		this.assertEqual('libraries', this.security.lastSecurity.resource);
+		this.assertEqual(Std.string(anon), Std.string(this.security.lastSecurity.data));
+	}
+
+	public function test_Then_create_requests_should_use_the_foreign_key_if_it_exists()
+	{
+		// Also testing serialized objects and anonymous object here.
+		var anon = { firstname: 'Boris', lastname: 'Doris', bazaarId: 7 };
+		
+		// Database should return the id of the bazaar.
+		this.db.addMockResult([{id:5}]);
+		
+		this.request('/bazaars/5/libraries', 'POST', haxe.Serializer.run(anon));
+		this.assertQueries([
+			'SELECT bazaars.id FROM bazaars WHERE bazaars.id = Q*5*Q',
+			#if neko
+			'INSERT INTO libraries (lastname, bazaarId, firstname) VALUES (Q*Doris*Q, Q*7*Q, Q*Boris*Q)'
+			#elseif php
+			'INSERT INTO libraries (firstname, bazaarId, lastname) VALUES (Q*Doris*Q, Q*7*Q, Q*Boris*Q)'
 			#end
 			]);
 		

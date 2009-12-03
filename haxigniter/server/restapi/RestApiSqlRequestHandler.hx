@@ -20,6 +20,7 @@ import haxigniter.server.libraries.Database;
 import haxigniter.server.restapi.RestApiRequest;
 import haxigniter.common.restapi.RestApiResponse;
 import haxigniter.server.restapi.RestApiSecurityHandler;
+import haxigniter.server.restapi.RestApiFormatHandler;
 
 import haxigniter.server.exceptions.RestApiException;
 
@@ -231,34 +232,35 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		}
 	}
 
-	private function requestData(request : RestApiRequest) : Hash<Dynamic>
+	private function requestData(request : RestApiRequest) : PropertyObject
 	{
-		var output : Hash<Dynamic>;
+		var output : PropertyObject;
 		var empty = true;
 		
 		if(Std.is(request.data, Hash))
 		{
-			output = cast(request.data, Hash<Dynamic>);
+			var hash = cast(request.data, Hash<Dynamic>);
+			output = {};
 			
-			for(key in output.keys())
+			for(key in hash.keys())
 			{
 				// Test for malicious keys.
 				this.db.testAlphaNumeric(key);
 				empty = false;
+				
+				Reflect.setField(output, key, hash.get(key));
 			}
 		}
 		else if(Reflect.isObject(request.data))
 		{
-			output = new Hash<Dynamic>();
-			
 			for(key in Reflect.fields(request.data))
 			{
 				// Test for malicious keys.
-				this.db.testAlphaNumeric(key);
-				output.set(key, Reflect.field(request.data, key));
-				
+				this.db.testAlphaNumeric(key);				
 				empty = false;
 			}
+			
+			output = request.data;
 		}
 		else
 		{
@@ -290,16 +292,26 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 			
 			var parentResource = request.resources[request.resources.length - 2].name;
 			var foreignKey = Inflection.singularize(parentResource) + 'Id';
-
+			
+			// If foreign key exists already, use it instead.
+			var newForeignKey = Reflect.hasField(data, foreignKey);
+			
 			for(id in query.ids())
 			{
 				// Test if security allows this request.
-				security.create(createResource.name, request.data, parentResource, id, request.queryParameters);
+				security.create(createResource.name, data, parentResource, id, request.queryParameters);
 
-				data.set(foreignKey, Std.string(id));
+				// Set the foreign key field
+				if(!newForeignKey)
+					Reflect.setField(data, foreignKey, id);
 				
 				db.insert(createResource.name, data);
 				output.push(db.lastInsertId());
+				
+				// Delete the foreign key afterwards, since there may have been more than one id added
+				// and supplying the last one would be dubious.
+				if(!newForeignKey)
+					Reflect.deleteField(data, foreignKey);
 			}
 		}
 		else
@@ -329,7 +341,7 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		var tableName = request.resources[request.resources.length - 1].name;
 		
 		// Test if security allows this request.
-		security.update(tableName, ids, request.data, request.queryParameters);
+		security.update(tableName, ids, data, request.queryParameters);
 		
 		if(ids.length > 0 || updateAll)
 		{
@@ -337,10 +349,10 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 			
 			var updateData = new Array<String>();
 			var values = [];
-			for(key in data.keys())
+			for(key in Reflect.fields(data))
 			{
 				updateData.push(key + '=?');			
-				values.push(data.get(key));
+				values.push(Reflect.field(data, key));
 			}
 			
 			// Add the data keys to the query.

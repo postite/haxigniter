@@ -190,6 +190,20 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.common.unit.Tes
 		}
 	}
 
+	public function test_Then_write_requests_fails_if_foreign_key_exists_for_ALL_rights()
+	{
+		rights.set('testResource', {guest: {create: 'ALL', read: 'ALL', update: 'ALL', delete: 'ALL'}, owner: null, admin: null});
+		
+		try
+		{
+			security.create('testResource', {foreignId: 123, name: 'Boris'});
+		}
+		catch(e : RestApiException)
+		{
+			this.assertPattern(~/Field "foreignId" cannot be modified.$/, e.message);
+		}
+	}
+
 	public function test_Then_no_access_if_login_fails()
 	{
 		rights.set('testResource', { guest: null, owner: null, admin: null } );
@@ -723,15 +737,19 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.common.unit.Tes
 	{
 		var fields = { id: ~/^[1-9]\d*$/ }
 		
-		var callbacks : Dynamic<String -> Bool> = cast { };
-		callbacks.name = function(name : String) { return name == 'Boris'; }
+		var callbacks : Dynamic = {};
+		callbacks.name = function(name : String) { return name == 'Boris' ? 'Modded' : null; }
 		
 		var validation = new FieldValidator(fields, callbacks);
 		
 		rights.set('news', { guest: {read: validation, create: validation}, owner: null, admin: null } );
 
 		// Validation ok.
-		security.create('news', { id: 123, name: 'Boris' } );
+		var data = { id: 123, name: 'Boris' };
+		security.create('news', data);
+		
+		this.assertEqual(123, data.id);
+		this.assertEqual('Modded', data.name);
 
 		// Regexp incorrect
 		try

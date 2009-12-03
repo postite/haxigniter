@@ -115,9 +115,19 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 		switch(rights)
 		{
 			case all:
-				// Access to all fields is allowed, but cannot write to the "id" field unless stated in the access array.
+				// Access to all fields is allowed, but as default, no keys can be written to unless stated in the access array.
+				
 				if(Reflect.hasField(data, 'id'))
 					throw new RestApiException('Field "id" cannot be modified.', RestErrorType.invalidData);
+
+				var foreignKey = ~/[\w-]{2,}Id$/;
+					
+				for(dataField in Reflect.fields(data))
+				{
+					if(foreignKey.match(dataField))
+						throw new RestApiException('Field "'+ dataField +'" cannot be modified.', RestErrorType.invalidData);
+				}
+
 					
 			case fields(accessArray):
 				// If user is writing this data, only allow a subset of the specified rules.

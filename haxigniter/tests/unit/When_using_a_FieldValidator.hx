@@ -20,8 +20,8 @@ class When_using_a_FieldValidator extends haxigniter.common.unit.TestCase
 		
 		callbacks = cast {};
 		
-		callbacks.id = function(input : String) {
-			return input == "123" ? input : null;
+		callbacks.id = function(input : Int) {
+			return input == 123 ? input : null;
 		}
 		
 		callbacks.name = function(input : String) {
