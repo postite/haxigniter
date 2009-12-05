@@ -15,6 +15,7 @@ Changed
  - FieldValidator callbacks (ValidationCallback) should return the new value or null for failed validation.
  - No foreign keys can be written to in RestApiConfigSecurityHandler unless stated explicitly.
  - RestApiHandler now accepts requests without api version.
+ - RestApiHandler now takes the requested format at the end of the query (/resource/1.xml for example)
 
 Bug fixes
  - In write requests, RestApiSqlRequestHandler now uses the foreign key if it exists in the input data.

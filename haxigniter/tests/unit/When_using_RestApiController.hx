@@ -42,14 +42,17 @@ class SecurityMock implements RestApiSecurityHandler
 	}
 }
 
-class TestRestApi implements Controller, implements RestApiRequestHandler
+class TestRestApi implements Controller, implements RestApiRequestHandler, implements RestApiFormatHandler
 {
 	public var lastRequest : RestApiRequest;
+	public var lastFormat : RestApiFormat;
+	public var lastData : String;
+	
 	public var requestHandler(default, null) : RequestHandler;
 	
 	public function new()
 	{
-		
+		restApiFormats = ['json', 'xml'];
 	}
 	
 	///// Interface implementation //////////////////////////////////
@@ -60,16 +63,17 @@ class TestRestApi implements Controller, implements RestApiRequestHandler
 		return RestApiResponse.success([]);
 	}
 
+	public var restApiFormats(default, null) : Array<RestApiFormat>;
+
+	public function restApiInput(data : String, inputFormat : RestApiFormat) : PropertyObject
+	{
+		this.lastData = data;
+	}
+
 	public function restApiOutput(response : RestApiResponse, outputFormat : RestApiFormat) : RestResponseOutput
 	{
-		switch(response)
-		{
-			case success(rows):
-				if(rows.length != 0) throw response;
-			default:
-				throw response;
-		}
-		
+		this.lastFormat = outputFormat;
+
 		return {
 			contentType: 'mock1',
 			charSet: 'mock2',
@@ -95,7 +99,7 @@ class When_using_RestApiController extends haxigniter.common.unit.TestCase
 		this.api = new TestRestApi();
 		this.request = new Request(config);		
 
-		this.requestHandler = new RestApiHandler(new SecurityMock(), this.api);
+		this.requestHandler = new RestApiHandler(new SecurityMock(), this.api, this.api);
 		this.requestHandler.noOutput = true;
 	}
 	
@@ -116,13 +120,14 @@ class When_using_RestApiController extends haxigniter.common.unit.TestCase
 
 	public function test_Then_a_request_should_handle_not_so_basic_data()
 	{
-		this.requestHandler.handleRequest(this.api, '/couldBeAnything/v23', 'DELETE', new Hash<String>(), '/what/3/is/[this^=stuff]/', null);
+		this.requestHandler.handleRequest(this.api, '/couldBeAnything/v23', 'DELETE', new Hash<String>(), '/what/3/is/[this^=stuff]/', 'abcde');
 		
 		this.assertEqual(23, api.lastRequest.apiVersion);
 		
 		this.assertEqual('{}', Std.string(api.lastRequest.queryParameters));
 		this.assertEqual(2, api.lastRequest.resources.length);
-		this.assertEqual(RestApiRequestType.delete, api.lastRequest.type);		
+		this.assertEqual(RestApiRequestType.delete, api.lastRequest.type);
+		this.assertEqual('abcde', api.lastData);
 	}
 
 	public function test_Then_a_request_should_handle_null_api_version()
@@ -130,7 +135,31 @@ class When_using_RestApiController extends haxigniter.common.unit.TestCase
 		this.requestHandler.handleRequest(this.api, '', 'GET', new Hash<String>(), 'mock', null);		
 		this.assertEqual(null, api.lastRequest.apiVersion);
 	}
-	
+
+	public function test_Then_output_format_should_use_first_format_as_default()
+	{
+		this.requestHandler.handleRequest(this.api, '', 'GET', new Hash<String>(), 'mock', null);		
+		this.assertEqual('json', this.api.lastFormat);
+	}
+
+	public function test_Then_output_format_should_use_specified_format()
+	{
+		r = requestResource('/mock/3.xml');
+		
+		this.assertEqual('xml', this.api.lastFormat);
+		this.assertEqual(1, r.length);
+		this.assertResource('mock', 'attribute(id,equals,3)', r[0]);
+	}
+
+	public function test_Then_output_format_should_be_specified_before_query_parameters()
+	{
+		r = requestResource('/mock/*.xml&test=123');
+		
+		this.assertEqual('xml', this.api.lastFormat);
+		this.assertEqual(1, r.length);
+		this.assertResource('mock', '', r[0]);
+	}
+
 	public function test_Then_a_request_should_generate_valid_resources()
 	{
 		r = requestResource('/bazaars');

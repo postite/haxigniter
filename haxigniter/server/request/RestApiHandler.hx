@@ -121,7 +121,7 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 	/////////////////////////////////////////////////////////////////
 
 	private static var apiRequestPattern = ~/(?:\/[vV](\d+))?\/\?(\/[^&]+)&?(.*)/;
-	private static var apiFormatPattern = ~/\/\w+\.(\w+)\//;
+	private static var apiFormatPattern = ~/\.(\w+)$/;
 	
 	private function parseUrl(url : String) : { api: Int, query: String, parameters: Hash<String>, format: RestApiFormat }
 	{
@@ -132,8 +132,8 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 		else
 		{
 			var api = apiRequestPattern.matched(1);
-			
 			var query = apiRequestPattern.matched(2);
+			var parameters = haxigniter.server.libraries.Input.parseQuery(apiRequestPattern.matched(3));
 			var format : RestApiFormat = null;
 
 			// Parse format from query, if any.
@@ -141,11 +141,9 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 			if(apiFormatPattern.match(query))
 			{
 				format = apiFormatPattern.matched(1);
-				//throw new RestApiException('Multiple output formats specified: "' + outputFormat + '" and "' + resourceData[1] + '".', RestErrorType.invalidOutputFormat);
+				query = query.substr(0, query.length - format.length - 1);
 			}
 
-			var parameters = haxigniter.server.libraries.Input.parseQuery(apiRequestPattern.matched(3));
-			
 			if(StringTools.endsWith(query, '/'))
 				query = query.substr(0, query.length - 1);			
 			
