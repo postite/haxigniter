@@ -37,17 +37,17 @@ class Main
 		// haxelib sets the current directory to the library path and puts the
 		// real current directory in the args, so if they are the same, it's
 		// not using a local version of run.n.
-		if(Sys.getCwd().replace('\\', '/') == libPath.replace('\\', '/'))
+		if(libPath != null && Sys.getCwd().replace('\\', '/') == libPath.replace('\\', '/'))
 		{
 			Sys.setCwd(args.pop());
 			debugMode = false;
 		}
 		else
 		{
-			libPath = neko.FileSystem.fullPath(neko.io.Path.directory(neko.vm.Module.local().name)) + '/';
+			libPath = neko.io.Path.directory(neko.FileSystem.fullPath(neko.vm.Module.local().name)) + '/';
 			debugMode = true;
 		}
-
+		
 		var command = args[0];
 		if(command == null || Lambda.has(['--help', '-help', '-?', '/?'], command))
 		{
