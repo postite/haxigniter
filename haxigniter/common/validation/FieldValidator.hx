@@ -42,6 +42,8 @@ class Field
 	
 	public static function email() { return ~/^[\w-\.]{2,}@[ÅÄÖåäö\w-\.]{2,}\.[a-z]{2,6}$/i; }
 	
+	public static function boolInt() { return ~/^[01]$/; }
+	
 	/////////////////////////////////////////////////////////////////
 	
 	private static function create(base : String, min : Int, max : Int, ?opt = '') : EReg
