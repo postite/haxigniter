@@ -125,6 +125,12 @@ class When_using_RestApiController extends haxigniter.common.unit.TestCase
 		this.assertEqual(RestApiRequestType.delete, api.lastRequest.type);		
 	}
 
+	public function test_Then_a_request_should_handle_null_api_version()
+	{
+		this.requestHandler.handleRequest(this.api, '', 'GET', new Hash<String>(), 'mock', null);		
+		this.assertEqual(null, api.lastRequest.apiVersion);
+	}
+	
 	public function test_Then_a_request_should_generate_valid_resources()
 	{
 		r = requestResource('/bazaars');

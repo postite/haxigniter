@@ -120,18 +120,22 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 	
 	/////////////////////////////////////////////////////////////////
 
-	private static var apiRequestPattern = ~/^.*?\/[vV](\d+)\/\?(\/[^&]+)&?(.*)/;
+	private static var apiRequestPattern = ~/(?:\/[vV](\d+))?\/\?(\/[^&]+)&?(.*)/;
 	private static var apiFormatPattern = ~/\/\w+\.(\w+)\//;
 	
 	private function parseUrl(url : String) : { api: Int, query: String, parameters: Hash<String>, format: RestApiFormat }
 	{
 		if(!apiRequestPattern.match(url))
+		{
 			throw new RestApiException('Invalid request.', RestErrorType.invalidQuery);
+		}
 		else
 		{
+			var api = apiRequestPattern.matched(1);
+			
 			var query = apiRequestPattern.matched(2);
 			var format : RestApiFormat = null;
-			
+
 			// Parse format from query, if any.
 			// The slash prepending the query is kept so this pattern can detect the format:
 			if(apiFormatPattern.match(query))
@@ -139,13 +143,13 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 				format = apiFormatPattern.matched(1);
 				//throw new RestApiException('Multiple output formats specified: "' + outputFormat + '" and "' + resourceData[1] + '".', RestErrorType.invalidOutputFormat);
 			}
-			
+
 			var parameters = haxigniter.server.libraries.Input.parseQuery(apiRequestPattern.matched(3));
 			
 			if(StringTools.endsWith(query, '/'))
 				query = query.substr(0, query.length - 1);			
 			
-			return { api: Std.parseInt(apiRequestPattern.matched(1)), query: query.substr(1), parameters: parameters, format: format };
+			return { api: (api != null ? Std.parseInt(api) : null), query: query.substr(1), parameters: parameters, format: format };
 		}
 	}
 	
@@ -155,12 +159,12 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 	{
 		// Urldecode the query so it can be parsed.
 		query = StringTools.urlDecode(query);
-
+		
 		try
 		{
 			// Parse the query
 			var selectors = RestApiParser.parse(query);
-
+			
 			// Create the RestApiRequest object and pass it along to the handler.
 			var request = new RestApiRequest(
 				type, 
@@ -207,7 +211,11 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 			if(!StringTools.startsWith(rawQuery, '/'))
 				rawQuery = '/' + rawQuery;
 		}
-			
+		else if(!StringTools.startsWith(rawQuery, '/'))
+		{
+			rawQuery = '/' + rawQuery;
+		}
+		
 		var response : RestApiResponse;
 		var urlParts = this.parseUrl(uriPath + '?' + rawQuery);
 		

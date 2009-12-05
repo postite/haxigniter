@@ -60,8 +60,6 @@ class RestApiRequest
 			throw new RestApiException('No request type specified.', RestErrorType.invalidRequestType);
 		if(resources == null)
 			throw new RestApiException('No selectors in request.', RestErrorType.invalidQuery);
-		if(apiVersion == null)
-			throw new RestApiException('No api version specified.', RestErrorType.invalidApiVersion);
 		
 		this.type = type;
 		this.resources = resources;
