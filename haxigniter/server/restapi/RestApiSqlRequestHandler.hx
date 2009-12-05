@@ -299,7 +299,8 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 			for(id in query.ids())
 			{
 				// Test if security allows this request.
-				security.create(createResource.name, data, parentResource, id, request.queryParameters);
+				if(security != null)
+					security.create(createResource.name, data, parentResource, id, request.queryParameters);
 
 				// Set the foreign key field
 				if(!newForeignKey)
@@ -317,7 +318,8 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		else
 		{
 			// Test if security allows this request.
-			security.create(createResource.name, request.data, null, null, request.queryParameters);
+			if(security != null)
+				security.create(createResource.name, request.data, null, null, request.queryParameters);
 
 			db.insert(createResource.name, data);
 			output.push(db.lastInsertId());
@@ -341,7 +343,8 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		var tableName = request.resources[request.resources.length - 1].name;
 		
 		// Test if security allows this request.
-		security.update(tableName, ids, data, request.queryParameters);
+		if(security != null)
+			security.update(tableName, ids, data, request.queryParameters);
 		
 		if(ids.length > 0 || updateAll)
 		{
@@ -379,7 +382,8 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		var tableName = request.resources[request.resources.length - 1].name;
 
 		// Test if security allows this request.
-		security.delete(tableName, ids, request.queryParameters);
+		if(security != null)
+			security.delete(tableName, ids, request.queryParameters);
 
 		if(ids.length > 0 || deleteAll)
 		{
@@ -420,7 +424,8 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 		}
 		
 		// Test if security allows this request.
-		security.read(tableName, response, request.queryParameters);
+		if(security != null)
+			security.read(tableName, response, request.queryParameters);
 		
 		return haxigniter.common.restapi.RestApiResponse.successData(response);
 	}

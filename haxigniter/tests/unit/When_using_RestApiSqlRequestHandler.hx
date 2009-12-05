@@ -155,7 +155,6 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.common.unit.TestCas
 			]);
 		
 		// Test security
-		this.assertEqual(cast(this.requestHandler, RestApiInterface), this.security.restApi);
 		this.assertEqual('bazaars', this.security.lastSecurity.resource);
 	}
 

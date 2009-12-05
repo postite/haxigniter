@@ -49,6 +49,7 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 	public function new(apiSecurityHandler : RestApiSecurityHandler, apiRequestHandler : RestApiRequestHandler, ?apiFormatHandler : RestApiFormatHandler)
 	{
 		this.apiRequestHandler = apiRequestHandler;
+		this.apiSecurityHandler = apiSecurityHandler;
 
 		// If no format handler specified, use itself, which handles haxigniter format (serialized).
 		if(apiFormatHandler == null)
@@ -59,9 +60,11 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 		else
 			this.apiFormatHandler = apiFormatHandler;
 
-		// A SecurityHandler must be specified.
-		this.apiSecurityHandler = apiSecurityHandler;
-		this.apiSecurityHandler.install(this);
+		if(apiSecurityHandler != null)
+		{
+			// Install a RestApiHandler without security for the security handler.
+			this.apiSecurityHandler.install(new RestApiHandler(null, apiRequestHandler, apiFormatHandler));
+		}
 		
 		this.viewTranslations = new Hash<Hash<String>>();
 		this.noOutput = false;
