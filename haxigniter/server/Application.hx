@@ -7,6 +7,7 @@ import neko.Web;
 #end
 
 import haxigniter.common.exceptions.Exception;
+import haxigniter.server.exceptions.NotFoundException;
 import haxigniter.server.Controller;
 
 import haxigniter.server.libraries.Debug;
@@ -40,60 +41,41 @@ class Application
 			controller = request.createController(segments[0]);
 			controller.requestHandler.handleRequest(controller, requestUri, Web.getMethod(), Web.getParams(), Web.getParamsString(), Web.getPostData());
 		}
-		catch(e : haxigniter.server.exceptions.NotFoundException)
-		{
-			if(errorHandler != null)
-			{
-				errorHandler(e);
-			}
-			else if(!config.development)
-			{
-				var server = new Server(config);
-				server.error404();
-			}
-			else
-				Application.rethrow(e);
-		}
-		catch(e : Exception)
-		{
-			if(errorHandler != null)
-			{
-				errorHandler(e);
-			}
-			else if(!config.development)
-			{
-				var server = new Server(config);
-				var debug = new haxigniter.server.libraries.Debug(config);
-				var error = genericError(e);
-				
-				var fullClass = Type.getClassName(Type.getClass(e));
-				
-				debug.log('[' + fullClass.substr(fullClass.lastIndexOf('.') + 1) + '] ' + e.message, haxigniter.server.libraries.DebugLevel.error);
-				server.error(error.title, error.header, error.message);
-			}
-			else
-				Application.rethrow(e);
-		}
 		catch(e : Dynamic)
 		{
 			if(errorHandler != null)
 			{
 				errorHandler(e);
 			}
-			else if(!config.development)
+			else if(config.development)
+			{
+				Application.rethrow(e);
+			}
+			else if(Std.is(e, NotFoundException))
 			{
 				var server = new Server(config);
-				var debug = new haxigniter.server.libraries.Debug(config);
-				var error = genericError(e);
-				
-				debug.log(e, haxigniter.server.libraries.DebugLevel.error);
-				server.error(error.title, error.header, error.message);
+				server.error404();
+			}
+			else if(Std.is(e, Exception))
+			{
+				var fullClass = Type.getClassName(Type.getClass(e));				
+				logError(config, '[' + fullClass.substr(fullClass.lastIndexOf('.') + 1) + '] ' + e.message, e);				
 			}
 			else
-				Application.rethrow(e);
+				logError(config, Std.string(e), e);
 		}
 		
 		return controller;
+	}
+	
+	private static function logError(config : Config, message : String, e : Dynamic)
+	{
+		var server = new Server(config);
+		var debug = new haxigniter.server.libraries.Debug(config);
+		var error = genericError(e);
+		
+		debug.log(message, haxigniter.server.libraries.DebugLevel.error);
+		server.error(error.title, error.header, error.message);		
 	}
 	
 	public static dynamic function genericError(e : Dynamic) : {title: String, header: String, message: String}

@@ -1,6 +1,7 @@
 package ;
 
 import config.Database;
+import config.Config;
 
 import haxigniter.server.request.RequestHandler;
 import haxigniter.server.request.RestHandler;
@@ -18,17 +19,17 @@ import haxigniter.server.views.ViewEngine;
  */
 class MyController implements haxigniter.server.Controller
 {
-	///// Starting with the Controller interface implementation /////
+	/* --- Starting with the Controller interface implementation --- */
 	
 	// A request handler, which will determine how the controller will be used in the application.
 	public var requestHandler(default, null) : RequestHandler;
 	
-	///// Now for some more application-specific properties /////////
+	/* --- Now for some more application-specific properties --- */
 
-	// A configuration file is useful.
-	public var config(default, null) : haxigniter.server.Config;
+	// A configuration file is required to run the application.
+	public var config(default, null) : Config;
 
-	// This application will use a template engine to render the output.
+	// The controllers will use a template engine to render the output.
 	public var view(default, null) : ViewEngine;
 	
 	// Database connection, if needed.
@@ -43,20 +44,21 @@ class MyController implements haxigniter.server.Controller
 	/////////////////////////////////////////////////////////////////
 	
 	// The application configuration file is static, since it used in main().
-	private static var configuration = new config.Config();
+	private static var appConfig = new Config();
 	
 	// The application session is filebased, could be switched to other implementations.
-	private static var appSession = new FileSession(configuration.sessionPath);
+	private static var appSession = new FileSession(appConfig.sessionPath);
 
 	/*
 	 * Application entrypoint
 	 */
 	public static function main()
 	{
-		var controller = haxigniter.server.Application.run(configuration);
+		// Just run the application with the configuration.
+		var controller = haxigniter.server.Application.run(appConfig);
 		
-		// Need to do some cleanup, but test controller type since others may have been called. 
-		// This test can be removed if all controllers are inherited from MyController.
+		// Need to do some cleanup, but test controller type in case some other
+		// class was used as a controller.
 		if(Std.is(controller, MyController))
 			terminateApp(cast controller);
 	}
@@ -79,9 +81,11 @@ class MyController implements haxigniter.server.Controller
 	 */
 	public function new()
 	{
-		this.config = configuration;
+		// Set controller configuration.
+		this.config = appConfig;
 
 		// Set the default request handler to a RestHandler.
+		// See haxigniter.server.request.RestHandler class for documentation.
 		this.requestHandler = new RestHandler(this.config);
 
 		/*
@@ -111,14 +115,14 @@ class MyController implements haxigniter.server.Controller
 
 		// Configure database depending on development mode.
 		if(this.config.development)
-		{
-			// If development, also set a debug
 			this.db = new DevelopmentConnection();
-			this.db.debug = this.debug;
-		}
 		else
 			this.db = new OnlineConnection();
-		
+
+		// Set the database debugging so erroneous queries are logged.
+		this.db.debug = this.debug;
+
+		// The session is restored from SessionObject, passing in the interface and the output type.
 		this.session = SessionObject.restore(appSession, config.Session);
 	}
 	
