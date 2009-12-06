@@ -298,7 +298,9 @@ class DatabaseConnection
 	private function request(query : String, ?pos : PosInfos) : ResultSet
 	{
 		if(traceQueries != null && this.debug != null)
-			debug.trace('[Executing SQL] ' + query, traceQueries, pos);
+		{
+			debug.log('[Executing SQL] ' + query, traceQueries);
+		}
 
 		try
 		{
@@ -307,7 +309,7 @@ class DatabaseConnection
 		catch(e : Dynamic)
 		{
 			if(this.debug != null)
-				debug.trace('[SQL Error]\n' + query, DebugLevel.error, pos);
+				debug.log('[SQL Error] ' + query, DebugLevel.error);
 			
 			throw e;
 		}
