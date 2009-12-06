@@ -1,8 +1,8 @@
 Changelog for haXigniter
 
 
-Current
-=======
+v0.83 (2009-12-06)
+==================
 Features
  - RestApiConfigSecurityHandler can now use a FieldValidator for access rights validation.
  - Added RestApiValidationException, to be used when data validation fails.
