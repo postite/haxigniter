@@ -14,7 +14,7 @@ package controllers;
  * file config/Config.hx, so the compiler is aware of them. See that file for more information.
  * 
  */
-class Start extends MyController, implements haxe.rtti.Infos
+class Start extends MyController
 {
 	public function new()
 	{

@@ -14,11 +14,11 @@ body {
 	::if (id != null)::
 		Looks like the id was "::id::".
 	::else::
-		You didn't enter an id. Here's a <a href="::link::start/123">good one</a>!
+		You didn't enter an id. Here's a <a href="::link::/start/123">good one</a>!
 	::end::
 	</p>
 
-	<form method="POST" action="::link::start">
+	<form method="POST" action="::link::/start">
 		<span style="padding:10px; border:1px solid gray; background-color:#ddd;">
 			Name: <input type="text" name="name" value=""/>
 			<input type="hidden" name="hiddenValue" value="OK"/>
@@ -26,6 +26,6 @@ body {
 		</span>
 	</form>
 
-	<p><a href="::link::dev/integrity/password">Run integrity tests</a> for the application.</p>
+	<p><a href="::link::/dev/integrity/password">Run integrity tests</a> for the application.</p>
 </body>
 </html>

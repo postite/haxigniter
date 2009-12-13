@@ -15,9 +15,12 @@ import haxigniter.server.libraries.Database;
 import haxigniter.server.views.ViewEngine;
 
 /**
- * Base controller, parent to all controllers in the application.
+ * This class is the base controller, parent to all controllers in the application.
+ * 
+ * It implements haxe.rtti.Infos because some request handlers (BasicHandler and RestHandler) 
+ * uses that info to typecast the web input from the web to the controller methods.
  */
-class MyController implements haxigniter.server.Controller
+class MyController implements haxigniter.server.Controller, implements haxe.rtti.Infos
 {
 	/* --- Starting with the Controller interface implementation --- */
 	

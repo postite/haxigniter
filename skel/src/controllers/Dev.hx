@@ -15,7 +15,7 @@ import tests.Integrity;
  * The arguments will be automatically casted to the type you specify in the methods.
  * 
  */
-class Dev extends MyController, implements haxe.rtti.Infos
+class Dev extends MyController
 {
 	public function new()
 	{
