@@ -153,19 +153,6 @@ class Config extends haxigniter.server.Config
 
 		/*
 		|--------------------------------------------------------------------------
-		| Site URL
-		|--------------------------------------------------------------------------
-		|
-		| URL to your haXigniter root. If null it will be autodetected. If you need
-		| to specify it, it's a normal URL:
-		|
-		|	http://www.your-site.com/path/to/index.php
-		|
-		*/
-		siteUrl = null;
-		
-		/*
-		|--------------------------------------------------------------------------
 		| Application Path
 		|--------------------------------------------------------------------------
 		|

@@ -25,6 +25,16 @@ class Url
 		if(uri == null)
 			uri = Web.getURI();
 		
+		// If indexFile is blank then mod_rewrite is active.
+		// Apache appends the script name to empty url:s, so it must be stripped out.
+		if(config.indexFile == '')
+		{
+			var modRewriteTest = ~/\/[\w-]+\.[\w-]+$/;
+			
+			if(modRewriteTest.match(uri))
+				uri = uri.substr(0, uri.length - modRewriteTest.matched(0).length + 1);
+		}
+
 		// Trim the index path and file from the uri to get the segments.
 		var indexFile = config.indexPath + config.indexFile;
 		
@@ -70,17 +80,38 @@ class Url
 	/**
 	 * Returns the path to the application directory, without appending slash.
 	 * 
-	 * A common usage is to prepend all links in a template page with this value so no 
-	 * internal links has to be rewritten if the application directory changes.
+	 * A common usage is to prepend for example all images in a template page 
+	 * with this value (and a slash) so no internal links has to be rewritten 
+	 * if the application directory changes.
 	 */
 	public function linkUrl() : String
 	{
 		return config.indexPath.substr(0, config.indexPath.length - 1);
 	}
 	
-	public function siteUrl(?segments : String) : String
+	/**
+	 * Used to create a url to a local link.
+	 * 
+	 * Prepends the current application path, so links using this method will 
+	 * not break if the application changes directory. It can also be used in 
+	 * views if called with no arguments.
+	 * 
+	 * @param	?segments Segments to append, "test/me" for example.
+	 * @return  Url with paths and segments concatenated.
+	 */
+	public function siteUrl(?request : String, ?requestArray : Array<String>) : String
 	{
-		return segments == null ? config.siteUrl + '/' : Url.join([config.siteUrl, segments]);
+		var url = config.indexPath + config.indexFile;
+		
+		if(requestArray == null)
+			requestArray = [];
+			
+		if(request != null)
+			requestArray.unshift(request);
+		
+		requestArray.unshift(StringTools.endsWith(url, '/') ? url.substr(0, url.length - 1) : url);
+		
+		return requestArray.join('/');
 	}
 	
 	public function uriString() : String

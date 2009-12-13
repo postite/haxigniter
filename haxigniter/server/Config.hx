@@ -22,7 +22,6 @@ class Config
 
 	public var indexFile : String;
 	public var indexPath : String;
-	public var siteUrl : String;
 	
 	public var applicationPath : String;
 	public var viewPath : String;
@@ -82,23 +81,6 @@ class Config
 			else
 			{
 				throw 'indexPath cannot be auto-detected. Please set it in "application/config/Config.hx".';
-			}
-		}
-		
-		if(this.siteUrl == null)
-		{
-			var index = this.indexPath + this.indexFile;
-			
-			// This works on Apache/PHP
-			if(env.exists('HTTP_HOST'))
-			{
-				siteUrl = env.exists('HTTPS') && env.get('HTTPS') == 'on' ? 'https' : 'http';
-				siteUrl += '://' + env.get('HTTP_HOST') + index;
-			}
-			else
-			{
-				// If no SSL and host detection, a short form of the URL is returned.
-				siteUrl = index;
 			}
 		}
 		
