@@ -13,11 +13,6 @@ class TestRunner extends haxe.unit.TestRunner
 	public var htmlOutput : Bool;
 	private var output : String;
 	
-	/**
-	 * Override this class and add your own test classes in this method.
-	 */
-	private function addTestClasses() {}
-	
 	public function new(?htmlOutput = true)
 	{
 		this.htmlOutput = htmlOutput;
@@ -30,7 +25,6 @@ class TestRunner extends haxe.unit.TestRunner
 		}
 
 		super();
-		this.addTestClasses();
 	}
 	
 	public function runTests() : String

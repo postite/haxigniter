@@ -17,6 +17,12 @@ import tests.Integrity;
  */
 class Dev extends MyController
 {
+	/**
+	 * If not in development mode, the development functions needs a password.
+	 * The default password is 'password'. Please change it.
+	 */
+	private static var devPassword = 'password';
+
 	public function new()
 	{
 		super();
@@ -27,33 +33,49 @@ class Dev extends MyController
 	
 	/**
 	 * Run integrity tests, useful when rolling out application for the first time.
-	 * @param	password default password is 'password'. Please change it.
 	 */
 	public function integrity(password = '')
 	{
-		if(config.development || password == 'password')
-		{
-			var integrity = new Integrity(config);
+		var self = this;
+		
+		runIfDevOrPassword(password, function() {
+			var integrity = new Integrity(self.config);
 			integrity.run();
+		});
+	}
+	
+	public function unittests(password = '')
+	{
+		var testRunner = new haxigniter.common.unit.TestRunner();
+
+		// Add all your test classes here
+		testRunner.add(new tests.unit.When_doing_math());
+		
+		runIfDevOrPassword(password, function() {
+			testRunner.runAndDisplay();
+		});
+	}
+
+	#if php
+	public function phpinfo(password = '')
+	{
+		runIfDevOrPassword(password, function() {
+			untyped __php__("phpinfo();");
+		});
+	}
+	#end
+
+	private function runIfDevOrPassword(password : String, callBack : Void -> Void)
+	{
+		if(config.development || password == devPassword)
+		{
+			callBack();
 		}
 		else
 		{
 			// Act like there is nothing here.
 			var server = new Server(config);
 			server.error404();
-		}
+		}		
 	}
-
-	#if php
-	public function phpinfo()
-	{
-		if(config.development)
-			untyped __php__("phpinfo();");
-		else
-		{
-			var server = new Server(config);
-			server.error404();
-		}
-	}
-	#end
 }

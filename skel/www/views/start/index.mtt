@@ -27,5 +27,6 @@ body {
 	</form>
 
 	<p><a href="::link::/dev/integrity/password">Run integrity tests</a> for the application.</p>
+	<p><a href="::link::/dev/unittests/password">Run unit tests</a> for the application.</p>
 </body>
 </html>
