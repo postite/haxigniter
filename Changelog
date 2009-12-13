@@ -1,6 +1,20 @@
 Changelog for haXigniter
 
 
+v0.84 (2009-12-13)
+==================
+Features
+ - doc/mod_rewrite.conf is now rewritten for Neko when ignite/init a project with -neko.
+
+Changed
+ - tests.TestRunner is removed. Added test method to dev/unittests instead.
+ - siteUrl is removed from configuration file. Use Url.siteUrl() instead.
+ - Behavior of Url.siteUrl() changed - no slash is added after return value anymore.
+   Update your templates if you're using it there.
+
+Bug fixes
+ - Fixed a URL rewrite bug on empty requests in Apache when using mod_rewrite.
+
 v0.83 (2009-12-06)
 ==================
 Features
