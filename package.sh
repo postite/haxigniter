@@ -20,7 +20,9 @@ fi
 
 # Clear skel folder from build output
 rm -f skel/www/index.php
+rm -f skel/www/index.n
 rm -rf skel/www/lib/*
+find skel/www/runtime -type f ! -iname ".*" -exec rm -f {} \;
 
 # Build run.n
 cd tools/runsrc
@@ -38,4 +40,10 @@ cd ../..
 OUTPUT=${1:-haxigniter.zip}
 rm -f $OUTPUT
 zip -x .git -r $OUTPUT *
+
+if [ "$1" == "zip" ]
+then
+	exit
+fi
+
 haxelib test $OUTPUT
