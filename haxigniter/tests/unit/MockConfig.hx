@@ -22,7 +22,6 @@ class MockConfig extends haxigniter.server.Config
 		indexFile = 'index.php';
 		indexPath = '/';
 
-		siteUrl = null;
 		applicationPath = null;		
 		viewPath = null;
 		
