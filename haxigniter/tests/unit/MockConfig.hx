@@ -13,23 +13,14 @@ class MockConfig extends haxigniter.server.Config
 {
 	public function new(?dumpEnv : Dynamic)
 	{
-		development = Web.getHostName() == 'localhost';
+		development = false;
 		
 		controllerPackage = 'haxigniter.tests.unit';
 		defaultController = 'start';
 		defaultAction = 'index';
 
-		#if php
-		indexFile = null;
-		#elseif neko
-		indexFile = 'index.n';
-		#end
-		
-		#if php
-		indexPath = null;
-		#elseif neko
+		indexFile = 'index.php';
 		indexPath = '/';
-		#end
 
 		siteUrl = null;
 		applicationPath = null;		

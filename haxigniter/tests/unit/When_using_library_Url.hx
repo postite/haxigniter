@@ -28,4 +28,18 @@ class When_using_library_Url extends haxigniter.common.unit.TestCase
 		config.indexPath = '/test/test2/';
 		this.assertEqual('/test/test2', url.linkUrl());
 	}
+	
+	public function test_Then_siteUrl_should_strip_last_slash()
+	{
+		this.assertEqual('/index.php', url.siteUrl());
+		this.assertEqual('/index.php/test/me', url.siteUrl('test/me'));
+		
+		config = new MockConfig();
+		config.indexFile = '';
+		config.indexPath = '/';		
+		url = new Url(config);
+		
+		this.assertEqual('', url.siteUrl());
+		this.assertEqual('/test/me', url.siteUrl('test/me'));
+	}
 }
