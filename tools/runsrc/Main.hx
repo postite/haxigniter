@@ -265,6 +265,11 @@ class Main
 			hxproj = hxproj.replace('<movie version="13" />', '<movie version="12" />');
 			
 			putContent(hxprojFile, hxproj);
+			
+			// Rewrite the mod_rewrite file.
+			var modRewrite = path + '/doc/mod_rewrite.conf';
+			var content = File.getContent(modRewrite).replace("index.php/$1", "index.n/$1");
+			putContent(modRewrite, content);
 		}
 		
 		/*
