@@ -9,6 +9,7 @@ import neko.Web;
 import haxigniter.common.exceptions.Exception;
 import haxigniter.server.exceptions.NotFoundException;
 import haxigniter.server.Controller;
+import haxigniter.server.Router;
 
 import haxigniter.server.libraries.Debug;
 import haxigniter.server.libraries.Server;
@@ -22,24 +23,25 @@ class Application
 	 * @param	config Configuration file
 	 * @param	?errorHandler If it exists, any exception is sent here.
 	 */
-	public static function run(config : Config, ?errorHandler : Dynamic -> Void) : Controller
+	public static function run(config : Config, ?router : Router, ?errorHandler : Dynamic -> Void) : Controller
 	{
 		var controller : Controller = null;
 		
+		var requestUri = Web.getURI();
+		var queryParams = Web.getParams();
+		var method = Web.getMethod();
+		var queryString = Web.getParamsString();
+		
+		if(router == null)
+			router = new DefaultRouter();
+
 		try
 		{
-			var url : Url = new Url(config);
-			var request : Request = new Request(config);
-
 			// Test url for valid characters.
-			var requestUri = Web.getURI();
-			url.testValidUri(requestUri);
-			
-			var segments = url.split(requestUri);
-			
-			// Handle the current web request.
-			controller = request.createController(segments[0]);
-			controller.requestHandler.handleRequest(controller, requestUri, Web.getMethod(), Web.getParams(), Web.getParamsString(), Web.getPostData());
+			new Url(config).testValidUri(requestUri);
+
+			controller = router.createController(config, requestUri, queryParams);
+			controller.requestHandler.handleRequest(controller, requestUri, method, queryParams, queryString, method == 'GET' ? null : Web.getPostData());
 		}
 		catch(e : Dynamic)
 		{
@@ -75,7 +77,7 @@ class Application
 		var error = genericError(e);
 		
 		debug.log(message, haxigniter.server.libraries.DebugLevel.error);
-		server.error(error.title, error.header, error.message);		
+		server.error(error.title, error.header, error.message);
 	}
 	
 	public static dynamic function genericError(e : Dynamic) : {title: String, header: String, message: String}

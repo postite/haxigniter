@@ -1,6 +1,12 @@
 Changelog for haXigniter
 
 
+Current
+=======
+Features
+ - Added haxigniter.server.Router, which can be sent to Application.run() to create controllers 
+   for the incoming requests.
+
 v0.84 (2009-12-13)
 ==================
 Features
