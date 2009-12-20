@@ -1,7 +1,6 @@
 package haxigniter.server.request;
 
 import haxigniter.server.Controller;
-import haxigniter.server.libraries.Url;
 import haxigniter.server.Config;
 import haxigniter.common.types.TypeFactory;
 
@@ -23,15 +22,14 @@ class BasicHandler implements RequestHandler
 	 */
 	public function handleRequest(controller : Controller, uriPath : String, method : String, query : Hash<String>, rawQuery : String, rawRequestData : String) : Dynamic
 	{
-		var url : Url = new Url(this.config);
-		var uriSegments = url.split(uriPath);
+		var uriSegments = uriPath.split('/');
 		
 		var controllerType = Type.getClass(controller);
 		var controllerMethod : String = (uriSegments[1] == null) ? config.defaultAction : uriSegments[1];
-
-		var callMethod : Dynamic = Reflect.field(controller, controllerMethod);
+		
+		var callMethod : Dynamic = Reflect.field(controller, controllerMethod);		
 		if(callMethod == null)
-			throw new haxigniter.server.exceptions.NotFoundException(controllerType + ' method "' + controllerMethod + '" not found.');
+			throw new haxigniter.server.exceptions.NotFoundException(Type.getClassName(controllerType) + ' method "' + controllerMethod + '" not found.');
 
 		// Typecast the arguments.
 		var arguments : Array<Dynamic> = TypeFactory.typecastArguments(controllerType, controllerMethod, uriSegments.slice(2));

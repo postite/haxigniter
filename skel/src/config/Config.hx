@@ -241,6 +241,22 @@ class Config extends haxigniter.server.Config
 
 		/*
 		|--------------------------------------------------------------------------
+		| Url Rewriter
+		|--------------------------------------------------------------------------
+		|
+		| Before a controller is created, the url can be remapped to a different
+		| request. For example, "start/abc" can be rewritten as "start/123" with
+		| a regexp.
+		|
+		| The default application uses a class found in config/UrlRewriter.hx
+		| You can edit that file to remove the default test rewrites, or set
+		| this value to null if you don't want any rewrites.
+		|
+		*/
+		urlRewriter = new config.UrlRewriter();
+
+		/*
+		|--------------------------------------------------------------------------
 		| Allowed URL Characters
 		|--------------------------------------------------------------------------
 		|
@@ -346,7 +362,7 @@ class Config extends haxigniter.server.Config
 		|
 		*/
 		encryptionKey = null;
-		
+
 		// Set default variables in super class.
 		super(dumpEnv);
 	}

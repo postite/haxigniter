@@ -20,7 +20,7 @@ class Url
 		this.config = config;
 	}
 	
-	public function split(uri : String, ?glue = '/') : Array<String>
+	public function segmentString(?uri : String, ?rewriteUrl = true, ?separator = '/') : String
 	{
 		if(uri == null)
 			uri = Web.getURI();
@@ -42,12 +42,24 @@ class Url
 			uri = uri.substr(indexFile.length);
 		
 		// Trim segments from slashes
-		if(StringTools.startsWith(uri, glue))
+		if(StringTools.startsWith(uri, separator))
 			uri = uri.substr(1);
 
-		if(StringTools.endsWith(uri, glue))
-			uri = uri.substr(0, uri.length-1);
-
+		if(StringTools.endsWith(uri, separator))
+			uri = uri.substr(0, uri.length - 1);
+		
+		uri = StringTools.trim(uri);
+		
+		if(rewriteUrl && config.urlRewriter != null)
+			uri = config.urlRewriter.rewriteUrl(uri);
+		
+		return uri;
+	}
+	
+	public function split(uri : String, ?glue = '/') : Array<String>
+	{
+		uri = segmentString(uri, glue);
+		
 		return uri.length > 0 ? uri.split(glue) : [];
 	}
 
@@ -132,7 +144,7 @@ class Url
 		if(!validUrl.match(uri))
 		{
 			// TODO: Multiple languages
-			throw new haxigniter.common.exceptions.Exception('The URI you submitted has disallowed characters.');
+			throw new haxigniter.common.exceptions.Exception('URI submitted with disallowed characters: ' + uri);
 		}
 	}
 }

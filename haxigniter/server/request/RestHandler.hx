@@ -4,7 +4,6 @@ import haxigniter.server.Controller;
 
 import haxigniter.server.Config;
 import haxigniter.server.libraries.Request;
-import haxigniter.server.libraries.Url;
 import haxigniter.common.rtti.RttiUtil;
 import haxigniter.server.request.RequestHandler;
 import haxigniter.common.types.TypeFactory;
@@ -52,9 +51,8 @@ class RestHandler implements RequestHandler
 		var controllerType = Type.getClass(controller);
 		var callMethod : Dynamic;
 
-		var url : Url = new Url(this.config);
-		var uriSegments = url.split(uriPath);
-
+		var uriSegments = uriPath.split('/');
+		
 		// TODO: Multiple languages for reserved keywords
 		if(method == 'GET')
 		{

@@ -2,6 +2,7 @@ package ;
 
 import config.Database;
 import config.Config;
+import config.UrlRewriter;
 
 import haxigniter.server.request.RequestHandler;
 import haxigniter.server.request.RestHandler;
@@ -57,7 +58,7 @@ class MyController implements haxigniter.server.Controller, implements haxe.rtti
 	 */
 	public static function main()
 	{
-		// Just run the application with the configuration.
+		// Run the application with the configuration.
 		var controller = haxigniter.server.Application.run(appConfig);
 		
 		// Need to do some cleanup, but test controller type in case some other

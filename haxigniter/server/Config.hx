@@ -3,6 +3,7 @@ package haxigniter.server;
 import haxigniter.server.libraries.Debug;
 import haxigniter.server.libraries.DebugLevel;
 import haxigniter.server.libraries.Server;
+import haxigniter.server.routing.UrlRewriter;
 import haxigniter.server.views.ViewEngine;
 
 #if php
@@ -46,6 +47,8 @@ class Config
 	public var defaultAction(default, null) : String;
 		
 	public var view : ViewEngine;
+	
+	public var urlRewriter : UrlRewriter;
 	
 	/**
 	 * Setting non-initialized constants.

@@ -4,8 +4,12 @@ Changelog for haXigniter
 Current
 =======
 Features
- - Added haxigniter.server.Router, which can be sent to Application.run() to create controllers 
+ - Added haxigniter.server.routing.Router, which can be sent to Application.run() to create controllers 
    for the incoming requests.
+ - Added haxigniter.server.routing.UrlRewriter, for rewriting the url before processing it with the Router.
+ - Added haxigniter.server.routing.ModRewriter, an implementation of UrlRewriter.
+ - "urlRewriter" property added to configuration file.
+ - Added url.segmentString(), which returns the string rewritten if a UrlRewriter is specified in the config.
 
 v0.84 (2009-12-13)
 ==================

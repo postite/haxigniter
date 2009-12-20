@@ -1,6 +1,8 @@
 package haxigniter.tests.unit;
 
 import haxe.rtti.Infos;
+import haxigniter.common.exceptions.Exception;
+import haxigniter.server.routing.ModRewriter;
 import Type;
 import haxigniter.common.types.TypeFactory;
 import haxigniter.common.unit.TestCase;
@@ -109,11 +111,11 @@ class When_using_Controllers extends haxigniter.common.unit.TestCase
 		this.assertEqual('index', output);
 
 		// make()
-		// Include in this test a prepending slash to test if it will be stripped.
-		// Also test optional argument
+		// Include in this test a prepending slash, which will be stripped.
 		output = request.execute('/testrest/new/123', 'GET');
 		this.assertEqual('make 123', output);
 
+		// Also test optional argument
 		output = request.execute('testrest/new/123/12.45', 'GET');
 		this.assertEqual('make 123 - 12.45', output);
 		
@@ -161,5 +163,22 @@ class When_using_Controllers extends haxigniter.common.unit.TestCase
 
 		output = request.execute('teststandard/second/what-a-nice-format', 'GET');
 		this.assertEqual('second what/a/nice/format', output);
+	}
+	
+	public function test_Then_standard_actions_should_work_with_url_rewrites()
+	{
+		var output : String;
+		var data = new Hash<String>();
+		
+		var rewrites = new ModRewriter();
+		rewrites.add(~/bogus/, 'teststandard/first/perfect');
+		
+		var config = new MockConfig();
+		config.urlRewriter = rewrites;
+		
+		request = new Request(config);
+
+		output = request.execute('bogus');
+		this.assertEqual('first perfect', output);
 	}
 }

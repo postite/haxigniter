@@ -8,40 +8,38 @@ import neko.Web;
 
 import haxigniter.common.exceptions.Exception;
 import haxigniter.server.exceptions.NotFoundException;
-import haxigniter.server.Controller;
-import haxigniter.server.Router;
 
-import haxigniter.server.libraries.Debug;
+import haxigniter.server.Controller;
+import haxigniter.server.routing.Router;
+
 import haxigniter.server.libraries.Server;
-import haxigniter.server.libraries.Url;
 import haxigniter.server.libraries.Request;
+import haxigniter.server.libraries.Url;
 
 class Application
 {
 	/**
-	 * Run the application, based on a configuration file and a web request.
-	 * @param	config Configuration file
-	 * @param	?errorHandler If it exists, any exception is sent here.
+	 * Run the haXigniter application.
+	 * @param	config        Configuration file
+	 * @param	?router       For routing the (rewritten) URL to a controller. Default is the DefaultRouter class.
+	 * @param	?errorHandler If set, all exceptions will be sent here instead of the default error handler.
+	 * @return  The controller created by the router, or null if an error occured before creation.
 	 */
 	public static function run(config : Config, ?router : Router, ?errorHandler : Dynamic -> Void) : Controller
 	{
 		var controller : Controller = null;
-		
-		var requestUri = Web.getURI();
+		var url = new Url(config);
+
+		var requestUri = url.segmentString(Web.getURI());
 		var queryParams = Web.getParams();
 		var method = Web.getMethod();
 		var queryString = Web.getParamsString();
-		
-		if(router == null)
-			router = new DefaultRouter();
+		var rawRequestData = method == 'GET' ? null : Web.getPostData();
 
 		try
 		{
-			// Test url for valid characters.
-			new Url(config).testValidUri(requestUri);
-
-			controller = router.createController(config, requestUri, queryParams);
-			controller.requestHandler.handleRequest(controller, requestUri, method, queryParams, queryString, method == 'GET' ? null : Web.getPostData());
+			controller = new Request(config).requestController(requestUri, queryParams, router);
+			controller.requestHandler.handleRequest(controller, requestUri, method, queryParams, queryString, rawRequestData);
 		}
 		catch(e : Dynamic)
 		{
