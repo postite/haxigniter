@@ -230,7 +230,7 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.common.unit.TestCas
 			#if neko
 			'INSERT INTO libraries (lastname, bazaarId, firstname) VALUES (Q*Doris*Q, Q*4*Q, Q*Boris*Q)'
 			#elseif php
-			'INSERT INTO libraries (firstname, bazaarId, lastname) VALUES (Q*Doris*Q, Q*4*Q, Q*Boris*Q)'
+			'INSERT INTO libraries (firstname, lastname, bazaarId) VALUES (Q*Boris*Q, Q*Doris*Q, Q*4*Q)'
 			#end
 			]);
 		
@@ -252,7 +252,7 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.common.unit.TestCas
 			#if neko
 			'INSERT INTO libraries (lastname, bazaarId, firstname) VALUES (Q*Doris*Q, Q*7*Q, Q*Boris*Q)'
 			#elseif php
-			'INSERT INTO libraries (firstname, bazaarId, lastname) VALUES (Q*Doris*Q, Q*7*Q, Q*Boris*Q)'
+			'INSERT INTO libraries (firstname, lastname, bazaarId) VALUES (Q*Boris*Q, Q*Doris*Q, Q*7*Q)'
 			#end
 			]);
 		

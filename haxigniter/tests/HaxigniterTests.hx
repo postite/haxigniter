@@ -26,10 +26,11 @@ import neko.Lib;
 
 /**
  * haXigniter framework tests.
- * Run by executing "tools/unittest.bat -all"
+ * Run by executing "./package.sh test" in a shell.
  */
 class HaxigniterTests extends haxigniter.common.unit.TestRunner
 {
+	// Can also be run from PHP with this:
 	//new haxigniter.tests.HaxigniterTests().runAndDisplay();
 	
 	public function new(?htmlOutput = true)

@@ -66,6 +66,12 @@ class When_using_a_FieldValidator extends haxigniter.common.unit.TestCase
 		
 		failList.add('name');
 		
+		#if php
+		// Arguments come in reverse order in PHP
+		failList.remove('id');
+		failList.add('id');
+		#end
+		
 		// Only regexps
 		v = new FieldValidator(data);
 		var result = v.validate( { id: 000, name: "X" } );
