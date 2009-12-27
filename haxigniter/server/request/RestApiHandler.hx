@@ -3,6 +3,7 @@ package haxigniter.server.request;
 import haxe.Serializer;
 import haxigniter.server.exceptions.RestApiValidationException;
 import haxigniter.server.libraries.DebugLevel;
+import haxigniter.common.libraries.ParsedUrl;
 import haxigniter.server.request.RequestHandler;
 import haxigniter.server.Controller;
 
@@ -136,7 +137,7 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 		{
 			var api = apiRequestPattern.matched(1);
 			var query = apiRequestPattern.matched(2);
-			var parameters = haxigniter.server.libraries.Input.parseQuery(apiRequestPattern.matched(3));
+			var parameters = ParsedUrl.parseQuery(apiRequestPattern.matched(3));
 			var format : RestApiFormat = null;
 
 			// Parse format from query, if any.
@@ -199,8 +200,11 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 	/**
 	 * Handle a page request. (RequestHandler implementation)
 	 */
-	public function handleRequest(controller : Controller, uriPath : String, method : String, query : Hash<String>, rawQuery : String, rawRequestData : String) : Dynamic
+	public function handleRequest(controller : Controller, url : ParsedUrl, method : String, getPostData : Hash<String>, rawRequestData : String) : Dynamic
 	{
+		var uriPath = url.path;
+		var rawQuery = url.query;
+		
 		// Fix the query formatting.
 		if(!StringTools.endsWith(uriPath, '/'))
 			uriPath += '/';

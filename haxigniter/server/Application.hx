@@ -16,6 +16,8 @@ import haxigniter.server.libraries.Server;
 import haxigniter.server.libraries.Request;
 import haxigniter.server.libraries.Url;
 
+import haxigniter.common.libraries.ParsedUrl;
+
 class Application
 {
 	/**
@@ -28,18 +30,25 @@ class Application
 	public static function run(config : Config, ?router : Router, ?errorHandler : Dynamic -> Void) : Controller
 	{
 		var controller : Controller = null;
-		var url = new Url(config);
 
-		var requestUri = url.segmentString(Web.getURI());
-		var queryParams = Web.getParams();
-		var method = Web.getMethod();
-		var queryString = Web.getParamsString();
-		var rawRequestData = method == 'GET' ? null : Web.getPostData();
+		// Create a default router if not set.
+		if(router == null)
+			router = new haxigniter.server.routing.DefaultRouter();
 
 		try
 		{
-			controller = new Request(config).requestController(requestUri, queryParams, router);
-			controller.requestHandler.handleRequest(controller, requestUri, method, queryParams, queryString, rawRequestData);
+			var url = new Url(config);
+			var parsedUrl = new ParsedUrl(requestUrl());
+
+			// Test url for valid characters.
+			url.testValidUri(parsedUrl.path);
+			
+			var method = Web.getMethod();
+			var rawRequestData = method == 'GET' ? null : Web.getPostData();
+			var getPostData = Web.getParams();
+
+			controller = router.createController(config, parsedUrl);
+			controller.requestHandler.handleRequest(controller, parsedUrl, method, getPostData, rawRequestData);
 		}
 		catch(e : Dynamic)
 		{
@@ -66,6 +75,17 @@ class Application
 		}
 		
 		return controller;
+	}
+	
+	private static inline function requestUrl() : String
+	{
+		var url = Web.getHostName() + Web.getURI();
+		var params = Web.getParamsString();
+		
+		if(params != null && params.length > 0)
+			url += '?' + params;
+		
+		return url;
 	}
 	
 	private static function logError(config : Config, message : String, e : Dynamic)

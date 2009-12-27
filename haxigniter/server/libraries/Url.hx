@@ -20,7 +20,7 @@ class Url
 		this.config = config;
 	}
 	
-	public function segmentString(?uri : String, ?rewriteUrl = true, ?separator = '/') : String
+	public function segmentString(?uri : String, ?separator = '/') : String
 	{
 		if(uri == null)
 			uri = Web.getURI();
@@ -48,12 +48,7 @@ class Url
 		if(StringTools.endsWith(uri, separator))
 			uri = uri.substr(0, uri.length - 1);
 		
-		uri = StringTools.trim(uri);
-		
-		if(rewriteUrl && config.urlRewriter != null)
-			uri = config.urlRewriter.rewriteUrl(uri);
-		
-		return uri;
+		return StringTools.trim(uri);
 	}
 	
 	public function split(uri : String, ?glue = '/') : Array<String>
@@ -64,7 +59,7 @@ class Url
 	}
 
 	/////////////////////////////////////////////////////////////////
-
+	
 	public static function join(segments : Array<String>, ?glue = '/') : String
 	{
 		if(segments.length == 0) return '';

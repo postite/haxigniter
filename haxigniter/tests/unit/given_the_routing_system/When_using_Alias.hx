@@ -1,14 +1,14 @@
 package haxigniter.tests.unit.given_the_routing_system;
 
-import haxigniter.server.routing.ModRewriter;
+import haxigniter.server.routing.Alias;
 
-class When_using_ModRewriter extends haxigniter.common.unit.TestCase
+class When_using_Alias extends haxigniter.common.unit.TestCase
 {
-	private var rw : ModRewriter;
+	private var rw : Alias;
 	
 	public override function setup()
 	{
-		rw = new ModRewriter();
+		rw = new Alias();
 	}
 	
 	public override function tearDown()

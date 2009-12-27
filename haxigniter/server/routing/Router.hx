@@ -2,6 +2,7 @@
 
 import haxigniter.server.Controller;
 import haxigniter.server.Config;
+import haxigniter.common.libraries.ParsedUrl;
 
 interface Router
 {
@@ -11,5 +12,5 @@ interface Router
 	 * @param	uri
 	 * @return
 	 */
-	function createController(config : Config, requestUri : String, queryParams : Hash<String>) : Controller;
+	function createController(config : Config, url : ParsedUrl) : Controller;
 }

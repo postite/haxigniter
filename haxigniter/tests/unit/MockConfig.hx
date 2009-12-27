@@ -41,8 +41,6 @@ class MockConfig extends haxigniter.server.Config
 
 		encryptionKey = null;
 		
-		urlRewriter = null;
-		
 		// Set default variables in super class.
 		super(dumpEnv);
 	}

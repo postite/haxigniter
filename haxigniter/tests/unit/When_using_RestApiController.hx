@@ -1,5 +1,6 @@
 package haxigniter.tests.unit;
 
+import haxigniter.common.libraries.ParsedUrl;
 import Type;
 import haxigniter.common.types.TypeFactory;
 import haxigniter.common.unit.TestCase;
@@ -109,7 +110,7 @@ class When_using_RestApiController extends haxigniter.common.unit.TestCase
 	
 	public function test_Then_a_request_should_handle_the_basic_data()
 	{
-		this.requestHandler.handleRequest(this.api, '/api/v1', 'GET', new Hash<String>(), '/bazaars', null);
+		this.requestHandler.handleRequest(this.api, new ParsedUrl('/api/v1/?/bazaars'), 'GET', null, null);
 		
 		this.assertEqual(1, api.lastRequest.apiVersion);
 		
@@ -120,7 +121,7 @@ class When_using_RestApiController extends haxigniter.common.unit.TestCase
 
 	public function test_Then_a_request_should_handle_not_so_basic_data()
 	{
-		this.requestHandler.handleRequest(this.api, '/couldBeAnything/v23', 'DELETE', new Hash<String>(), '/what/3/is/[this^=stuff]/', 'abcde');
+		this.requestHandler.handleRequest(this.api, new ParsedUrl('/couldBeAnything/v23?/what/3/is/[this^=stuff]/'), 'DELETE', null, 'abcde');
 		
 		this.assertEqual(23, api.lastRequest.apiVersion);
 		
@@ -132,13 +133,13 @@ class When_using_RestApiController extends haxigniter.common.unit.TestCase
 
 	public function test_Then_a_request_should_handle_null_api_version()
 	{
-		this.requestHandler.handleRequest(this.api, '', 'GET', new Hash<String>(), 'mock', null);		
+		this.requestHandler.handleRequest(this.api, new ParsedUrl('/?mock'), 'GET', null, null);
 		this.assertEqual(null, api.lastRequest.apiVersion);
 	}
 
 	public function test_Then_output_format_should_use_first_format_as_default()
 	{
-		this.requestHandler.handleRequest(this.api, '', 'GET', new Hash<String>(), 'mock', null);		
+		this.requestHandler.handleRequest(this.api, new ParsedUrl('/?mock'), 'GET', null, null);
 		this.assertEqual('json', this.api.lastFormat);
 	}
 
@@ -220,7 +221,7 @@ class When_using_RestApiController extends haxigniter.common.unit.TestCase
 	private function requestResource(query : String, method = 'GET') : Array<RestApiResource>
 	{
 		this.api.lastRequest = null;
-		var response = this.requestHandler.handleRequest(this.api, '/api/v1', method, new Hash<String>(), query, null);
+		var response = this.requestHandler.handleRequest(this.api, new ParsedUrl('/api/v1?' + query), method, null, null);
 		
 		if(this.api.lastRequest == null)
 			trace(response);

@@ -2,6 +2,7 @@
 
 import Type;
 import haxigniter.common.types.TypeFactory;
+import haxigniter.common.libraries.ParsedUrl;
 
 import haxigniter.server.Controller;
 import haxigniter.server.Config;
@@ -32,23 +33,25 @@ class Request
 		return cast(Type.createInstance(classType, controllerArgs == null ? [] : controllerArgs), Controller);
 	}
 
-	public function requestController(uri : String, ?query : Hash<String>, ?router : Router) : Controller
+	public function execute(uri : String, ?method = 'GET', ?getPostData : Hash<String>, ?rawRequestData : String, ?router : Router) : Dynamic
 	{
+		// Need to prepend a slash so the ParsedUrl doesn't take the first argument as the hostname.
+		if(!StringTools.startsWith(uri, '/'))
+			uri = '/' + uri;
+		
+		var parsedUrl = new ParsedUrl(uri);
+
 		// Test url for valid characters.
-		url.testValidUri(uri);
+		url.testValidUri(parsedUrl.path);
+
+		if(getPostData == null)
+			getPostData = new Hash<String>();
 
 		// Create a default router if not set.
 		if(router == null)
 			router = new haxigniter.server.routing.DefaultRouter();
 
-		return router.createController(config, uri, query);
-	}
-	
-	public function execute(uri : String, ?method = 'GET', ?query : Hash<String>, ?rawQuery : String, ?rawRequestData : String, ?router : Router) : Dynamic
-	{
-		uri = url.segmentString(uri);
-		
-		var controller = requestController(uri, query, router);
-		return controller.requestHandler.handleRequest(controller, uri, method, query, rawQuery, rawRequestData);
+		var controller = router.createController(config, parsedUrl);
+		return controller.requestHandler.handleRequest(controller, parsedUrl, method, getPostData, rawRequestData);
 	}
 }

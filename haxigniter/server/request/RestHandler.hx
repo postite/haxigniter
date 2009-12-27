@@ -1,9 +1,11 @@
 package haxigniter.server.request;
 
 import haxigniter.server.Controller;
+import haxigniter.server.libraries.Url;
 
 import haxigniter.server.Config;
 import haxigniter.server.libraries.Request;
+import haxigniter.common.libraries.ParsedUrl;
 import haxigniter.common.rtti.RttiUtil;
 import haxigniter.server.request.RequestHandler;
 import haxigniter.common.types.TypeFactory;
@@ -42,7 +44,7 @@ class RestHandler implements RequestHandler
 		this.config = config;
 	}
 	
-	public function handleRequest(controller : Controller, uriPath : String, method : String, query : Hash<String>, rawQuery : String, rawRequestData : String) : Dynamic
+	public function handleRequest(controller : Controller, url : ParsedUrl, method : String, getPostData : Hash<String>, rawRequestData : String) : Dynamic
 	{
 		var action : String = null;
 		var args : Array<Dynamic> = [];
@@ -51,7 +53,7 @@ class RestHandler implements RequestHandler
 		var controllerType = Type.getClass(controller);
 		var callMethod : Dynamic;
 
-		var uriSegments = uriPath.split('/');
+		var uriSegments = new Url(config).split(url.path);
 		
 		// TODO: Multiple languages for reserved keywords
 		if(method == 'GET')
@@ -112,7 +114,11 @@ class RestHandler implements RequestHandler
 		}
 		else if(method == 'POST')
 		{
-			if(query == null)
+			var query : Hash<String>;
+			
+			if(getPostData != null)
+				query = getPostData;
+			else
 				query = new Hash<String>();
 			
 			if(uriSegments.length <= 1)

@@ -4,12 +4,16 @@ Changelog for haXigniter
 Current
 =======
 Features
+ - Added haxigniter.common.libraries.ParsedUrl for convenient parsing of urls. Used in request handlers.
  - Added haxigniter.server.routing.Router, which can be sent to Application.run() to create controllers 
    for the incoming requests.
- - Added haxigniter.server.routing.UrlRewriter, for rewriting the url before processing it with the Router.
- - Added haxigniter.server.routing.ModRewriter, an implementation of UrlRewriter.
- - "urlRewriter" property added to configuration file.
- - Added url.segmentString(), which returns the string rewritten if a UrlRewriter is specified in the config.
+ - Added Url.segmentString(), which rewrites the request path to a proper segment string, taking
+   mod_rewrite into account. Request handlers are encouraged to use this method.
+ - Added haxigniter.server.routing.Alias, an early version of url path rewriting. Will support
+   bidirectional aliasing later.
+ 
+Changed
+ - RequestHandler interface now uses a ParsedUrl instead of just path.
 
 v0.84 (2009-12-13)
 ==================

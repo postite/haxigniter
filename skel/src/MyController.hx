@@ -2,7 +2,6 @@ package ;
 
 import config.Database;
 import config.Config;
-import config.UrlRewriter;
 
 import haxigniter.server.request.RequestHandler;
 import haxigniter.server.request.RestHandler;

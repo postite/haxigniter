@@ -41,5 +41,5 @@ class When_using_library_Url extends haxigniter.common.unit.TestCase
 		
 		this.assertEqual('', url.siteUrl());
 		this.assertEqual('/test/me', url.siteUrl('test/me'));
-	}
+	}	
 }

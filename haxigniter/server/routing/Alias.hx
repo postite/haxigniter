@@ -1,10 +1,10 @@
 ﻿package haxigniter.server.routing;
 
 /**
- * The ModRewriter uses regexps to rewrite the url. Each regexp is followed by a string
+ * The Alias class uses regexps to rewrite the url. Each regexp is followed by a string
  * that determines how the url should be rewritten if the regexp matches the url.
  */
-class ModRewriter implements UrlRewriter
+class Alias
 {
 	private var regexps : Array<EReg>;
 	private var rewrites : Array<String>;

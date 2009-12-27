@@ -21,31 +21,6 @@ class Input
 		return Web.getParams();
 	}
 
-	/**
-	 * Parse a query string like name=this&email=that to a hash of key=value.
-	 * It also works with full urls, parsing only the query part of it.
-	 * @param	queryString
-	 * @return
-	 */
-	public static function parseQuery(queryString : String) : Hash<String>
-	{
-		var output = new Hash<String>();
-		var pairs : Array<String>;
-		
-		queryString = queryString.substr(queryString.indexOf('?') + 1);
-		pairs = queryString.split('&');
-		
-		for(pair in pairs)
-		{
-			var keyValue = pair.split('=');
-			
-			if(keyValue.length == 2)
-				output.set(keyValue[0], StringTools.urlDecode(keyValue[1]));
-		}
-		
-		return output;
-	}
-	
 	public static function escapeIterator(input : Iterator<Dynamic>, ?callBack : Dynamic -> Dynamic, ?escapeAll : Bool = false) : List<Dynamic>
 	{
 		return escapeIterable({ iterator: function() { return input; }}, callBack, escapeAll);

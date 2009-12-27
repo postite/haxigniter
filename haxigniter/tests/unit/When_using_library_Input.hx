@@ -137,27 +137,4 @@ class When_using_library_Input extends haxigniter.common.unit.TestCase
 		this.assertEqual('&amp;', output.get('field3'));
 		this.assertEqual('1337', output.get('field4'));
 	}
-
-	public function test_Then_parseQuery_should_parse_query_parameters()
-	{
-		var output = Input.parseQuery('best=123&in=234&test=345');
-		
-		this.assertEqual('123', output.get('best'));
-		this.assertEqual('234', output.get('in'));
-		this.assertEqual('345', output.get('test'));
-
-		output = Input.parseQuery('best=&=234& ');
-		
-		this.assertEqual('', output.get('best'));
-		this.assertEqual('234', output.get(''));
-
-		output = Input.parseQuery('model=S%26W');
-		
-		this.assertEqual('S&W', output.get('model'));
-
-		output = Input.parseQuery('http://www.haxigniter.com/test.php?ve/ry=useful&quite=handy');
-		
-		this.assertEqual('useful', output.get('ve/ry'));
-		this.assertEqual('handy', output.get('quite'));
-	}
 }

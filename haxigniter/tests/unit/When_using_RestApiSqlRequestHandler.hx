@@ -2,6 +2,7 @@
 
 import haxe.Serializer;
 import haxe.Unserializer;
+import haxigniter.common.libraries.ParsedUrl;
 import haxigniter.server.Controller;
 import haxigniter.server.request.RequestHandler;
 
@@ -300,7 +301,7 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.common.unit.TestCas
 	public function test_Then_update_requests_should_create_proper_sql()
 	{
 		// Also testing serialized Hash here.
-		var hash = haxigniter.server.libraries.Input.parseQuery('firstname=Boris&lastname=Doris');
+		var hash = ParsedUrl.parseQuery('firstname=Boris&lastname=Doris');
 		
 		this.db.addMockResult([{id:9}, {id:8}, {id:7}]);
 		
@@ -349,6 +350,6 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.common.unit.TestCas
 	private function request(query : String, ?type = 'GET', ?rawRequestData : String) : Void
 	{
 		this.db.queries.splice(0, this.db.queries.length);
-		this.requestHandler.handleRequest(this.requestHandler, 'api/v1', type, new Hash<String>(), query, rawRequestData);
+		this.requestHandler.handleRequest(this.requestHandler, new ParsedUrl('/api/v1?' + query), type, null, rawRequestData);
 	}
 }

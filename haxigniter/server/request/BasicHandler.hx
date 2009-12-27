@@ -3,6 +3,8 @@ package haxigniter.server.request;
 import haxigniter.server.Controller;
 import haxigniter.server.Config;
 import haxigniter.common.types.TypeFactory;
+import haxigniter.server.libraries.Url;
+import haxigniter.common.libraries.ParsedUrl;
 
 class BasicHandler implements RequestHandler
 {
@@ -13,21 +15,14 @@ class BasicHandler implements RequestHandler
 		this.config = config;
 	}
 	
-	/**
-	 * Handle a page request.
-	 * @param	uriSegments Array of request segments (URL splitted with "/")
-	 * @param	method Request method, "GET" or "POST" most likely.
-	 * @param	params Query parameters
-	 * @return  Any value that the controller returns.
-	 */
-	public function handleRequest(controller : Controller, uriPath : String, method : String, query : Hash<String>, rawQuery : String, rawRequestData : String) : Dynamic
+	public function handleRequest(controller : Controller, url : ParsedUrl, method : String, getPostData : Hash<String>, rawRequestData : String) : Dynamic
 	{
-		var uriSegments = uriPath.split('/');
+		var uriSegments = new Url(config).split(url.path);
 		
 		var controllerType = Type.getClass(controller);
 		var controllerMethod : String = (uriSegments[1] == null) ? config.defaultAction : uriSegments[1];
 		
-		var callMethod : Dynamic = Reflect.field(controller, controllerMethod);		
+		var callMethod : Dynamic = Reflect.field(controller, controllerMethod);
 		if(callMethod == null)
 			throw new haxigniter.server.exceptions.NotFoundException(Type.getClassName(controllerType) + ' method "' + controllerMethod + '" not found.');
 

@@ -2,8 +2,10 @@
 
 import haxigniter.server.Controller;
 import haxigniter.server.Config;
+import haxigniter.server.libraries.Url;
 
 import haxigniter.server.libraries.Request;
+import haxigniter.common.libraries.ParsedUrl;
 
 class DefaultRouter implements Router
 {
@@ -12,12 +14,13 @@ class DefaultRouter implements Router
 	/**
 	 * A quite simple router, creates a controller with the same name as the first segment in the url.
 	 */ 
-	public function createController(config : Config, requestUri : String, queryParams : Hash<String>) : Controller
+	public function createController(config : Config, url : ParsedUrl) : Controller
 	{
-		var request : Request = new Request(config);		
-		var segments = requestUri.split('/');
+		var request : Request = new Request(config);
+		var urlLib = new Url(config);
 		
-		// Handle the current web request.
+		var segments = urlLib.split(url.path);
+		
 		return request.createController(segments[0]);
 	}	
 }

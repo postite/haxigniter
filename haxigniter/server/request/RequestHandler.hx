@@ -1,18 +1,18 @@
 package haxigniter.server.request;
 
 import haxigniter.server.Controller;
+import haxigniter.common.libraries.ParsedUrl;
 
 interface RequestHandler
 {
 	/**
 	 * Handle a page request.
 	 * @param   controller The object that is delegated to handle the request.
-	 * @param	urlPath The path part of the url (after host and script name, before query).
+	 * @param	url A parsed url of the request.
 	 * @param	method Request method, "GET" or "POST" most likely.
-	 * @param	query Usually a combination of GET and POST vars.
-	 * @param	rawQuery Url query string.
+	 * @param	getPostData A combination of GET and POST vars.
 	 * @param	rawRequestData Raw data sent with the request.
 	 * @return
 	 */
-	public function handleRequest(controller : Controller, uriPath : String, method : String, query : Hash<String>, rawQuery : String, rawRequestData : String) : Dynamic;
+	public function handleRequest(controller : Controller, url : ParsedUrl, method : String, getPostData : Hash<String>, rawRequestData : String) : Dynamic;
 }
