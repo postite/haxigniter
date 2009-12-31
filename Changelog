@@ -15,6 +15,9 @@ Features
 Changed
  - RequestHandler interface now uses a ParsedUrl instead of just path.
 
+Bug fixes
+ - Logging RestApiExceptions in RestApiHandler now works if logger property is set.
+
 v0.84 (2009-12-13)
 ==================
 Features

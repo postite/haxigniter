@@ -184,6 +184,9 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 		}
 		catch(e : RestApiException)
 		{
+			if(logger != null)
+				logger.log(Std.string(e), DebugLevel.error);
+
 			return RestApiResponse.failure(e.message, e.error);
 		}
 		catch(e : Dynamic)
