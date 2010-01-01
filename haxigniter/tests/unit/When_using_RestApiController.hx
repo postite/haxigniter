@@ -1,6 +1,7 @@
 package haxigniter.tests.unit;
 
 import haxigniter.common.libraries.ParsedUrl;
+import haxigniter.server.content.ContentHandler;
 import Type;
 import haxigniter.common.types.TypeFactory;
 import haxigniter.common.unit.TestCase;
@@ -50,6 +51,7 @@ class TestRestApi implements Controller, implements RestApiRequestHandler, imple
 	public var lastData : String;
 	
 	public var requestHandler(default, null) : RequestHandler;
+	public var contentHandler(default, null) : ContentHandler;
 	
 	public function new()
 	{

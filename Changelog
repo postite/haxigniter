@@ -11,9 +11,14 @@ Features
    mod_rewrite into account. Request handlers are encouraged to use this method.
  - Added haxigniter.server.routing.Alias, an early version of url path rewriting. Will support
    bidirectional aliasing later.
+ - Added haxigniter.server.content.ContentHandler, an interface for transforming input and output content
+   from/to a controller to different charsets, mimetypes, etc.
+ - Added haxigniter.server.content.HaxeRequestContent, a content handler for remoting of haxe objects.
  
 Changed
  - RequestHandler interface now uses a ParsedUrl instead of just path.
+ - RequestHandler interface now accepts any data instead of raw posted data, so the ContentHandler can
+   modify it.
 
 Bug fixes
  - Logging RestApiExceptions in RestApiHandler now works if logger property is set.

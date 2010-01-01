@@ -11,8 +11,9 @@ interface RequestHandler
 	 * @param	url A parsed url of the request.
 	 * @param	method Request method, "GET" or "POST" most likely.
 	 * @param	getPostData A combination of GET and POST vars.
-	 * @param	rawRequestData Raw data sent with the request.
-	 * @return
+	 * @param	requestData Data sent with the request. Null for GET requests, otherwise a Dynamic value sent
+	 *          from a ContentHandler. If no content handler changed it, it is the raw post data as a String.
+	 * @return  Output from the controller, that will be modified with the controllers FormatHandler if set.
 	 */
-	public function handleRequest(controller : Controller, url : ParsedUrl, method : String, getPostData : Hash<String>, rawRequestData : String) : Dynamic;
+	public function handleRequest(controller : Controller, url : ParsedUrl, method : String, getPostData : Hash<String>, requestData : Dynamic) : Dynamic;
 }

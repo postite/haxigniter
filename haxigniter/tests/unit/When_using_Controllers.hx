@@ -2,16 +2,42 @@ package haxigniter.tests.unit;
 
 import haxe.rtti.Infos;
 import haxigniter.common.exceptions.Exception;
+import haxigniter.server.content.ContentHandler;
 import Type;
 import haxigniter.common.types.TypeFactory;
 import haxigniter.common.unit.TestCase;
 
+import haxigniter.server.content.ContentHandler;
 import haxigniter.server.request.RequestHandler;
+
 import haxigniter.server.Controller;
 import haxigniter.server.request.RestHandler;
 import haxigniter.server.request.BasicHandler;
 
 import haxigniter.server.libraries.Request;
+
+class TestContentHandler implements ContentHandler
+{
+	public function new() {}
+	
+	public function input(content : ContentData) : Dynamic
+	{
+		return StringTools.replace(content.data, 'a', '#');
+	}
+	
+	public function output(content : Dynamic) : ContentData
+	{
+		var s = cast(content, String);
+		
+		return {
+			mimeType: null,
+			charSet: null,
+			encoding : null,
+			data : StringTools.replace(s, '1', '@####')
+		}
+	}
+}
+
 
 class Testrest implements Controller, implements Infos
 {
@@ -21,6 +47,7 @@ class Testrest implements Controller, implements Infos
 	}
 	
 	public var requestHandler(default, null) : RequestHandler;
+	public var contentHandler(default, null) : ContentHandler;
 	
 	public function index() : String
 	{
@@ -66,6 +93,7 @@ class Teststandard implements Controller, implements Infos
 	}
 	
 	public var requestHandler(default, null) : RequestHandler;
+	public var contentHandler(default, null) : ContentHandler;
 	
 	public function index(?arg1 : Bool) : String
 	{

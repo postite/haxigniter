@@ -44,7 +44,7 @@ class RestHandler implements RequestHandler
 		this.config = config;
 	}
 	
-	public function handleRequest(controller : Controller, url : ParsedUrl, method : String, getPostData : Hash<String>, rawRequestData : String) : Dynamic
+	public function handleRequest(controller : Controller, url : ParsedUrl, method : String, getPostData : Hash<String>, requestData : Dynamic) : Dynamic
 	{
 		var action : String = null;
 		var args : Array<Dynamic> = [];

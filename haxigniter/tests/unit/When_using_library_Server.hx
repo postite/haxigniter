@@ -23,4 +23,21 @@ class When_using_library_Server extends haxigniter.common.unit.TestCase
 		filename = 'file2.txt';
 		this.assertEqual('file2', Server.basename(filename, '.txt'));
 	}
+	
+	public function test_Then_request_content_should_return_proper_ContentData()
+	{
+		var output = Server.requestContent(' application/test-this-encoding; charset=VERY-COMPLICATED ', 'lha', 'abcdefg');
+		
+		this.assertEqual('application/test-this-encoding', output.mimeType);
+		this.assertEqual('VERY-COMPLICATED', output.charSet);
+		this.assertEqual('lha', output.encoding);
+		this.assertEqual('abcdefg', output.data);
+		
+		output = Server.requestContent('text/html', null, 'aabbcc');
+		
+		this.assertEqual('text/html', output.mimeType);
+		this.assertEqual(null, output.charSet);
+		this.assertEqual(null, output.encoding);
+		this.assertEqual('aabbcc', output.data);
+	}
 }

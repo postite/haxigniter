@@ -15,7 +15,7 @@ class BasicHandler implements RequestHandler
 		this.config = config;
 	}
 	
-	public function handleRequest(controller : Controller, url : ParsedUrl, method : String, getPostData : Hash<String>, rawRequestData : String) : Dynamic
+	public function handleRequest(controller : Controller, url : ParsedUrl, method : String, getPostData : Hash<String>, requestData : Dynamic) : Dynamic
 	{
 		var uriSegments = new Url(config).split(url.path);
 		

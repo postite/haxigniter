@@ -3,7 +3,9 @@ package ;
 import config.Database;
 import config.Config;
 
+import haxigniter.server.content.ContentHandler;
 import haxigniter.server.request.RequestHandler;
+
 import haxigniter.server.request.RestHandler;
 import haxigniter.server.session.FileSession;
 import haxigniter.server.session.SessionObject;
@@ -26,6 +28,10 @@ class MyController implements haxigniter.server.Controller, implements haxe.rtti
 	
 	// A request handler, which will determine how the controller will be used in the application.
 	public var requestHandler(default, null) : RequestHandler;
+	
+	// A content handler, which can modify the incoming and outgoing request data.
+	// If null, no modifications will be made.
+	public var contentHandler(default, null) : ContentHandler;
 	
 	/* --- Now for some more application-specific properties --- */
 

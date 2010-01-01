@@ -1,5 +1,6 @@
 ﻿package haxigniter.server.libraries;
 
+import haxigniter.server.content.ContentHandler;
 import haxigniter.server.session.SessionObject;
 
 #if php
@@ -150,6 +151,41 @@ class Server
 			return;
 		
 		this.redirect(null, session != null ? session.flashVar : null, ssl);
+	}
+	
+	/////////////////////////////////////////////////////////////////
+
+	public static function requestContentFromWeb() : ContentData
+	{
+		var contentData = Web.getPostData();
+		var contentType = StringTools.trim(Web.getClientHeader('content-type'));
+		var contentEncoding = StringTools.trim(Web.getClientHeader('content-encoding'));
+		var contentLength : Null<Int> = null;
+		
+		return requestContent(contentType, contentEncoding, contentData);
+	}
+	
+	private static var charsetRegexp = ~/\bcharset=([\w-]+)/;
+	
+	public static function requestContent(contentType : String, contentEncoding : String, contentData : String) : ContentData
+	{
+		var output = {
+			mimeType : null,
+			charSet : null,
+			encoding : contentEncoding,
+			data : contentData
+		}
+		
+		if(contentType != null)
+		{
+			var splitPos = contentType.indexOf(';');
+			output.mimeType = StringTools.trim((splitPos == -1) ? contentType : contentType.substr(0, splitPos));
+			
+			if(charsetRegexp.match(contentType))
+				output.charSet = charsetRegexp.matched(1);
+		}
+		
+		return output;
 	}
 	
 	/////////////////////////////////////////////////////////////////

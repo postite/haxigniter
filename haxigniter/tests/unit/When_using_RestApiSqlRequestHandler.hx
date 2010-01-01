@@ -3,6 +3,7 @@
 import haxe.Serializer;
 import haxe.Unserializer;
 import haxigniter.common.libraries.ParsedUrl;
+import haxigniter.server.content.ContentHandler;
 import haxigniter.server.Controller;
 import haxigniter.server.request.RequestHandler;
 
@@ -32,6 +33,7 @@ class TestRestCreate
 class TestHandler extends RestApiHandler, implements Controller
 {
 	public var requestHandler(default, null) : RequestHandler;
+	public var contentHandler(default, null) : ContentHandler;
 	
 	public var acceptFailure : String;
 

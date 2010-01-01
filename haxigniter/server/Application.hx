@@ -2,14 +2,17 @@ package haxigniter.server;
 
 #if php
 import php.Web;
+import php.Lib;
 #elseif neko
 import neko.Web;
+import neko.Lib;
 #end
 
 import haxigniter.common.exceptions.Exception;
 import haxigniter.server.exceptions.NotFoundException;
 
 import haxigniter.server.Controller;
+import haxigniter.server.content.ContentHandler;
 import haxigniter.server.routing.Router;
 
 import haxigniter.server.libraries.Server;
@@ -42,13 +45,32 @@ class Application
 
 			// Test url for valid characters.
 			url.testValidUri(parsedUrl.path);
-			
-			var method = Web.getMethod();
-			var rawRequestData = method == 'GET' ? null : Web.getPostData();
-			var getPostData = Web.getParams();
 
 			controller = router.createController(config, parsedUrl);
-			controller.requestHandler.handleRequest(controller, parsedUrl, method, getPostData, rawRequestData);
+
+			var method = Web.getMethod();
+			var getPostData = Web.getParams();
+			
+			var requestData : Dynamic = null;
+			if(method != 'GET')
+			{
+				// If a content handler exists, transform the raw request data.
+				if(controller.contentHandler != null)
+					requestData = controller.contentHandler.input(Server.requestContentFromWeb());
+				else
+					requestData = Web.getPostData();
+			}
+			
+			var output = controller.requestHandler.handleRequest(controller, parsedUrl, method, getPostData, requestData);
+			
+			// If a content handler exists, output the data based on the content handler modifications.
+			if(controller.contentHandler != null)
+			{
+				var outContent = controller.contentHandler.output(output);
+				
+				if(outContent != null)
+					outputContent(outContent);
+			}			
 		}
 		catch(e : Dynamic)
 		{
@@ -86,6 +108,27 @@ class Application
 			url += '?' + params;
 		
 		return url;
+	}
+	
+	private static function outputContent(content : ContentData) : Void
+	{
+		// Format the final output according to response and send it to the client.
+		var header = [];
+
+		// Content-Type, including mimetype and charset
+		if(content.mimeType != null)
+			header.push(content.mimeType);
+		if(content.charSet != null)
+			header.push('charset=' + content.charSet);
+		if(header.length > 0)
+			Web.setHeader('Content-Type', header.join('; '));
+
+		// Content-Encoding
+		if(content.encoding != null)
+			Web.setHeader('Content-Encoding', content.encoding);
+
+		// Content-Length and MD5 should be handled automatically by the server.
+		Lib.print(content.data);
 	}
 	
 	private static function logError(config : Config, message : String, e : Dynamic)

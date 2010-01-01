@@ -203,7 +203,7 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 	/**
 	 * Handle a page request. (RequestHandler implementation)
 	 */
-	public function handleRequest(controller : Controller, url : ParsedUrl, method : String, getPostData : Hash<String>, rawRequestData : String) : Dynamic
+	public function handleRequest(controller : Controller, url : ParsedUrl, method : String, getPostData : Hash<String>, requestData : Dynamic) : Dynamic
 	{
 		var uriPath = url.path;
 		var rawQuery = url.query;
@@ -238,7 +238,7 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 				urlParts.format = apiFormatHandler.restApiFormats[0];
 		
 			// Convert the raw request data using the RestApiFormatHandler.
-			var requestData : PropertyObject = (rawRequestData != null) ? apiFormatHandler.restApiInput(rawRequestData, urlParts.format) : null;
+			var requestData : PropertyObject = (requestData != null) ? apiFormatHandler.restApiInput(requestData, urlParts.format) : null;
 
 			// Create the request type depending on method
 			var type = switch(method)
