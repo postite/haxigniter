@@ -26,14 +26,14 @@ class When_using_library_Server extends haxigniter.common.unit.TestCase
 	
 	public function test_Then_request_content_should_return_proper_ContentData()
 	{
-		var output = Server.requestContent(' application/test-this-encoding; charset=VERY-COMPLICATED ', 'lha', 'abcdefg');
+		var output = Server.requestContent('abcdefg', ' application/test-this-encoding; charset=VERY-COMPLICATED ', 'lha');
 		
 		this.assertEqual('application/test-this-encoding', output.mimeType);
 		this.assertEqual('VERY-COMPLICATED', output.charSet);
 		this.assertEqual('lha', output.encoding);
 		this.assertEqual('abcdefg', output.data);
 		
-		output = Server.requestContent('text/html', null, 'aabbcc');
+		output = Server.requestContent('aabbcc', 'text/html', null);
 		
 		this.assertEqual('text/html', output.mimeType);
 		this.assertEqual(null, output.charSet);

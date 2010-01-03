@@ -116,14 +116,18 @@ class Main
 			case 'build':
 				help = 'build [buildfile.hxml] [compiler options ...]
 
-  This command compiles the project, after running the "prebuild" command. If a .hxml file isn\'t specified, the first
-  one found in the directory will be used. All arguments after the buildfile will be passed on to the haxe compiler.';
+  This command compiles the project, after running the "prebuild" command.
+  If a .hxml file isn\'t specified, the first one found in the directory 
+  will be used. All arguments after the buildfile will be passed on to the 
+  haxe compiler.';
 
 			case 'init':
 				help = 'init [path] [-neko]
 				
-  Creates a project structure for a haXigniter project in a directory. If no dir is specified, it will be prompted for.
-  The -neko switch can be used to create the project .hxml file for Neko instead of the default PHP.';
+  Creates a project structure for a haXigniter project in a directory. If
+  no dir is specified, it will be prompted for. The -neko switch can be 
+  used to create the project .hxml file for Neko instead of the default 
+  PHP.';
 
 			case 'help':
 				help = '  "He has a right to criticize, who has a heart to help."
@@ -132,15 +136,19 @@ class Main
 			case 'nekoserver':
 				help = 'nekoserver [-p port] [-h host] [-d documentroot]
 
-  Starts a neko web server for immediate testing of the project (if it\'s built for Neko).
-  If no port and/or host is specified, the default is port 2001 and localhost.
-  If no documentroot is specified, it will be read from the project .hxml file.';
+  Starts a neko web server for immediate testing of the project (if it\'s
+  built for Neko). If no port and/or host is specified, the default is 
+  port 2001 and localhost. If no documentroot is specified, it will be 
+  read from the project .hxml file.
+  
+  The "-rewrite" switch is implicit for this command since the nekoserver
+  doesn\'t handle the haXigniter URL\'s without it.';
 
   			case 'unittest':
 				help = 'unittest
 				
-  Executes the haXigniter unit tests. For developers only, or if you want to make sure your changes didn\'t break
-  anything in the library.';
+  Executes the haXigniter unit tests. For developers only, or if you want
+  to make sure your changes didn\'t break anything in the library.';
 
 			default:
 				help = 'No help is available on this command, sorry.';

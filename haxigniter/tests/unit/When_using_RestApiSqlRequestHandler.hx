@@ -32,8 +32,8 @@ class TestRestCreate
 
 class TestHandler extends RestApiHandler, implements Controller
 {
-	public var requestHandler(default, null) : RequestHandler;
-	public var contentHandler(default, null) : ContentHandler;
+	public var requestHandler : RequestHandler;
+	public var contentHandler : ContentHandler;
 	
 	public var acceptFailure : String;
 

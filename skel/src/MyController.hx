@@ -21,17 +21,21 @@ import haxigniter.server.views.ViewEngine;
  * 
  * It implements haxe.rtti.Infos because some request handlers (BasicHandler and RestHandler) 
  * uses that info to typecast the web input from the web to the controller methods.
+ * 
+ * NOTE: Controllers called by haXigniter can only have the starting character capitalized!
+ *       MyController is never called, so it's excepted.
  */
 class MyController implements haxigniter.server.Controller, implements haxe.rtti.Infos
 {
 	/* --- Starting with the Controller interface implementation --- */
 	
 	// A request handler, which will determine how the controller will be used in the application.
-	public var requestHandler(default, null) : RequestHandler;
+	// Default request action is to use haxigniter.libraries.server.BasicHandler
+	public var requestHandler : RequestHandler;
 	
 	// A content handler, which can modify the incoming and outgoing request data.
-	// If null, no modifications will be made.
-	public var contentHandler(default, null) : ContentHandler;
+	// Default content handling is to do nothing, let the controller handle the output.
+	public var contentHandler : ContentHandler;
 	
 	/* --- Now for some more application-specific properties --- */
 
@@ -55,32 +59,58 @@ class MyController implements haxigniter.server.Controller, implements haxe.rtti
 	// The application configuration file is static, since it used in main().
 	private static var appConfig = new Config();
 	
+	// The database is also static since it is used by all controllers.
+	private static var appDb : DatabaseConnection;
+	
 	// The application session is filebased, could be switched to other implementations.
 	private static var appSession = new FileSession(appConfig.sessionPath);
+
+	// A debug object, for tracing and logging.
+	private static var appDebug = new Debug(appConfig);
+	
+	/*
+	| Template files are displayed by a ViewEngine, which is any class extending 
+	| the haxigniter.views.viewEngine class.
+	|
+	| The engines currently supplied by haXigniter are:
+	|
+	|   haxigniter.server.views.Templo() - The Templo 2 engine. (http://haxe.org/com/libs/mtwin/templo)
+	|   haxigniter.server.views.HaxeTemplate() - haxe.Template (http://haxe.org/doc/cross/template)
+	|   haxigniter.server.views.Smarty() - Smarty, PHP only (http://smarty.net)
+	|
+	| If you want to use another template system, make a class extending
+	| haxigniter.server.views.viewEngine and instantiate it here. Contributions 
+	| are always welcome, contact us at haxigniter@gmail.com so we can include
+	| your class in the distribution.
+	|		
+	*/
+	private static var appView = new haxigniter.server.views.HaxeTemplate(appConfig);
 
 	/*
 	 * Application entrypoint
 	 */
 	public static function main()
 	{
-		// Run the application with the configuration.
-		var controller = haxigniter.server.Application.run(appConfig);
-		
-		// Need to do some cleanup, but test controller type in case some other
-		// class was used as a controller.
-		if(Std.is(controller, MyController))
-			terminateApp(cast controller);
-	}
+		// Configure database depending on development mode.
+		if(appConfig.development)
+			appDb = new DevelopmentConnection();
+		else
+			appDb = new OnlineConnection();
 
-	/**
-	 * Cleanup after application is run.
-	 * @param	controller Controller that is executed in Application.run().
-	 */
-	private static function terminateApp(controller : MyController)
-	{
-		if(controller.db != null)
-			controller.db.close();
+		// Set the database debugging so erroneous queries are logged.
+		appDb.debug = appDebug;
 		
+		// *** Run the application ***
+		haxigniter.server.Application.run(appConfig);
+		
+		// Need to do some cleanup after the request is done.
+		
+		// Close the database
+		if(appDb != null)
+			appDb.close();
+		
+		// Close the session, especially important for Neko session which doesn't close 
+		// automatically like the PHP session.
 		if(appSession != null)
 			appSession.close();
 	}
@@ -89,50 +119,19 @@ class MyController implements haxigniter.server.Controller, implements haxe.rtti
 	 * The controllers are automatically created by haxigniter.server.Application.
 	 */
 	public function new()
-	{
-		// Set controller configuration.
+	{	
+		// Set the controller vars to the static vars, so they can be referenced from the controllers.
 		this.config = appConfig;
+		this.db = appDb;
+		this.debug = appDebug; // Will be used in this.trace() and this.log()
+		this.view = appView;
+
+		// The session is restored from SessionObject, passing in the interface and the output type.
+		this.session = SessionObject.restore(appSession, config.Session);
 
 		// Set the default request handler to a RestHandler.
 		// See haxigniter.server.request.RestHandler class for documentation.
 		this.requestHandler = new RestHandler(this.config);
-
-		/*
-		|--------------------------------------------------------------------------
-		| View Engine
-		|--------------------------------------------------------------------------
-		|
-		| The Views are displayed by a ViewEngine, which is any class extending 
-		| the haxigniter.views.viewEngine class.
-		|
-		| The engines currently supplied by haXigniter are:
-		|
-		|   haxigniter.server.views.Templo() - The Templo 2 engine. (http://haxe.org/com/libs/mtwin/templo)
-		|   haxigniter.server.views.HaxeTemplate() - haxe.Template (http://haxe.org/doc/cross/template)
-		|   haxigniter.server.views.Smarty() - Smarty, PHP only (http://smarty.net)
-		|
-		| If you want to use another template system, make a class extending
-		| haxigniter.server.views.viewEngine and instantiate it here. Contributions 
-		| are always welcome, contact us at haxigniter@gmail.com so we can include
-		| your class in the distribution.
-		|		
-		*/
-		this.view = new haxigniter.server.views.HaxeTemplate(this.config);
-		
-		// Create a debug object for this.trace() and this.log()
-		this.debug = new Debug(this.config);
-
-		// Configure database depending on development mode.
-		if(this.config.development)
-			this.db = new DevelopmentConnection();
-		else
-			this.db = new OnlineConnection();
-
-		// Set the database debugging so erroneous queries are logged.
-		this.db.debug = this.debug;
-
-		// The session is restored from SessionObject, passing in the interface and the output type.
-		this.session = SessionObject.restore(appSession, config.Session);
 	}
 	
 	///// Some useful trace/log methods /////////////////////////////

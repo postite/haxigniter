@@ -155,19 +155,41 @@ class Server
 	
 	/////////////////////////////////////////////////////////////////
 
+	public static function outputContentToWeb(content : ContentData) : Void
+	{
+		if(content == null) return;
+		
+		// Format the final output according to response and send it to the client.
+		var header = [];
+
+		// Content-Type, including mimetype and charset
+		if(content.mimeType != null)
+			header.push(content.mimeType);
+		if(content.charSet != null)
+			header.push('charset=' + content.charSet);
+		if(header.length > 0)
+			Web.setHeader('Content-Type', header.join('; '));
+
+		// Content-Encoding
+		if(content.encoding != null)
+			Web.setHeader('Content-Encoding', content.encoding);
+
+		// Content-Length and MD5 should be handled automatically by the server.
+		Lib.print(content.data);
+	}
+	
 	public static function requestContentFromWeb() : ContentData
 	{
 		var contentData = Web.getPostData();
-		var contentType = StringTools.trim(Web.getClientHeader('content-type'));
-		var contentEncoding = StringTools.trim(Web.getClientHeader('content-encoding'));
-		var contentLength : Null<Int> = null;
+		var contentType = Web.getClientHeader('content-type');
+		var contentEncoding = Web.getClientHeader('content-encoding');
 		
-		return requestContent(contentType, contentEncoding, contentData);
+		return requestContent(contentData, contentType == null ? null : StringTools.trim(contentType), contentEncoding == null ? null : StringTools.trim(contentEncoding));
 	}
 	
 	private static var charsetRegexp = ~/\bcharset=([\w-]+)/;
 	
-	public static function requestContent(contentType : String, contentEncoding : String, contentData : String) : ContentData
+	public static function requestContent(contentData : String, contentType : String, contentEncoding : String) : ContentData
 	{
 		var output = {
 			mimeType : null,

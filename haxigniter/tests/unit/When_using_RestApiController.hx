@@ -50,8 +50,8 @@ class TestRestApi implements Controller, implements RestApiRequestHandler, imple
 	public var lastFormat : RestApiFormat;
 	public var lastData : String;
 	
-	public var requestHandler(default, null) : RequestHandler;
-	public var contentHandler(default, null) : ContentHandler;
+	public var requestHandler : RequestHandler;
+	public var contentHandler : ContentHandler;
 	
 	public function new()
 	{

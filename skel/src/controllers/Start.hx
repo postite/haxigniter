@@ -18,13 +18,18 @@ class Start extends MyController
 {
 	public function new()
 	{
+		// Call the superclass to set up database, configuration, etc
 		super();
 
 		var url = new haxigniter.server.libraries.Url(this.config);
 		
 		// Some default view assignments for every page
 		this.view.assign('application', 'haXigniter');
+		
+		// The siteUrl() method creates a link to the web directory haXigniter is currently
+		// located, so links won't be broken if moved somewhere else.
 		this.view.assign('link', url.siteUrl());
+		
 		this.view.assign('id', null);
 	}
 	

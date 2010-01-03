@@ -14,12 +14,18 @@ Features
  - Added haxigniter.server.content.ContentHandler, an interface for transforming input and output content
    from/to a controller to different charsets, mimetypes, etc.
  - Added haxigniter.server.content.HaxeRequestContent, a content handler for remoting of haxe objects.
+ - haxigniter.server.request.BasicHandler now has a property for the GET/POST data sent to it.
+ - Added config.Router, so a Router can be specified in the configuration.
+ - Cleaned up and commented the skeleton project files, and also the documentation for the run.n.
  
 Changed
  - RequestHandler interface now uses a ParsedUrl instead of just path.
  - RequestHandler interface now accepts any data instead of raw posted data, so the ContentHandler can
    modify it.
-
+ - haxigniter.server.Controller interface is now public for all properties, instead of just read-only.
+   Please update your controller class implementations.
+ - The Request library now handles all external and internal requests in haXigniter.
+ 
 Bug fixes
  - Logging RestApiExceptions in RestApiHandler now works if logger property is set.
 

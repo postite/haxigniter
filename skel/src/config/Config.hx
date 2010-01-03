@@ -136,7 +136,7 @@ class Config extends haxigniter.server.Config
 		|--------------------------------------------------------------------------
 		|
 		| This is the absolute web path to your index file. Usually for PHP it can 
-		| be autodetected, so you can set leave it as null.
+		| be autodetected, so you can leave it as null.
 		|
 		| If you're using Neko or autodetection doesn't work, you must specify it
 		| manually. For example, if the index file is located in the folder 
@@ -239,6 +239,25 @@ class Config extends haxigniter.server.Config
 		/* === Other =========================================================== */
 		/* ===================================================================== */
 
+		/*
+		|--------------------------------------------------------------------------
+		| Controller Router
+		|--------------------------------------------------------------------------
+		|
+		| Every server request must be mapped to a Controller. This is where the
+		| Router comes in. It analyzes the request URL and returns a suitable
+		| Controller that can be used by the application.
+		|
+		| If this value is set to null, haxigniter.server.routing.DefaultRouter
+		| will be used, which creates a router with the same name as the first
+		| request segment, in the controllerPackage package. 
+		|
+		| A request of "/test/me/123" will create "controllers.Test" for example,
+		| if config.controllerPackage is set to "controllers".
+		|
+		*/
+		router = null;
+		
 		/*
 		|--------------------------------------------------------------------------
 		| Allowed URL Characters
@@ -347,7 +366,8 @@ class Config extends haxigniter.server.Config
 		*/
 		encryptionKey = null;
 
-		// Set default variables in super class.
+		
+		// Set default variables in super class and/or debug if dumpEnv is set.
 		super(dumpEnv);
 	}
 }

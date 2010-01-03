@@ -9,10 +9,17 @@ import haxigniter.common.libraries.ParsedUrl;
 class BasicHandler implements RequestHandler
 {
 	private var config : Config;
+	
+	private var getPostDataStack : List<Hash<String>>;
+	public function getPostData() : Hash<String>
+	{
+		return getPostDataStack.first();
+	}
 
 	public function new(config : Config)
 	{
 		this.config = config;
+		this.getPostDataStack = new List<Hash<String>>();
 	}
 	
 	public function handleRequest(controller : Controller, url : ParsedUrl, method : String, getPostData : Hash<String>, requestData : Dynamic) : Dynamic
@@ -29,6 +36,10 @@ class BasicHandler implements RequestHandler
 		// Typecast the arguments.
 		var arguments : Array<Dynamic> = TypeFactory.typecastArguments(controllerType, controllerMethod, uriSegments.slice(2));
 		
-		return Reflect.callMethod(controller, callMethod, arguments);
+		getPostDataStack.push(getPostData);
+		var output = Reflect.callMethod(controller, callMethod, arguments);
+		getPostDataStack.pop();
+		
+		return output;
 	}
 }

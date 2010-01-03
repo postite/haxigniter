@@ -13,7 +13,6 @@ import haxigniter.server.exceptions.NotFoundException;
 
 import haxigniter.server.Controller;
 import haxigniter.server.content.ContentHandler;
-import haxigniter.server.routing.Router;
 
 import haxigniter.server.libraries.Server;
 import haxigniter.server.libraries.Request;
@@ -23,54 +22,16 @@ import haxigniter.common.libraries.ParsedUrl;
 
 class Application
 {
-	/**
-	 * Run the haXigniter application.
-	 * @param	config        Configuration file
-	 * @param	?router       For routing the (rewritten) URL to a controller. Default is the DefaultRouter class.
-	 * @param	?errorHandler If set, all exceptions will be sent here instead of the default error handler.
-	 * @return  The controller created by the router, or null if an error occured before creation.
-	 */
-	public static function run(config : Config, ?router : Router, ?errorHandler : Dynamic -> Void) : Controller
+	public static function run(config : Config, ?errorHandler : Dynamic -> Void) : Controller
 	{
 		var controller : Controller = null;
-
-		// Create a default router if not set.
-		if(router == null)
-			router = new haxigniter.server.routing.DefaultRouter();
-
+		
 		try
 		{
-			var url = new Url(config);
-			var parsedUrl = new ParsedUrl(requestUrl());
-
-			// Test url for valid characters.
-			url.testValidUri(parsedUrl.path);
-
-			controller = router.createController(config, parsedUrl);
-
 			var method = Web.getMethod();
-			var getPostData = Web.getParams();
+			var requestData : ContentData = (method == 'GET') ? null : Server.requestContentFromWeb();
 			
-			var requestData : Dynamic = null;
-			if(method != 'GET')
-			{
-				// If a content handler exists, transform the raw request data.
-				if(controller.contentHandler != null)
-					requestData = controller.contentHandler.input(Server.requestContentFromWeb());
-				else
-					requestData = Web.getPostData();
-			}
-			
-			var output = controller.requestHandler.handleRequest(controller, parsedUrl, method, getPostData, requestData);
-			
-			// If a content handler exists, output the data based on the content handler modifications.
-			if(controller.contentHandler != null)
-			{
-				var outContent = controller.contentHandler.output(output);
-				
-				if(outContent != null)
-					outputContent(outContent);
-			}			
+			controller = new Request(config).execute(requestUrl(), method, Web.getParams(), requestData, Server.outputContentToWeb);
 		}
 		catch(e : Dynamic)
 		{
@@ -89,7 +50,7 @@ class Application
 			}
 			else if(Std.is(e, Exception))
 			{
-				var fullClass = Type.getClassName(Type.getClass(e));				
+				var fullClass = Type.getClassName(Type.getClass(e));
 				logError(config, '[' + fullClass.substr(fullClass.lastIndexOf('.') + 1) + '] ' + e.message, e);				
 			}
 			else
@@ -97,38 +58,6 @@ class Application
 		}
 		
 		return controller;
-	}
-	
-	private static inline function requestUrl() : String
-	{
-		var url = Web.getHostName() + Web.getURI();
-		var params = Web.getParamsString();
-		
-		if(params != null && params.length > 0)
-			url += '?' + params;
-		
-		return url;
-	}
-	
-	private static function outputContent(content : ContentData) : Void
-	{
-		// Format the final output according to response and send it to the client.
-		var header = [];
-
-		// Content-Type, including mimetype and charset
-		if(content.mimeType != null)
-			header.push(content.mimeType);
-		if(content.charSet != null)
-			header.push('charset=' + content.charSet);
-		if(header.length > 0)
-			Web.setHeader('Content-Type', header.join('; '));
-
-		// Content-Encoding
-		if(content.encoding != null)
-			Web.setHeader('Content-Encoding', content.encoding);
-
-		// Content-Length and MD5 should be handled automatically by the server.
-		Lib.print(content.data);
 	}
 	
 	private static function logError(config : Config, message : String, e : Dynamic)
@@ -145,7 +74,18 @@ class Application
 	{
 		return { title: 'Page error', header: 'Page error', message: 'Something went wrong during server processing.' };
 	}
-	
+
+	private static inline function requestUrl() : String
+	{
+		var url = Web.getHostName() + Web.getURI();
+		var params = Web.getParamsString();
+		
+		if(params != null && params.length > 0)
+			url += '?' + params;
+		
+		return url;
+	}
+
 	/**
 	 * php.Lib.rethrow() is broken in haXe <= 2.04, so here's a fix until next release.
 	 */

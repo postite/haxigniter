@@ -3,6 +3,8 @@ package haxigniter.tests.unit;
 import haxe.rtti.Infos;
 import haxigniter.common.exceptions.Exception;
 import haxigniter.server.content.ContentHandler;
+import haxigniter.server.content.OutputAllContent;
+import haxigniter.server.libraries.Server;
 import Type;
 import haxigniter.common.types.TypeFactory;
 import haxigniter.common.unit.TestCase;
@@ -46,8 +48,8 @@ class Testrest implements Controller, implements Infos
 		requestHandler = new RestHandler(new MockConfig());
 	}
 	
-	public var requestHandler(default, null) : RequestHandler;
-	public var contentHandler(default, null) : ContentHandler;
+	public var requestHandler : RequestHandler;
+	public var contentHandler : ContentHandler;
 	
 	public function index() : String
 	{
@@ -89,11 +91,15 @@ class Teststandard implements Controller, implements Infos
 {
 	public function new()
 	{
-		requestHandler = new BasicHandler(new MockConfig());
 	}
 	
-	public var requestHandler(default, null) : RequestHandler;
-	public var contentHandler(default, null) : ContentHandler;
+	public var myOutput : String;
+	
+	// The default requestHandler is a BasicHandler.
+	public var requestHandler : RequestHandler;
+	
+	// If no contentHandler, output nothing. Controller handles that.
+	public var contentHandler : ContentHandler;
 	
 	public function index(?arg1 : Bool) : String
 	{
@@ -109,6 +115,29 @@ class Teststandard implements Controller, implements Infos
 	{
 		return 'second ' + arg2.join('/');
 	}
+	
+	public function third()
+	{
+		var postData = cast(requestHandler, BasicHandler).getPostData();
+		myOutput = postData.get('test') + postData.get('test2');
+	}
+}
+
+class Testcontent implements Controller, implements Infos
+{
+	public function new()
+	{
+		requestHandler = new BasicHandler(new MockConfig());
+		contentHandler = new OutputAllContent();
+	}
+	
+	public var requestHandler : RequestHandler;
+	public var contentHandler : ContentHandler;
+	
+	public function index(arg : List<String>) : String
+	{
+		return 'index ' + arg.join('/');
+	}	
 }
 
 ///// Testing ///////////////////////////////////////////////////////
@@ -134,61 +163,78 @@ class When_using_Controllers extends haxigniter.common.unit.TestCase
 		var data = new Hash<String>();
 
 		// index()
-		output = request.execute('testrest');
+		output = request.internal('testrest');
 		this.assertEqual('index', output);
 
 		// make()
 		// Include in this test a prepending slash, which will be stripped.
-		output = request.execute('/testrest/new/123');
+		output = request.internal('/testrest/new/123');
 		this.assertEqual('make 123', output);
 
 		// Also test optional argument
-		output = request.execute('testrest/new/123/12.45');
+		output = request.internal('testrest/new/123/12.45');
 		this.assertEqual('make 123 - 12.45', output);
 		
 		// show()
-		output = request.execute('testrest/123/useful/1-2-3');
+		output = request.internal('testrest/123/useful/1-2-3');
 		this.assertEqual('show 123 (useful) 1=2=3', output);
 
 		// edit()
-		output = request.execute('testrest/456/edit/true');
+		output = request.internal('testrest/456/edit/true');
 		this.assertPattern(~/^edit 456 (1|true)$/, output);
 
 		// create()
 		data.set('id', '123');
 		data.set('name', 'Test');
 		
-		output = request.execute('testrest', 'POST', data);
+		output = request.internal('testrest', 'POST', data);
 		this.assertEqual('create 123 Test', output);
 
 		// update()
 		data.set('id', 'N/A');
 		data.set('name', 'Test 2');
 
-		output = request.execute('testrest/456', 'POST', data);
+		output = request.internal('testrest/456', 'POST', data);
 		this.assertEqual('update 456 N/A Test 2', output);
 
 		// destroy()
-		output = request.execute('testrest/789/delete', 'POST', data);
+		output = request.internal('testrest/789/delete', 'POST', data);
 		this.assertEqual('destroy 789', output);
 	}
 
 	public function test_Then_standard_actions_should_work_according_to_reference()
 	{
 		var output : String;
-		var data = new Hash<String>();
 
 		// index()
-		output = request.execute('teststandard', 'GET');
+		output = request.internal('teststandard', 'GET');
 		this.assertEqual('index', output);
 
-		output = request.execute('teststandard/index/true', 'POST');
+		output = request.internal('teststandard/index/true', 'POST');
 		this.assertPattern(~/^index (1|true)$/, output);
 
-		output = request.execute('teststandard/first/true/123.987', 'GET');
+		output = request.internal('teststandard/first/true/123.987', 'GET');
 		this.assertEqual('first true - 123.987', output);
 
-		output = request.execute('teststandard/second/what-a-nice-format', 'GET');
-		this.assertEqual('second what/a/nice/format', output);
+		output = request.internal('teststandard/second/what-a-nice-format', 'GET');
+		this.assertEqual('second what/a/nice/format', output);		
+	}
+	
+	public function test_Then_external_requests_with_BasicHandler_should_work_with_postdata()
+	{
+		var data = new Hash<String>();
+		data.set('test', 'abcd');
+		data.set('test2', 'efgh');
+		
+		var controller : Teststandard = cast request.execute('http://example.com/teststandard/third', 'POST', data);
+		this.assertEqual('abcdefgh', controller.myOutput);
+	}
+	
+	public function test_Then_external_requests_with_OutputAllContent_should_be_sent_to_output_method()
+	{
+		var self = this;
+		request.execute('http://example.com/testcontent/index/output-this-please', 'GET', null, null, function(content : ContentData) {
+			self.assertEqual('index output/this/please', content.data);
+		});
 	}
 }

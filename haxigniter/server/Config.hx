@@ -3,6 +3,7 @@ package haxigniter.server;
 import haxigniter.server.libraries.Debug;
 import haxigniter.server.libraries.DebugLevel;
 import haxigniter.server.libraries.Server;
+import haxigniter.server.routing.Router;
 import haxigniter.server.views.ViewEngine;
 
 #if php
@@ -44,7 +45,9 @@ class Config
 	
 	public var defaultController(default, null) : String;
 	public var defaultAction(default, null) : String;
-		
+	
+	public var router : Router;
+	
 	public var view : ViewEngine;
 	
 	/**
@@ -126,6 +129,12 @@ class Config
 		if(this.defaultAction == null)
 		{
 			this.defaultAction = 'index';
+		}
+		
+		// Create a default router if not set.
+		if(this.router == null)
+		{
+			router = new haxigniter.server.routing.DefaultRouter();
 		}
 
 		if(debug != null)

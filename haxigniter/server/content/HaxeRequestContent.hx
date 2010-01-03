@@ -20,7 +20,7 @@ class HaxeRequestContent implements ContentHandler
 		return Unserializer.run(content.data);
 	}
 
-	function output(content : Dynamic) : ContentData
+	public function output(content : Dynamic) : ContentData
 	{
 		return {
 			mimeType : mimeType,
