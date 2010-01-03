@@ -41,9 +41,4 @@ OUTPUT=${1:-haxigniter.zip}
 rm -f $OUTPUT
 zip -x .git -r $OUTPUT *
 
-if [ "$1" == "zip" ]
-then
-	exit
-fi
-
 haxelib test $OUTPUT

@@ -6,7 +6,7 @@
     <tag v="php"/>
     <tag v="restful"/>
     <description>An easy-to-use web framework for haXe.</description>
-    <version name="0.84">Some unit test changes, url and mod_rewrite fixes. 
-    Note that behavior of Url.siteUrl() changed - no slash is added after return value anymore. 
-    Update your templates if you're using it there.</version>
+    <version name="0.9">Plenty of nice additions that isn't very obvious but will make
+    the input/output handling much nicer when needed. Two interfaces changed in this 
+    version, so make sure you read the Changelog and update them if upgrading.</version>
 </project>

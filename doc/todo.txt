@@ -13,10 +13,10 @@ XSS filtering
 Pagination library
 OpenID (RPXnow)
 Encryption (Encrypted cookies)
-Routes
 
 Done
 ====
+Routes
 DB convenience functions (DBTools)
 Email class (Wrapper around PHPMailer)
 Unit tests with autorun

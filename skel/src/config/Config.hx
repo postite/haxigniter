@@ -67,7 +67,7 @@ class Config extends haxigniter.server.Config
 		|    development = Server.Param('SERVER_ADDR') == '127.0.0.1';
 		|
 		*/
-		development = Web.getHostName() == 'localhost';
+		development = (Web.getHostName() == 'localhost') || (Web.getHostName() == '127.0.0.1');
 
 		/*
 		|--------------------------------------------------------------------------

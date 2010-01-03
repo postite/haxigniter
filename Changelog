@@ -1,8 +1,8 @@
 Changelog for haXigniter
 
 
-Current
-=======
+v0.9 (2010-01-03)
+=================
 Features
  - Added haxigniter.common.libraries.ParsedUrl for convenient parsing of urls. Used in request handlers.
  - Added haxigniter.server.routing.Router, which can be sent to Application.run() to create controllers 
@@ -17,6 +17,7 @@ Features
  - haxigniter.server.request.BasicHandler now has a property for the GET/POST data sent to it.
  - Added config.Router, so a Router can be specified in the configuration.
  - Cleaned up and commented the skeleton project files, and also the documentation for the run.n.
+ - Improved development mode detection in skeleton config file.
  
 Changed
  - RequestHandler interface now uses a ParsedUrl instead of just path.
