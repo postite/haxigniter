@@ -189,7 +189,7 @@ class Server
 	
 	private static var charsetRegexp = ~/\bcharset=([\w-]+)/;
 	
-	public static function requestContent(contentData : String, contentType : String, contentEncoding : String) : ContentData
+	public static function requestContent(contentData : String, ?contentType : String, ?contentEncoding : String) : ContentData
 	{
 		var output = {
 			mimeType : null,

@@ -14,7 +14,8 @@ Features
  - Added haxigniter.server.content.ContentHandler, an interface for transforming input and output content
    from/to a controller to different charsets, mimetypes, etc.
  - Added haxigniter.server.content.HaxeRequestContent, a content handler for remoting of haxe objects.
- - haxigniter.server.request.BasicHandler now has a property for the GET/POST data sent to it.
+ - haxigniter.server.request.BasicHandler now has a property for the GET/POST data sent to it, and
+   also for the posted requestData.
  - Added config.Router, so a Router can be specified in the configuration.
  - Cleaned up and commented the skeleton project files, and also the documentation for the run.n.
  - Improved development mode detection in skeleton config file.

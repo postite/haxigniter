@@ -119,7 +119,9 @@ class Teststandard implements Controller, implements Infos
 	public function third()
 	{
 		var postData = cast(requestHandler, BasicHandler).getPostData();
-		myOutput = postData.get('test') + postData.get('test2');
+		var requestData = cast(requestHandler, BasicHandler).requestData();
+		
+		myOutput = postData.get('test') + postData.get('test2') + requestData;
 	}
 }
 
@@ -226,8 +228,8 @@ class When_using_Controllers extends haxigniter.common.unit.TestCase
 		data.set('test', 'abcd');
 		data.set('test2', 'efgh');
 		
-		var controller : Teststandard = cast request.execute('http://example.com/teststandard/third', 'POST', data);
-		this.assertEqual('abcdefgh', controller.myOutput);
+		var controller : Teststandard = cast request.execute('http://example.com/teststandard/third', 'POST', data, Server.requestContent('ijkl'));
+		this.assertEqual('abcdefghijkl', controller.myOutput);
 	}
 	
 	public function test_Then_external_requests_with_OutputAllContent_should_be_sent_to_output_method()
