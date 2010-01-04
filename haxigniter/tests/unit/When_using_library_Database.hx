@@ -1,5 +1,6 @@
 package haxigniter.tests.unit;
 
+import haxigniter.server.libraries.Database;
 import haxigniter.tests.unit.MockDatabaseConnection;
 
 class When_using_library_Database extends haxigniter.common.unit.TestCase
@@ -38,5 +39,66 @@ class When_using_library_Database extends haxigniter.common.unit.TestCase
 		this.assertEqual(4, db.queries.length);
 		this.assertEqual('INSERT INTO test (me, data) VALUES (Q*who*Q, Q*you*Q)', db.queries[0]);
 		this.assertEqual('DELETE FROM test WHERE me=Q*who*Q AND data=Q*you*Q LIMIT 1', db.queries[3]);
+	}
+	
+	public function test_Then_charset_should_generate_an_extra_query()
+	{
+		db.charSet = 'utf8';
+		db.query('MOCK');
+		
+		// Make another query to make sure the charset isn't queried again.
+		db.query('MOCK 2');
+		
+		this.assertEqual(3, db.queries.length);
+		
+		this.assertEqual('SET CHARACTER SET utf8', db.queries[0]);
+		this.assertEqual('MOCK', db.queries[1]);
+		this.assertEqual('MOCK 2', db.queries[2]);
+	}
+	
+	public function test_Then_charset_and_collation_should_generate_an_extra_query()
+	{
+		db.charSet = 'utf8';
+		db.collation = 'utf8_unicode_ci';
+		db.query('MOCK 123');
+		
+		this.assertEqual(2, db.queries.length);
+		this.assertEqual("SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'", db.queries[0]);
+		this.assertEqual('MOCK 123', db.queries[1]);
+	}
+	
+	public function test_Then_non_alphanumeric_charsets_will_throw_exception()
+	{
+		db.charSet = 'utf8.1';
+		
+		try
+		{
+			db.query('MOCK 123');
+		}
+		catch(e : DatabaseException)
+		{
+			this.assertEqual('Charset/collation settings must be alphanumeric.', e.message);
+			return;
+		}
+		
+		this.assertTrue(false);
+	}
+	
+	public function test_Then_non_alphanumeric_collations_will_throw_exception()
+	{
+		db.charSet = 'utf8';
+		db.collation = 'utf8.1_unicode_ci';
+		
+		try
+		{
+			db.query('MOCK 456');
+		}
+		catch(e : DatabaseException)
+		{
+			this.assertEqual('Charset/collation settings must be alphanumeric.', e.message);
+			return;
+		}
+		
+		this.assertTrue(false);
 	}
 }

@@ -68,8 +68,22 @@ class MockDatabaseConnection extends DatabaseConnection
 		this.mockConnection = new MockConnection();
 		
 		// Set the myConnection and driver manually for the mock object.
-		this.myConnection = this.mockConnection;
 		this.driver = driver != null ? driver : DatabaseDriver.mysql;
+	}
+
+	private var collationSent : Bool;
+	private override function getConnection() : Connection
+	{
+		if(collationSent == null)
+		{
+			collationSent = true;
+			
+			// Need to send the collation query here because the method is overridden.
+			if(this.driver == DatabaseDriver.mysql && this.charSet != null)
+				sendCollationQuery();
+		}
+
+		return this.mockConnection;
 	}
 }
 

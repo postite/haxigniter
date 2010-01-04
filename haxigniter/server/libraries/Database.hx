@@ -44,7 +44,10 @@ class DatabaseConnection
 	public var database : String;
 	public var socket : String;
 	public var driver : DatabaseDriver;
-	
+
+	public var charSet : String;
+	public var collation : String;
+
 	public var debug : Debug;
 	
 	public var connection(getConnection, null) : Connection;
@@ -57,9 +60,13 @@ class DatabaseConnection
 			{
 				case mysql:
 					this.myConnection = Mysql.connect(this);
+					
+					if(charSet != null)
+						sendCollationQuery();
+
 				case sqlite:
 					this.myConnection = Sqlite.open(this.database);
-			}
+			}			
 		}
 		
 		return this.myConnection;
@@ -314,6 +321,21 @@ class DatabaseConnection
 			throw e;
 		}
 	}
+	
+	private inline function sendCollationQuery() : Void
+	{
+		var stringTest = charSet + (collation != null ? collation : '');
+		
+		if(!(~/^\w+$/.match(stringTest)))
+		{
+			throw new DatabaseException('Charset/collation settings must be alphanumeric.', null);
+		}
+		
+		if(collation != null)
+			this.connection.request("SET NAMES '" + charSet + "' COLLATE '" + collation + "'");
+		else
+			this.connection.request("SET CHARACTER SET " + charSet);
+	}
 }
 
 /*
@@ -321,6 +343,4 @@ $db['local']['dbprefix'] = "";
 $db['local']['pconnect'] = FALSE;
 $db['local']['cache_on'] = FALSE;
 $db['local']['cachedir'] = "";
-$db['local']['char_set'] = "latin1";
-$db['local']['dbcollat'] = "latin1_swedish_ci";	
 */
