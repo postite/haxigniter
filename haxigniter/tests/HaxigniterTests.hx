@@ -17,6 +17,7 @@ import haxigniter.tests.unit.When_using_RestApiSqlRequestHandler;
 import haxigniter.tests.unit.When_using_RestApiConfigSecurityHandler;
 
 import haxigniter.tests.unit.given_the_routing_system.When_using_Alias;
+import haxigniter.tests.unit.given_a_requesthandlerdecorator.When_using_HaxeRequestDecorator;
 
 #if php
 import php.Lib;
@@ -54,5 +55,7 @@ class HaxigniterTests extends haxigniter.common.unit.TestRunner
 		
 		this.add(new When_using_a_FieldValidator());
 		this.add(new When_using_Alias());
+		
+		this.add(new When_using_HaxeRequestDecorator());
 	}
 }

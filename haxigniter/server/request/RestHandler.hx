@@ -38,13 +38,20 @@ import haxigniter.common.types.TypeFactory;
 class RestHandler implements RequestHandler
 {
 	private var config : Config;
+	public var passRequestData : Bool;
 	
-	public function new(config : Config)
+	/**
+	 * Creates a new instance of the RestHandler class.
+	 * @param	config  Application configuration.
+	 * @param	?passRequestData  If true, the raw request data is passed to POST requests instead of the GET/POST parameters.
+	 */
+	public function new(config : Config, ?passRequestData = false)
 	{
 		this.config = config;
+		this.passRequestData = passRequestData;
 	}
 	
-	public function handleRequest(controller : Controller, url : ParsedUrl, method : String, getPostData : Hash<String>, requestData : Dynamic) : Dynamic
+	public function handleRequest(controller : Controller, url : ParsedUrl, method : String, getPostData : Hash<String>, requestData : Dynamic) : RequestResult
 	{
 		var action : String = null;
 		var args : Array<Dynamic> = [];
@@ -114,9 +121,11 @@ class RestHandler implements RequestHandler
 		}
 		else if(method == 'POST')
 		{
-			var query : Hash<String>;
+			var query : Dynamic;
 			
-			if(getPostData != null)
+			if(passRequestData)
+				query = requestData;
+			else if(getPostData != null)
 				query = getPostData;
 			else
 				query = new Hash<String>();
@@ -158,6 +167,6 @@ class RestHandler implements RequestHandler
 			args[0] = TypeFactory.createType(methodArgs.first().type, args[0]);
 		}
 		
-		return Reflect.callMethod(controller, callMethod, args);
+		return RequestResult.methodCall(controller, callMethod, args);
 	}
 }

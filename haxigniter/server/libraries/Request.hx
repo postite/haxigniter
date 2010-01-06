@@ -65,7 +65,8 @@ class Request
 			controller.requestHandler = new BasicHandler(config);
 		}
 
-		return controller.requestHandler.handleRequest(controller, parsedUrl, method, getPostData, requestData);
+		var result : RequestResult = controller.requestHandler.handleRequest(controller, parsedUrl, method, getPostData, requestData);
+		return requestResultOutput(result);
 	}
 	
 	/**
@@ -99,7 +100,8 @@ class Request
 			controller.requestHandler = new BasicHandler(config);
 		}
 		
-		var output = controller.requestHandler.handleRequest(controller, parsedUrl, method, getPostData, requestData);
+		var result : RequestResult = controller.requestHandler.handleRequest(controller, parsedUrl, method, getPostData, requestData);
+		var output = requestResultOutput(result);
 		
 		// If a content handler exists, output the data based on the content handler modifications.
 		if(output != null && outputFunction != null && controller.contentHandler != null)
@@ -113,6 +115,21 @@ class Request
 		return controller;
 	}
 
+	private function requestResultOutput(result : RequestResult) : Dynamic
+	{
+		switch(result)
+		{
+			case returnValue(value):
+				return value;
+				
+			case methodCall(object, method, arguments):
+				return Reflect.callMethod(object, method, arguments);
+				
+			case noOutput:
+				return null;
+		}		
+	}
+	
 	private inline function testUrl(url : String) : ParsedUrl
 	{
 		var parsedUrl = new ParsedUrl(url);

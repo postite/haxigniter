@@ -118,8 +118,8 @@ class Teststandard implements Controller, implements Infos
 	
 	public function third()
 	{
-		var postData = cast(requestHandler, BasicHandler).getPostData();
-		var requestData = cast(requestHandler, BasicHandler).requestData();
+		var postData = cast(requestHandler, BasicHandler).getPostData;
+		var requestData = cast(requestHandler, BasicHandler).requestData;
 		
 		myOutput = postData.get('test') + postData.get('test2') + requestData;
 	}

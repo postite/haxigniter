@@ -1,5 +1,7 @@
 package haxigniter.server.request;
 
+import haxigniter.server.request.RequestHandler;
+
 import haxigniter.server.Controller;
 import haxigniter.server.Config;
 import haxigniter.common.types.TypeFactory;
@@ -10,26 +12,15 @@ class BasicHandler implements RequestHandler
 {
 	private var config : Config;
 	
-	private var getPostDataStack : List<Hash<String>>;
-	public function getPostData() : Hash<String>
-	{
-		return getPostDataStack.first();
-	}
-
-	private var requestDataStack : List<Dynamic>;
-	public function requestData() : Dynamic
-	{
-		return requestDataStack.first();
-	}
+	public var getPostData(default, null) : Hash<String>;
+	public var requestData(default, null) : Dynamic;
 	
 	public function new(config : Config)
 	{
 		this.config = config;
-		this.getPostDataStack = new List<Hash<String>>();
-		this.requestDataStack = new List<Dynamic>();
 	}
 	
-	public function handleRequest(controller : Controller, url : ParsedUrl, method : String, getPostData : Hash<String>, requestData : Dynamic) : Dynamic
+	public function handleRequest(controller : Controller, url : ParsedUrl, method : String, getPostData : Hash<String>, requestData : Dynamic) : RequestResult
 	{
 		var uriSegments = new Url(config).split(url.path);
 		
@@ -43,14 +34,9 @@ class BasicHandler implements RequestHandler
 		// Typecast the arguments.
 		var arguments : Array<Dynamic> = TypeFactory.typecastArguments(controllerType, controllerMethod, uriSegments.slice(2));
 		
-		getPostDataStack.push(getPostData);
-		requestDataStack.push(requestData);
+		this.getPostData = getPostData;
+		this.requestData = requestData;
 		
-		var output = Reflect.callMethod(controller, callMethod, arguments);
-		
-		getPostDataStack.pop();
-		requestDataStack.pop();
-		
-		return output;
+		return RequestResult.methodCall(controller, callMethod, arguments);
 	}
 }

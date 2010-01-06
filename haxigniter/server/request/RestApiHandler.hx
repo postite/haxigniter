@@ -203,7 +203,7 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 	/**
 	 * Handle a page request. (RequestHandler implementation)
 	 */
-	public function handleRequest(controller : Controller, url : ParsedUrl, method : String, getPostData : Hash<String>, requestData : Dynamic) : Dynamic
+	public function handleRequest(controller : Controller, url : ParsedUrl, method : String, getPostData : Hash<String>, requestData : Dynamic) : RequestResult
 	{
 		var uriPath = url.path;
 		var rawQuery = url.query;
@@ -280,7 +280,7 @@ class RestApiHandler implements RequestHandler, implements RestApiFormatHandler,
 			Lib.print(finalOutput.output);
 		}
 		
-		return finalOutput;
+		return RequestResult.returnValue(finalOutput);
 	}
 
 	///// View translations /////////////////////////////////////////

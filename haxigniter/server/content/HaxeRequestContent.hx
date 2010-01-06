@@ -6,8 +6,8 @@ import haxigniter.server.content.ContentHandler;
 
 class HaxeRequestContent implements ContentHandler
 {
-	public var mimeType(default, null);
-	public var encoding(default, null);
+	public var mimeType : String;
+	public var encoding : String;
 	
 	public function new()
 	{

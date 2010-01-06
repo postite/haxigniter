@@ -7,6 +7,15 @@ Features
  - haxigniter.server.libraries.DatabaseConnection now has a charSet and collation property for setting 
    client charset in MySQL databases. See http://dev.mysql.com/doc/refman/5.0/en/charset-connection.html
    for more information.
+ - haxigniter.server.request.RequestHandlerDecorator added, which modifies the RequestResult created by
+   the RequestHandlers. HaxeRequestDecorator is an implementation that simplifies Haxe remoting over
+   http.
+ - RestHandler can now optionally pass the requestData object to the Controller instead of the GET/POST
+   query.
+ 
+Changed 
+ - RequestHandler interface should now return a new RequestResult enum, for much greater control over 
+   the request. 
 
 v0.9 (2010-01-03)
 =================
