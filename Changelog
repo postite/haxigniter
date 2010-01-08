@@ -14,6 +14,7 @@ Features
    query.
  - Added haxigniter.common.libraries.Mime and haxigniter.server.libraries.Download for simplifying
    file downloads.
+ - haxigniter.server.db.Sqlite is now compatible with the DB interface changes in Haxe 2.05.
  
 Changed 
  - RequestHandler interface should now return a new RequestResult enum, for much greater control over 

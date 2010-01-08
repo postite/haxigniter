@@ -50,8 +50,7 @@ extern class PDO
 	public function getAttribute(attribute : Int) : Dynamic;
 	public function getAvailableDrivers() : NativeArray;
 	public function lastInsertId(?name : String) : String;
-	// Optional is empty NativeArray, not sure how to implement, but not needed for the SQLite implementation.
-	//public function prepare(statement : String, ?driver_options : NativeArray = NativeArray()) : PDOStatement;
+	public function prepare(statement : String, ?driver_options : NativeArray) : PDOStatement;
 	public function query(statement : String, ?mode : Int, ?fetch : Dynamic, ?ctorargs : NativeArray) : PDOStatement;	
 	public function quote(String : String, ?parameter_type : Int = 2) : String;
 	public function rollBack() : Bool;
@@ -68,11 +67,9 @@ extern class PDOStatement
 	public function debugDumpParams() : Bool;
 	public function errorCode() : String;
 	public function errorInfo() : NativeArray;
-	// Optional is empty NativeArray, not sure how to implement, but not needed for the SQLite implementation.
-	//public function execute(?input_parameters : NativeArray = NativeArray()) : Bool;
+	public function execute(?input_parameters : NativeArray) : Bool;
 	public function fetch(?fetch_style : Int = 4, ?cursor_orientation : Int = 0, ?cursor_offset : Int = 0) : Dynamic;
-	// Optional is empty NativeArray, not sure how to implement, but not needed for the SQLite implementation.
-	//public function fetchAll(?fetch_style : Int = 4, ?column_index : Int, ?ctor_args : NativeArray = NativeArray()) : NativeArray;
+	public function fetchAll(?fetch_style : Int = 4, ?column_index : Int, ?ctor_args : NativeArray) : NativeArray;
 	public function fetchColumn(?column_number : Int = 0) : String;
 	public function fetchObject(?class_name : String, ?ctor_args : NativeArray) : Dynamic;
 	public function getAttribute(attribute : Int) : Dynamic;
@@ -119,6 +116,15 @@ private class SqliteConnection implements Connection {
 		return pdo.quote(s);
 	}
 
+	public function addValue( s : StringBuf, v : Dynamic ) {
+		if( untyped __call__("is_int", v) || __call__("is_null", v))
+			s.add(v);
+		else if( untyped __call__("is_bool", v) )
+			s.add(if( v ) 1 else 0);
+		else
+			s.add(quote(Std.string(v)));
+	}
+	
 	public function lastInsertId() {
 		return cast(Std.parseInt(pdo.lastInsertId()), Int);
 	}
