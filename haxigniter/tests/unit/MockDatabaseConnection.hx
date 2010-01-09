@@ -28,6 +28,7 @@ class MockConnection implements Connection
 	public function escape( s : String ) : String { return 'E*' + s + '*E'; }
 	public function lastInsertId() : Int { return 0; }
 	public function quote( s : String ) : String { return 'Q*' + s + '*Q'; }
+	public function addValue( s : StringBuf, v : Dynamic ) {}
 	
 	public function request( sql : String ) : ResultSet
 	{
