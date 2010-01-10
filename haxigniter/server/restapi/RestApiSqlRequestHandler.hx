@@ -41,9 +41,9 @@ class SelectQuery
 	public var limit : Int;
 	public var offset : Int;
 	
-	private var db : DatabaseConnection;
+	private var db : Database;
 	
-	public function new(db : DatabaseConnection)
+	public function new(db : Database)
 	{
 		this.db = db;
 		
@@ -205,10 +205,10 @@ class SelectQuery
 
 class RestApiSqlRequestHandler implements RestApiRequestHandler
 {
-	private var db : DatabaseConnection;
+	private var db : Database;
 	private var security : RestApiSecurityHandler;
 	
-	public function new(db : DatabaseConnection)
+	public function new(db : Database)
 	{
 		this.db = db;		
 	}

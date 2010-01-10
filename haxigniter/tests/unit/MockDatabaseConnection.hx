@@ -44,7 +44,7 @@ class MockConnection implements Connection
 	public function startTransaction() : Void {}
 }
 
-class MockDatabaseConnection extends DatabaseConnection
+class MockDatabaseConnection extends Database
 {
 	private var mockConnection : MockConnection;
 	
