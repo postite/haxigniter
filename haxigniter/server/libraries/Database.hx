@@ -8,7 +8,7 @@ import haxigniter.server.libraries.Debug;
 import php.db.Connection;
 import php.db.ResultSet;
 import php.db.Mysql;
-import haxigniter.server.db.Sqlite;
+import php.db.PDO;
 #elseif neko
 import neko.db.Connection;
 import neko.db.ResultSet;
@@ -20,6 +20,7 @@ enum DatabaseDriver
 {
 	mysql;
 	sqlite;
+	other;
 }
 
 class DatabaseException extends haxigniter.common.exceptions.Exception
@@ -50,7 +51,7 @@ class DatabaseConnection
 
 	public var debug : Debug;
 	
-	public var connection(getConnection, null) : Connection;
+	public var connection(getConnection, setConnection) : Connection;
 	private var myConnection : Connection;
 	private function getConnection() : Connection
 	{
@@ -65,10 +66,28 @@ class DatabaseConnection
 						sendCollationQuery();
 
 				case sqlite:
+					#if php
+					this.myConnection = PDO.open('sqlite:' + this.database);
+					#elseif neko
 					this.myConnection = Sqlite.open(this.database);
+					#end
+				
+				case other:
+					throw new DatabaseException('No database connection specified.', this);
 			}			
 		}
 		
+		return this.myConnection;
+	}
+	private function setConnection(value : Connection) : Connection
+	{
+		if(value == null)
+			throw new DatabaseException('Cannot set database connection to null.', this);
+
+		if(this.myConnection != null)
+			throw new DatabaseException('Cannot change database connection after setting it.', this);
+		
+		this.myConnection = value;
 		return this.myConnection;
 	}
 	
@@ -110,8 +129,6 @@ class DatabaseConnection
 	{
 		if(params != null)
 			query = this.queryParams(query, params);
-		
-		this.lastQuery = query;
 		
 		return this.request(query, pos);
 	}
@@ -174,7 +191,6 @@ class DatabaseConnection
 		var query = (replace ? 'REPLACE' : 'INSERT') + ' INTO ' + table + ' (' + keys.substr(2) + ') VALUES (' + values.substr(2) + ')';
 		var result : ResultSet = this.request(query, pos);
 		
-		this.lastQuery = query;		
 		return result.length;
 	}
 
@@ -218,7 +234,6 @@ class DatabaseConnection
 
 		var result : ResultSet = this.request(query, pos);
 		
-		this.lastQuery = query;
 		return result.length;
 	}
 	
@@ -249,7 +264,6 @@ class DatabaseConnection
 
 		var result : ResultSet = this.request(query, pos);
 		
-		this.lastQuery = query;
 		return result.length;
 	}	
 
@@ -311,6 +325,7 @@ class DatabaseConnection
 
 		try
 		{
+			this.lastQuery = query;
 			return this.connection.request(query);
 		}
 		catch(e : Dynamic)

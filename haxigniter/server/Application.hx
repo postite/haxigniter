@@ -41,7 +41,7 @@ class Application
 			}
 			else if(config.development)
 			{
-				Application.rethrow(e);
+				Lib.rethrow(e);
 			}
 			else if(Std.is(e, NotFoundException))
 			{
@@ -84,22 +84,5 @@ class Application
 			url += '?' + params;
 		
 		return url;
-	}
-
-	/**
-	 * php.Lib.rethrow() is broken in haXe <= 2.04, so here's a fix until next release.
-	 */
-	public inline static function rethrow( e : Dynamic )
-	{
-		#if php
-		untyped __php__("if(isset($»e)) throw $»e");
-		if(Std.is(e, php.Exception)) {
-			var __rtex__ = e;
-			untyped __php__("throw $__rtex__");
-		}
-		else throw e;
-		#elseif neko
-		neko.Lib.rethrow(e);
-		#end
 	}
 }

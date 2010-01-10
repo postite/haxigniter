@@ -14,11 +14,14 @@ Features
    query.
  - Added haxigniter.common.libraries.Mime and haxigniter.server.libraries.Download for simplifying
    file downloads.
- - haxigniter.server.db.Sqlite is now compatible with the DB interface changes in Haxe 2.05.
+ - Added DatabaseDriver.other, so any Connection can be used in the DatabaseConnection object.
+   DatabaseConnection.connection property is now settable because of this.
  
 Changed 
  - RequestHandler interface should now return a new RequestResult enum, for much greater control over 
    the request. 
+ - haxigniter.server.db.Sqlite is removed and replaced by the native php.db.PDO object.
+ - Application.rethrow() is gone and replaced by the now working php.Lib.rethrow().
 
 v0.9 (2010-01-03)
 =================
