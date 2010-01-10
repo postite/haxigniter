@@ -25,9 +25,9 @@ enum DatabaseDriver
 
 class DatabaseException extends haxigniter.common.exceptions.Exception
 {
-	public var connection : DatabaseConnection;
+	public var connection : Database;
 	
-	public function new(message : String, connection : DatabaseConnection, ?stack : haxe.PosInfos)
+	public function new(message : String, connection : Database, ?stack : haxe.PosInfos)
 	{
 		this.connection = connection;
 		super(message, 0, stack);
@@ -36,7 +36,7 @@ class DatabaseException extends haxigniter.common.exceptions.Exception
 
 // TODO: Operators in where queries
 // TODO: Unquoted fields in where/data queries
-class DatabaseConnection
+class Database
 {	
 	public var host : String;
 	public var port : Int;
@@ -276,7 +276,7 @@ class DatabaseConnection
 	
 	public inline function testAlphaNumeric(value : String) : Void
 	{	
-		if(value == null || !DatabaseConnection.alphaRegexp.match(value))
+		if(value == null || !Database.alphaRegexp.match(value))
 			throw new DatabaseException('Invalid parameter: ' + value, this);
 	}
 

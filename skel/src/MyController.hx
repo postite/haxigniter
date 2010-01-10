@@ -46,7 +46,7 @@ class MyController implements haxigniter.server.Controller, implements haxe.rtti
 	public var view(default, null) : ViewEngine;
 	
 	// Database connection, if needed.
-	public var db(default, null) : DatabaseConnection;
+	public var db(default, null) : Database;
 	
 	// Session handling, if needed.
 	public var session(default, null) : config.Session;
@@ -60,7 +60,7 @@ class MyController implements haxigniter.server.Controller, implements haxe.rtti
 	private static var appConfig = new Config();
 	
 	// The database is also static since it is used by all controllers.
-	private static var appDb : DatabaseConnection;
+	private static var appDb : Database;
 	
 	// The application session is filebased, could be switched to other implementations.
 	private static var appSession = new FileSession(appConfig.sessionPath);

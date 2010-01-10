@@ -1,10 +1,13 @@
 Changelog for haXigniter
 
 
+- = Normal item
+* = Change that is likely to break your application in normal usage.
+
 Current
 =======
 Features
- - haxigniter.server.libraries.DatabaseConnection now has a charSet and collation property for setting 
+ - haxigniter.server.libraries.Database now has a charSet and collation property for setting 
    client charset in MySQL databases. See http://dev.mysql.com/doc/refman/5.0/en/charset-connection.html
    for more information.
  - haxigniter.server.request.RequestHandlerDecorator added, which modifies the RequestResult created by
@@ -14,14 +17,15 @@ Features
    query.
  - Added haxigniter.common.libraries.Mime and haxigniter.server.libraries.Download for simplifying
    file downloads.
- - Added DatabaseDriver.other, so any Connection can be used in the DatabaseConnection object.
-   DatabaseConnection.connection property is now settable because of this.
+ - Added DatabaseDriver.other, so any Connection can be used in the Database object.
+   Database.connection property is now settable because of this.
  
 Changed 
  - RequestHandler interface should now return a new RequestResult enum, for much greater control over 
    the request. 
  - haxigniter.server.db.Sqlite is removed and replaced by the native php.db.PDO object.
  - Application.rethrow() is gone and replaced by the now working php.Lib.rethrow().
+ * haxigniter.server.libraries.DatabaseConnection renamed to Database. Please update your classes.
 
 v0.9 (2010-01-03)
 =================
@@ -46,7 +50,7 @@ Changed
  - RequestHandler interface now uses a ParsedUrl instead of just path.
  - RequestHandler interface now accepts any data instead of raw posted data, so the ContentHandler can
    modify it.
- - haxigniter.server.Controller interface is now public for all properties, instead of just read-only.
+ * haxigniter.server.Controller interface is now public for all properties, instead of just read-only.
    Please update your controller class implementations.
  - The Request library now handles all external and internal requests in haXigniter.
  

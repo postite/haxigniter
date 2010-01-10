@@ -14,7 +14,7 @@ import haxigniter.server.libraries.Database;
 | Set them as appropriate.
 |
 */
-class DevelopmentConnection extends DatabaseConnection
+class DevelopmentConnection extends Database
 {
 	public function new()
 	{
@@ -37,7 +37,7 @@ class DevelopmentConnection extends DatabaseConnection
 | These database settings will be used when Config.development is false.
 |
 */
-class OnlineConnection extends DatabaseConnection
+class OnlineConnection extends Database
 {
 	public function new()
 	{
