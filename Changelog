@@ -27,6 +27,9 @@ Changed
  - Application.rethrow() is gone and replaced by the now working php.Lib.rethrow().
  * haxigniter.server.libraries.DatabaseConnection renamed to Database. Please update your classes.
 
+Bug fixes
+ - RestApiConfigSecurityHandler can now do user authorization on the "userResource" field.
+
 v0.9 (2010-01-03)
 =================
 Features

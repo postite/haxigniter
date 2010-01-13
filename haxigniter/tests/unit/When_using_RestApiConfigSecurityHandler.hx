@@ -481,6 +481,28 @@ class When_using_RestApiConfigSecurityHandler extends haxigniter.common.unit.Tes
 		this.assertEqualObjects( { id: 2, firstname: 'Justin' }, smalldata.data[0]);
 	}
 
+	public function test_Then_the_users_table_can_be_queried_for_authorization_if_no_ownerships()
+	{
+		var self = this;
+		
+		var smalldata = new RestDataCollection(0, 0, 1, [ { id: 123, firstname: 'Justin', lastname: 'Case' } ]);
+		var data = new RestDataCollection(0, 0, 2, [ { id: 1, firstname: 'Boris', lastname: 'Doris' }, { id: 123, firstname: 'Justin', lastname: 'Case' } ]);
+		
+		this.rights.set('USERS', { guest: null, owner: { read: ['id', 'firstname'] }, admin: null } );
+		this.ownerships = null; // Explicit just to be sure
+
+		this.api.requests[1] = function(url : String) : RestApiResponse
+		{
+			self.assertEqual('/?/USERS/123', url);
+			return RestApiResponse.successData(data);
+		}
+
+		security.read('USERS', smalldata, parameters);
+		
+		this.assertEqual(smalldata.totalCount, 1);
+		this.assertEqualObjects( { id: 123, firstname: 'Justin' }, smalldata.data[0]);
+	}
+
 	public function test_Then_if_owner_requests_more_than_he_owns_error_is_thrown()
 	{
 		var self = this;

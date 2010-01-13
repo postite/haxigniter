@@ -273,10 +273,19 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 
 		for(ownerTable in this.ownerships)
 		{
-			var request = buildOwnerRequest(resourceName, ownerTable, createRequest);			
+			var request = buildOwnerRequest(resourceName, ownerTable, createRequest);
 			if(request == null) continue;
 			
 			return ids.isSubsetOf(this.requestIds(request));
+		}
+		
+		if(resourceName == 'users')
+			trace(this.userResource);
+		
+		// If no ownerships are set, test if the userResource (user table) is used. That's allowed to authorize logins.
+		if(this.userResource != null && resourceName == this.userResource)
+		{
+			return ids.isSubsetOf(this.requestIds('/?/' + this.userResource + '/' + this.ownerID));
 		}
 		
 		return false;
@@ -386,6 +395,7 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 			
 			function(callBack : Dynamic) : Void
 			{
+				// Dynamic callback based on request type.
 				callBack(self.restApi, data, parentResource, parentId, parameters);
 			}
 		);		
@@ -497,7 +507,7 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 		
 		if(this.ownerID != null)
 		{
-			access = this.accessFor(type, rights.owner);
+			access = this.accessFor(type, rights.owner);			
 			if(access != null && ownerAuthorized(access))
 			{
 				testCallback(resourceName, type, 'owner', callBack);
