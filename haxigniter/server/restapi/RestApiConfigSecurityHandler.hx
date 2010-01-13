@@ -279,9 +279,6 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 			return ids.isSubsetOf(this.requestIds(request));
 		}
 		
-		if(resourceName == 'users')
-			trace(this.userResource);
-		
 		// If no ownerships are set, test if the userResource (user table) is used. That's allowed to authorize logins.
 		if(this.userResource != null && resourceName == this.userResource)
 		{
