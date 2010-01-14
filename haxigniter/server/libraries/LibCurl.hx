@@ -1,5 +1,6 @@
 ﻿#if php
-package server.libraries;
+package haxigniter.server.libraries;
+
 import php.Lib;
 import php.NativeArray;
 
