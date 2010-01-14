@@ -19,6 +19,7 @@ Features
    file downloads.
  - Added DatabaseDriver.other, so any Connection can be used in the Database object.
    Database.connection property is now settable because of this.
+ - A wrapper for curl in PHP added: haxigniter.server.libraries.LibCurl
  
 Changed 
  - RequestHandler interface should now return a new RequestResult enum, for much greater control over 
