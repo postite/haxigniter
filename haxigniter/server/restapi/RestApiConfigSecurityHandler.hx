@@ -266,7 +266,7 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 		Reflect.setField(data, keyField, id);
 	}
 	
-	private function testDataOwnership(resourceName : String, ids : Iterable<Int>, createRequest : Bool) : Bool
+	private function testDataOwnership(resourceName : String, ids : Iterable<Int>, createRequest : Bool) : Void
 	{
 		if(this.ownerID == null)
 			throw new RestApiException('Unauthorized owner data access.', RestErrorType.unauthorizedRequest);
@@ -276,16 +276,16 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 			var request = buildOwnerRequest(resourceName, ownerTable, createRequest);
 			if(request == null) continue;
 			
-			return ids.isSubsetOf(this.requestIds(request));
+			if(!ids.isSubsetOf(this.requestIds(request)))
+				this.authorizationFailed();
 		}
 		
 		// If no ownerships are set, test if the userResource (user table) is used. That's allowed to authorize logins.
 		if(this.userResource != null && resourceName == this.userResource)
 		{
-			return ids.isSubsetOf(this.requestIds('/?/' + this.userResource + '/' + this.ownerID));
+			if(!ids.isSubsetOf(this.requestIds('/?/' + this.userResource + '/' + this.ownerID)))
+				this.authorizationFailed();
 		}
-		
-		return false;
 	}
 	
 	/////////////////////////////////////////////////////////////////
@@ -379,13 +379,9 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 				self.testWriteAccess(access, data);
 				
 				// If data access was ok, add foreign key to data if needed.
-				if(self.testDataOwnership(resourceName, [parentId], true))
-				{
-					self.setDataOwnership(data, parentResource, parentId);
-					return true;
-				}
-				else
-					return false;
+				self.testDataOwnership(resourceName, [parentId], true);
+				self.setDataOwnership(data, parentResource, parentId);
+				return true;
 			},
 			
 			testWriteAccess,
@@ -413,10 +409,8 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 		
 			function(access : Dynamic) : Bool
 			{
-				if(self.testDataOwnership(resourceName, self.mapIds(data), false))
-					return filterReadAccess(access);
-				else
-					return false;
+				self.testDataOwnership(resourceName, self.mapIds(data), false);
+				return filterReadAccess(access);
 			},
 			
 			filterReadAccess,
@@ -443,8 +437,9 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 			
 			function(access : Dynamic) : Bool
 			{
+				self.testDataOwnership(resourceName, ids, false);
 				self.testWriteAccess(access, data);
-				return self.testDataOwnership(resourceName, ids, false);
+				return true;
 			},
 			
 			testWriteAccess,
@@ -467,7 +462,8 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 			
 			function(access : Dynamic) : Bool
 			{
-				return self.testDataOwnership(resourceName, ids, false);
+				self.testDataOwnership(resourceName, ids, false);
+				return true;
 			},
 			
 			allowDeleteAccess,
@@ -491,7 +487,7 @@ class RestApiConfigSecurityHandler implements RestApiSecurityHandler
 		var access : Dynamic;
 
 		this.authorizeUser(parameters);
-		
+
 		if(this.isAdmin)
 		{
 			access = this.accessFor(type, rights.admin);

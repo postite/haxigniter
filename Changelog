@@ -26,6 +26,7 @@ Changed
  - haxigniter.server.db.Sqlite is removed and replaced by the native php.db.PDO object.
  - Application.rethrow() is gone and replaced by the now working php.Lib.rethrow().
  * haxigniter.server.libraries.DatabaseConnection renamed to Database. Please update your classes.
+ - RestApiConfigSecurityHandler now always denies access if an owner requests more data than allowed.
 
 Bug fixes
  - RestApiConfigSecurityHandler can now do user authorization on the "userResource" field.
