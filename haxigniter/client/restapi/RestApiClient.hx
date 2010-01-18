@@ -12,17 +12,6 @@ class RestApiClient implements RestApiInterface
 {
 	private var serverUrl : String;
 
-	// There is a problem with javascript StringTools.urlDecode and special 
-	// characters in haXe <= 2.04, so this is the fix until it's included.
-	#if js
-	private static function __init__() untyped
-	{
-		StringTools.urlDecode = function( s : String ) : String untyped {
-			return decodeURIComponent(unescape(s.split("+").join(" ")));
-		}
-	}
-	#end
-	
 	public function new(serverUrl : String)
 	{
 		if(serverUrl.charAt(serverUrl.length - 1) == '/')
