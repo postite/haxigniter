@@ -2,11 +2,13 @@
 package haxigniter.server.external;
 
 /**
- * How to use: Put the Smarty files in an externalPath/smarty folder.
- * (The Smarty "libs" folder should reside in the externalPath/smarty folder.)
+ * How to use: Set your external directory in config.externalPath. Then put the Smarty files 
+ * in the <externalPath>/smarty folder.
  * 
- * Then you need to make a small adjustment to the file "internals/core.write_file.php".
- * You need to change this line:
+ * (The Smarty "libs" folder should be located at <externalPath>/smarty/libs)
+ * 
+ * Then you need to make a small adjustment to the file 
+ * "smarty/libs/internals/core.write_file.php". You need to change this line:
  * 
  *      @unlink($params['filename']);
  * 
@@ -18,7 +20,7 @@ package haxigniter.server.external;
  * (For more information: http://tylermac.wordpress.com/2009/09/06/haxe-php-smarty-flashdevelop)
  * 
  * When that is done, you can use haxigniter.server.views.Smarty as a ViewEngine.
- * See Config.hx for more about the ViewEngine.
+ * Use Server.requireExternal('smarty/libs/Smarty.class.php') to include it.
  * 
  */
 extern class Smarty 

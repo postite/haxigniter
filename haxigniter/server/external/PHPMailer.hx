@@ -4,7 +4,7 @@ package haxigniter.server.external;
 /**
  * How to use: 
  * 
- *   1. Put the PHPMailer directory in config.externalPath.
+ *   1. Set your external directory in config.externalPath.
  *   2. Use Server.requireExternal('phpmailer/class.phpmailer.php') to include it.
  * 
  * Then it works just like any other haXe class.
