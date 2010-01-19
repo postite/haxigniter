@@ -214,6 +214,9 @@ class When_using_RestApiController extends haxigniter.common.unit.TestCase
 				
 				case attribute(name, operator, value):
 					output.push('attribute(' + name + ',' + operator + ',' + value + ')');
+					
+				case or:
+					output.push('OR');
 			}
 		}
 		

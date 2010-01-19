@@ -14,6 +14,7 @@ enum Modifier {
     className (value:String);
     hash      (value:String);
     attribute (name:String, operator:String, value:String);
+	or;
 }
 
 /**
@@ -28,7 +29,7 @@ class SelectorSegment
     private static var ATTR_P        = ~/^\[(.*?(?<!\\))\]/;
 	//private static var ATTR_P        = ~/^\[([^\]]+)\]/;
     
-    private static var ATTR_S_P      = ~/^([\w\-]+)\s*(?:([=|!~*\^$<>]+)\s*['"]?(.*?)["']?)?$/i;
+    private static var ATTR_S_P      = ~/^([\w\-]+)\s*(?:([=!~*\^$<>]+)\s*['"]?(.*?)["']?)?$/i;
     
     public var name       (default, null):String;
     public var modifiers  (default, null):Array<Modifier>;
@@ -78,25 +79,9 @@ class SelectorSegment
             }
             else if (ATTR_P.match(remainder)) {
                 var attr = ATTR_P.matched(1);
-                
-                if (ATTR_S_P.match(attr)) {
-                    var name  = ATTR_S_P.matched(1);
-                    var op    = ATTR_S_P.matched(2);
-                    var value = ATTR_S_P.matched(3);
-
-                    // Need to rewrite escaping of the brackets manually
-					if(value != null)
-					{
-						value = StringTools.replace(value, '\\[', '[');
-						value = StringTools.replace(value, '\\]', ']');
-					}
-					
-                    modifiers.push(Modifier.attribute(name, op, value));
-                }
-                else {
-                    throw "Unrecognized attribute selector format: " + attr;
-                }
-                
+				
+				modifiers = modifiers.concat(createAttributes(attr));
+				    
                 i += ATTR_P.matched(0).length;
             }
             else {
@@ -107,6 +92,46 @@ class SelectorSegment
         return new SelectorSegment(name, modifiers);
     }
     
+	private static function createAttributes(attributeContent : String) : Array<Modifier>
+	{
+		var output = new Array<Modifier>();
+		
+		// Split attribute in OR expressions, if they exist
+		while(attributeContent.length > 0)
+		{
+			var nextExpr = searchUnquoted(attributeContent, '|');
+			var attr = attributeContent.substr(0, (nextExpr == -1) ? null : nextExpr);
+			
+			if (ATTR_S_P.match(attr))
+			{
+				var name  = ATTR_S_P.matched(1);
+				var op    = ATTR_S_P.matched(2);
+				var value = ATTR_S_P.matched(3);
+
+				// Need to rewrite escaping of the brackets manually
+				if(value != null)
+				{
+					value = StringTools.replace(value, '\\[', '[');
+					value = StringTools.replace(value, '\\]', ']');
+				}
+				
+				// If more than one attribute in the expression, push an OR modifier.
+				if(output.length > 0)
+				{
+					output.push(Modifier.or);
+				}
+				
+				output.push(Modifier.attribute(name, op, value));
+			}
+			else
+				throw "Unrecognized attribute selector format: " + attr;
+			
+			attributeContent = (nextExpr == -1) ? '' : attributeContent.substr(nextExpr+1);
+		}
+		
+		return output;
+	}
+	
     public function toString():String {
         return "SelectorSegment(" + name + ", modifiers=" + modifiers + ")";
     }
@@ -168,6 +193,43 @@ class SelectorSegment
         // Set parsed length so it can be used in the main parser
         parsed.length = i;
         return Modifier.pseudoFunc(funcName, funcParams);
+    }
+	
+	private static function searchUnquoted(input : String, searchFor : String) : Int
+	{
+        var insideSQuote = false;
+        var insideDQuote = false;
+		
+		var i = -1;
+		var searchLen = searchFor.length;
+		var escaped = false;
+
+        while (++i < input.length)
+		{
+			if(!insideDQuote && !insideSQuote && input.substr(i, searchLen) == searchFor)
+				return i;
+				
+            var char = input.charAt(i);
+
+			if(char == '"')
+			{
+				if(insideDQuote && !escaped)
+					insideDQuote = false;
+				else
+					insideDQuote = true;
+			}
+			else if(char == "'")
+			{
+				if(insideSQuote && !escaped)
+					insideSQuote = false;
+				else
+					insideSQuote = true;
+			}
+			
+			escaped = char == '\\';
+		}
+
+		return -1;
     }
 }
 
@@ -369,6 +431,8 @@ class RestApiParser
 				throw new RestApiException('Invalid modifier: ' + value, RestErrorType.invalidQuery);
 			case attribute(name, operator, value):
 				return RestApiSelector.attribute(name, getOperator(operator), value);
+			case or:
+				return RestApiSelector.or;
 		}
 	}
 	

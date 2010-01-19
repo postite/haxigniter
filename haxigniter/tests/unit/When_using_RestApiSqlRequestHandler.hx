@@ -130,6 +130,12 @@ class When_using_RestApiSqlRequestHandler extends haxigniter.common.unit.TestCas
 			'SELECT COUNT(*) FROM bazaars WHERE bazaars.name LIKE Q*test%*Q AND bazaars.email LIKE Q*%google.com*Q'
 			]);
 
+		// Test OR query
+		this.request('/bazaars/[name^=test|email$=google.com][expr="||"]');
+		this.assertQueries([
+			'SELECT bazaars.* FROM bazaars WHERE bazaars.name LIKE Q*test%*Q OR bazaars.email LIKE Q*%google.com*Q AND bazaars.expr = Q*||*Q',
+			]);
+
 		this.request('/bazaars/:order(name)');
 		this.assertQueries(['SELECT bazaars.* FROM bazaars ORDER BY name']);
 

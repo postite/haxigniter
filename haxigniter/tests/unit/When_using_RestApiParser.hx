@@ -170,10 +170,28 @@ class When_using_RestApiParser extends haxigniter.common.unit.TestCase
 		// And an error check.
 		badParse('/bazaars/[this]]is not good', ~/Unrecognized selector segment: \]is/, RestErrorType.invalidQuery);
 	}
+	
+	public function test_Then_SOME_selectors_with_OR_should_be_parsed_properly()
+	{
+		output = parse('/bazaars/[a="\\"3"|b=4]/');
+		
+		this.assertEqual(1, output.length);
+		this.assertSelectorAttrib(output[0], 0, 'a', RestApiSelectorOperator.equals, '\\"3');
+		this.assertSelectorAttrib(output[0], 1, 'OR');
+		this.assertSelectorAttrib(output[0], 2, 'b', RestApiSelectorOperator.equals, '4');
+
+		output = parse("/bazaars/[a='3|4']/");
+		this.assertEqual(1, output.length);
+		this.assertSelectorAttrib(output[0], 0, 'a', RestApiSelectorOperator.equals, '3|4');
+		
+		output = parse('/bazaars/[a="3|4"]/');
+		this.assertEqual(1, output.length);
+		this.assertSelectorAttrib(output[0], 0, 'a', RestApiSelectorOperator.equals, '3|4');
+	}
 
 	/////////////////////////////////////////////////////////////////
 	
-	private function assertSelectorAttrib(selector : RestApiParsedSegment, selectorIndex : Int, name : String, operator : RestApiSelectorOperator, value : String, ?resourceName : String)
+	private function assertSelectorAttrib(selector : RestApiParsedSegment, selectorIndex : Int, name : String, ?operator : RestApiSelectorOperator, ?value : String, ?resourceName : String)
 	{
 		switch(selector)
 		{
@@ -187,6 +205,8 @@ class When_using_RestApiParser extends haxigniter.common.unit.TestCase
 						this.assertEqual(name, aName);
 						this.assertEqual(operator, aOp);
 						this.assertEqual(value, aValue);
+					case or:
+						this.assertEqual('OR', name);
 					default:
 						this.assertTrue(false); // The lazy way out
 				}

@@ -21,6 +21,7 @@ enum RestApiSelector
 {
     func (name : String, args : Array<String>);
     attribute (name : String, operator : RestApiSelectorOperator, value : String);
+	or;
 }
 	
 enum RestApiParsedSegment

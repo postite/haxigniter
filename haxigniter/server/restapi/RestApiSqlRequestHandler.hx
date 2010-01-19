@@ -172,7 +172,9 @@ class SelectQuery
 		if(tables[i].attributes.length == 0)
 			return '';
 		
-		return 'WHERE ' + tables[i].attributes.join(' AND ');
+		var attribs = tables[i].attributes.join(' AND ');
+		
+		return 'WHERE ' + StringTools.replace(attribs, ' AND #OR# AND ', ' OR ');
 	}
 	
 	private function generateJoin(leftTable : SqlTable, rightTable : SqlTable, direction : SqlJoinDir) : String
@@ -492,6 +494,9 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 					case attribute(name, operator, value):
 						var newValue = { val: '' };
 						attributes.push(attributeToSql(resource.name + '.' + name, operator, value));
+						
+					case or:
+						attributes.push('#OR#');
 				}
 			}
 
