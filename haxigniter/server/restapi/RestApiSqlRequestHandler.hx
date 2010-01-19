@@ -495,7 +495,7 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 						var newValue = { val: '' };
 						attributes.push(attributeToSql(resource.name + '.' + name, operator, value));
 						
-					case or:
+					case orOperator:
 						attributes.push('#OR#');
 				}
 			}

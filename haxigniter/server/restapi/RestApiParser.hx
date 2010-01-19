@@ -14,7 +14,7 @@ enum Modifier {
     className (value:String);
     hash      (value:String);
     attribute (name:String, operator:String, value:String);
-	or;
+	orOperator;
 }
 
 /**
@@ -118,7 +118,7 @@ class SelectorSegment
 				// If more than one attribute in the expression, push an OR modifier.
 				if(output.length > 0)
 				{
-					output.push(Modifier.or);
+					output.push(Modifier.orOperator);
 				}
 				
 				output.push(Modifier.attribute(name, op, value));
@@ -431,8 +431,8 @@ class RestApiParser
 				throw new RestApiException('Invalid modifier: ' + value, RestErrorType.invalidQuery);
 			case attribute(name, operator, value):
 				return RestApiSelector.attribute(name, getOperator(operator), value);
-			case or:
-				return RestApiSelector.or;
+			case orOperator:
+				return RestApiSelector.orOperator;
 		}
 	}
 	
