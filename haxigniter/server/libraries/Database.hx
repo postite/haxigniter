@@ -185,7 +185,9 @@ class Database
 		{
 			this.testAlphaNumeric(key);
 			keys += ', ' + key;
-			values += ', ' + this.connection.quote(Std.string(hash.get(key)));
+			
+			var value = hash.get(key);
+			values += ', ' + (value == null ? 'NULL' : this.connection.quote(Std.string(value)));
 		}
 		
 		var query = (replace ? 'REPLACE' : 'INSERT') + ' INTO ' + table + ' (' + keys.substr(2) + ') VALUES (' + values.substr(2) + ')';
@@ -210,7 +212,9 @@ class Database
 		for(key in hash.keys())
 		{
 			this.testAlphaNumeric(key);
-			set += ', ' + key + '=' + this.connection.quote(Std.string(hash.get(key)));
+			
+			var value = hash.get(key);
+			set += ', ' + key + '=' + (value == null ? 'NULL' : this.connection.quote(Std.string(value)));
 		}
 
 		if(where != null)
@@ -220,7 +224,9 @@ class Database
 			for(key in whereHash.keys())
 			{
 				this.testAlphaNumeric(key);
-				whereStr += ' AND ' + key + '=' + this.connection.quote(Std.string(whereHash.get(key)));
+				
+				var value = whereHash.get(key);
+				whereStr += ' AND ' + key + '=' + (value == null ? 'NULL' : this.connection.quote(Std.string(value)));
 			}
 		}
 
@@ -250,7 +256,9 @@ class Database
 			for(key in whereHash.keys())
 			{
 				this.testAlphaNumeric(key);
-				whereStr += ' AND ' + key + '=' + this.connection.quote(Std.string(whereHash.get(key)));
+				
+				var value = whereHash.get(key);
+				whereStr += ' AND ' + key + '=' + (value == null ? 'NULL' : this.connection.quote(Std.string(value)));
 			}
 		}
 

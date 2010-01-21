@@ -38,7 +38,21 @@ class When_using_library_Database extends haxigniter.common.unit.TestCase
 		// Simple test of the mock object
 		this.assertEqual(4, db.queries.length);
 		this.assertEqual('INSERT INTO test (me, data) VALUES (Q*who*Q, Q*you*Q)', db.queries[0]);
-		this.assertEqual('DELETE FROM test WHERE me=Q*who*Q AND data=Q*you*Q LIMIT 1', db.queries[3]);
+		this.assertEqual('DELETE FROM test WHERE me=Q*who*Q AND data=Q*you*Q LIMIT 1', db.queries[3]);		
+	}
+
+	public function test_Then_null_values_should_not_be_quoted()
+	{
+		var data1 = { test: null };
+		
+		db.insert('nulltest', data1);
+		this.assertEqual('INSERT INTO nulltest (test) VALUES (NULL)', db.lastQuery);
+		
+		db.update('nulltest', data1, data1);
+		this.assertEqual('UPDATE nulltest SET test=NULL WHERE test=NULL', db.lastQuery);
+
+		db.delete('nulltest', data1);
+		this.assertEqual('DELETE FROM nulltest WHERE test=NULL', db.lastQuery);	
 	}
 	
 	public function test_Then_charset_should_generate_an_extra_query()

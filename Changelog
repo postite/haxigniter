@@ -4,6 +4,11 @@ Changelog for haXigniter
 - = Normal item
 * = Change that is likely to break your application in normal usage.
 
+Current
+=======
+Bug fixes
+ - Database doesn't quote null values anymore when doing insert, update or delete.
+
 v0.91 (2010-01-21)
 ==================
 Features
