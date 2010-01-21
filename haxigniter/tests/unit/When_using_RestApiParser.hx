@@ -205,7 +205,7 @@ class When_using_RestApiParser extends haxigniter.common.unit.TestCase
 						this.assertEqual(name, aName);
 						this.assertEqual(operator, aOp);
 						this.assertEqual(value, aValue);
-					case or:
+					case orOperator:
 						this.assertEqual('OR', name);
 					default:
 						this.assertTrue(false); // The lazy way out

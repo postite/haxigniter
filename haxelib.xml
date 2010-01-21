@@ -6,7 +6,7 @@
     <tag v="php"/>
     <tag v="restful"/>
     <description>An easy-to-use web framework for haXe.</description>
-    <version name="0.9">Plenty of nice additions that isn't very obvious but will make
-    the input/output handling much nicer when needed. Two interfaces changed in this 
-    version, so make sure you read the Changelog and update them if upgrading.</version>
+    <version name="0.91">RestApi improvements, database features, curl and file download library added. 
+    DatabaseConnection class renamed to Database. Please update your classes. 
+    Haxe 2.05 or later is required for this version.</version>
 </project>

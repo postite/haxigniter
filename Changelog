@@ -4,8 +4,8 @@ Changelog for haXigniter
 - = Normal item
 * = Change that is likely to break your application in normal usage.
 
-Current
-=======
+v0.91 (2010-01-21)
+==================
 Features
  - haxigniter.server.libraries.Database now has a charSet and collation property for setting 
    client charset in MySQL databases. See http://dev.mysql.com/doc/refman/5.0/en/charset-connection.html
