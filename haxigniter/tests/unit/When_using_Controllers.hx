@@ -81,9 +81,9 @@ class Testrest implements Controller, implements Infos
 		return 'update ' + id + ' ' + formData.get('id') + ' ' + formData.get('name');
 	}
 	
-	public function destroy(id : Int) : String
+	public function destroy(id : Int, formData : Hash<String>) : String
 	{
-		return 'destroy ' + id;
+		return 'destroy ' + id + ' ' + formData.get('id') + ' ' + formData.get('name');
 	}
 }
 
@@ -201,7 +201,7 @@ class When_using_Controllers extends haxigniter.common.unit.TestCase
 
 		// destroy()
 		output = request.internal('testrest/789/delete', 'POST', data);
-		this.assertEqual('destroy 789', output);
+		this.assertEqual('destroy 789 N/A Test 2', output);
 	}
 
 	public function test_Then_standard_actions_should_work_according_to_reference()

@@ -26,7 +26,7 @@ import haxigniter.common.types.TypeFactory;
  * 
  *  /classname           -> create(formData : Hash<String>)
  *  /classname/ID        -> update(id : T, formData : Hash<String>)
- *  /classname/ID/delete -> destroy(id : T)
+ *  /classname/ID/delete -> destroy(id : T, formData : Hash<String>)
  * 
  * 
  * Thanks to Thomas on the haXe list for the inspiration.
@@ -107,16 +107,10 @@ class RestHandler implements RequestHandler
 			// Add extra arguments if the action allows.
 			if(extraArgsPos != null)
 			{
-				//haxigniter.server.Application.trace('--- Request: ' + uriSegments);
-				//haxigniter.server.Application.trace('Extra args: ' + uriSegments.slice(extraArgsPos));
-				
 				// Typecast the extra arguments and add them to the action.
 				var extraArguments : Array<Dynamic> = TypeFactory.typecastArguments(Type.getClass(controller), action, uriSegments.slice(extraArgsPos), argOffset);
 
 				args = args.concat(extraArguments);
-				
-				//haxigniter.server.Application.trace('Typed: ' + extraArguments);
-				//haxigniter.server.Application.trace('Output: ' + args);
 			}
 		}
 		else if(method == 'POST')
@@ -135,16 +129,9 @@ class RestHandler implements RequestHandler
 				action = 'create';
 				args.push(query);
 			}
-			else if(uriSegments[2] == 'delete')
-			{
-				action = 'destroy';
-
-				args.push(uriSegments[1]);
-				typecastId = true;
-			}
 			else
 			{
-				action = 'update';
+				action = (uriSegments[2] == 'delete') ? 'destroy' : 'update';
 
 				args.push(uriSegments[1]);
 				args.push(query);

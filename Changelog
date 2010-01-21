@@ -2,10 +2,14 @@ Changelog for haXigniter
 
 
 - = Normal item
-* = Change that is likely to break your application in normal usage.
+* = Change that could break your application in normal usage.
 
 Current
 =======
+Changed
+ * The "destroy" action created by RestHandler now takes the posted data as second parameter.
+   Method signature is now: destroy(id : Int, formData : Hash<String>)
+
 Bug fixes
  - Database doesn't quote null values anymore when doing insert, update or delete.
 
