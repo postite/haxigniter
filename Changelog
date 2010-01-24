@@ -4,8 +4,8 @@ Changelog for haXigniter
 - = Normal item
 * = Change that could break your application in normal usage.
 
-Current
-=======
+v0.92 (2010-01-24)
+==================
 Changed
  * The "destroy" action created by RestHandler now takes the posted data as second parameter.
    Method signature is now: destroy(id : Int, formData : Hash<String>)
