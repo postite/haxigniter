@@ -1,5 +1,7 @@
 package haxigniter.tests.unit;
 
+import haxigniter.tests.mocks.MockConfig;
+
 import haxe.rtti.Infos;
 import haxigniter.common.exceptions.Exception;
 import haxigniter.server.content.ContentHandler;

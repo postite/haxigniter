@@ -1,5 +1,8 @@
 package haxigniter.tests.unit;
 
+import haxigniter.tests.mocks.MockDatabaseConnection;
+import haxigniter.tests.mocks.MockConfig;
+
 import haxigniter.common.libraries.ParsedUrl;
 import haxigniter.server.content.ContentHandler;
 import Type;

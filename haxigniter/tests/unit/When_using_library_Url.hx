@@ -1,6 +1,7 @@
 package haxigniter.tests.unit;
 
 import haxigniter.server.libraries.Url;
+import haxigniter.tests.mocks.MockConfig;
 
 class When_using_library_Url extends haxigniter.common.unit.TestCase
 {

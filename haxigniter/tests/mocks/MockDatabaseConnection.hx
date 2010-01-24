@@ -1,4 +1,4 @@
-package haxigniter.tests.unit;
+package haxigniter.tests.mocks;
 
 import haxigniter.server.libraries.Database;
 

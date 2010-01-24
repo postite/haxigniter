@@ -16,7 +16,7 @@ import haxigniter.server.restapi.RestApiRequest;
 
 import haxigniter.server.request.RestApiHandler;
 
-import haxigniter.tests.unit.MockDatabaseConnection;
+import haxigniter.tests.mocks.MockDatabaseConnection;
 
 class TestRestCreate
 {
