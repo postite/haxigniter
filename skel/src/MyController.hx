@@ -94,8 +94,15 @@ class MyController implements haxigniter.server.Controller, implements haxe.rtti
 	/*
 	 * Application entrypoint
 	 */
-	public static function main()
-	{
+	public static function main() {
+		#if neko
+		neko.Web.cacheModule(run);
+		#else
+		run();
+		#end
+	}
+
+	public static function run():Void {
 		// Configure database depending on development mode.
 		if(appConfig.development)
 			appDb = new DevelopmentConnection();
@@ -119,7 +126,7 @@ class MyController implements haxigniter.server.Controller, implements haxe.rtti
 		if(appSession != null)
 			appSession.close();
 	}
-
+	
 	/**
 	 * The controllers are automatically created by haxigniter.server.Application.
 	 */
