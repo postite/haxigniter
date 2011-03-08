@@ -35,12 +35,12 @@ class Templo extends ViewEngine
 
 	public override function render(fileName : String) : String
 	{
-		templo.Loader.BASE_DIR = this.templatePath;
-		templo.Loader.TMP_DIR = this.compiledPath;
-		templo.Loader.MACROS = this.macros;
-		templo.Loader.OPTIMIZED = this.optimized;
+		mtwin.templo.Loader.BASE_DIR = this.templatePath;
+		mtwin.templo.Loader.TMP_DIR = this.compiledPath;
+		mtwin.templo.Loader.MACROS = this.macros;
+		mtwin.templo.Loader.OPTIMIZED = this.optimized;
 
-		var t = new templo.Loader(fileName);
+		var t = new mtwin.templo.Loader(fileName);
 		return t.execute(this.templateVars);
 	}
 }
