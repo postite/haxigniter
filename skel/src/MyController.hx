@@ -78,6 +78,11 @@ class MyController implements haxigniter.server.Controller, implements haxe.rtti
 	|   haxigniter.server.views.HaxeTemplate() - haxe.Template (http://haxe.org/doc/cross/template)
 	|   haxigniter.server.views.Smarty() - Smarty, PHP only (http://smarty.net)
 	|
+	| In order to use Templo install both 'templo' and 'mtwin' libraries with haxelib and
+	| add those libraries to build script:
+	|	-lib templo
+	|	-lib mtwin
+	|
 	| If you want to use another template system, make a class extending
 	| haxigniter.server.views.viewEngine and instantiate it here. Contributions 
 	| are always welcome, contact us at haxigniter@gmail.com so we can include
