@@ -638,6 +638,8 @@ class RestApiSqlRequestHandler implements RestApiRequestHandler
 						query.order = 'RAND()';
 					case DatabaseDriver.sqlite:
 						query.order = 'RANDOM()';
+					default:
+						throw new RestApiException('Random order is only supported by mysql or sqlite.', RestErrorType.invalidQuery);
 				}
 				
 			default:

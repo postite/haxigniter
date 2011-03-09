@@ -114,6 +114,7 @@ class MockResultSet implements ResultSet
 	public function getFloatResult(n : Int) : Float { return 0; }
 	public function getIntResult(n : Int) : Int { return 0; }
 	public function getResult(n : Int) : String { return ''; }
+	public function getFieldsNames() : Null<Array<String>> { return []; }
 	
 	public function hasNext() : Bool { return iterator.hasNext(); }
 	public function next() : Dynamic { return iterator.next(); }
